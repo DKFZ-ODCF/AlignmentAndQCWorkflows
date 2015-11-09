@@ -1,0 +1,65 @@
+<configuration name='exomeAnalysis' description='The exome pipeline / analysis is an extension to the qc pipeline / analysis.'
+               configurationType='analysis' class='de.dkfz.roddy.core.Analysis' workflowClass='de.dkfz.b080.co.qcworkflow.QCPipeline'
+               imports='qcAnalysis'
+               canCreateTestdata='true'
+               listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,readBinsCoverage,qcSummary,onTargetCoverage,onTargetCoveragePlotter,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff,targetExtractCoverageSlim"
+               usedToolFolders="qcPipeline,qcPipelineTools,exomePipeline,devel,tools"
+               cleanupScript="cleanupScript">
+    <configurationvalues>
+        <cvalue name='analysisMethodNameOnInput' value='exon_sequencing' type='string' />
+        <cvalue name='analysisMethodNameOnOutput' value='exome' type='string' />
+
+        <cvalue name='runExomeAnalysis' value='true' type="boolean" description="Shows that the workflow is running for whole exome datasets."/>
+
+        <cvalue name='BASE_QUALITY_CUTOFF' value='25' type="integer"/>
+
+        <!--Reference genome'-->
+        <cvalue name='SEQUENCER_STRATEGY' value='wholeExome'/>
+        <cvalue name='WINDOW_SIZE' value='10' type="integer"/>
+
+        <!--Target regions-->
+        <cvalue name='TARGETSIZE' value='35961919' type="integer" description="Other values #43992300 #62085286"/>
+
+        <!--Options for onTargetCoverage'-->
+        <cvalue name='SAMTOOLS_VIEW_OPTIONS' value='" -bu -q 1 -F 1024"' description="-q 1 uniquely mapped reads, -bu output uncompressed BAM for pipe to coverageBed"/>
+        <cvalue name='INTERSECTBED_OPTIONS' value='""'/>
+        <cvalue name='COVERAGEBED_OPTIONS' value='" -d "'/>
+    </configurationvalues>
+    <processingTools>
+        <!--<tool name='targetExtraction' value='targetExtract.sh' basepath='exomePipeline'/>-->
+        <!--<tool name='targetExtractionAndCoverage' value='targetExtractCoverage.sh' basepath='exomePipeline'/>-->
+        <tool name='onTargetCoverage' value='samtoolsOnTargetCoverage.sh' basepath='exomePipeline'/>
+        <tool name='onTargetCoveragePlotter' value='createOnTargetCoveragePlot.sh' basepath='exomePipeline'/>
+        <tool name='onTargetCoveragePlotterBinary' value='targetCoverageDistributionPlot.r' basepath="exomePipeline"/>
+        <tool name='compressionDetection' value='determineFileCompressor.sh' basepath='tools'/>
+        <tool name='targetCoveragePerlScript' value='targetcov.pl' basepath='exomePipeline'/>
+
+        <tool name='targetExtractCoverageSlim' value='targetExtractCoverageSlim.sh' basepath='exomePipeline'>
+            <resourcesets>
+                <rset size="xs" memory="5" cores="2" nodes="1" walltime="1"/>
+                <rset size="s" memory="6" cores="2" nodes="1" walltime="2"/>
+                <rset size="m" memory="7" cores="2" nodes="1" walltime="4"/>
+                <rset size="l" memory="8" cores="2" nodes="1" walltime="6"/>
+                <rset size="xl" memory="9" cores="2" nodes="1" walltime="8"/>
+            </resourcesets>
+            <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
+            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_PARENTBAM" />
+            <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_PARENTBAM_COVERAGE" />
+            <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
+            <output type="file" check="false" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME">
+                <output type="file" variable="indexFile" check="false" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="FILENAME_INDEX" />
+                <output type="file" variable="flagstatsFile" typeof="de.dkfz.b080.co.files.FlagstatsFile" scriptparameter="FILENAME_FLAGSTATS" />
+                <output type="file" variable="extendedFlagstatsFile" fnpatternselectiontag="extendedFlagstats" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_EXTENDED_FLAGSTATS" />
+                <output type="file" variable="chromosomeDiffStatisticsFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAME_DIFFCHROM_STATISTICS" />
+                <output type="file" variable="chromosomeDiffMatrixFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffTextFile" scriptparameter="FILENAME_DIFFCHROM_MATRIX" />
+                <output type="file" variable="chromosomeDiffPlotFile" check="false" typeof="de.dkfz.b080.co.files.ChromosomeDiffPlotFile" scriptparameter="FILENAME_DIFFCHROM_PLOT" />
+                <output type="file" variable="insertSizesStatisticsFile" fnpatternselectiontag="targetExtract" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAME_ISIZES_STATISTICS" />
+                <output type="file" variable="insertSizesMatrixFile" fnpatternselectiontag="targetExtract" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX" />
+                <output type="file" variable="insertSizesPlotFile" fnpatternselectiontag="targetExtract" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT" />
+                <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE" />
+                <output type="file" variable="targetsWithCoverageTextFile" fnpatternselectiontag="targetsWithCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_TARGETS_WITH_COVERAGE_TEXT" />
+                <output type="file" variable="qcSummaryFile" fnpatternselectiontag="targetExtract" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY" />
+            </output>
+        </tool>
+    </processingTools>
+</configuration>

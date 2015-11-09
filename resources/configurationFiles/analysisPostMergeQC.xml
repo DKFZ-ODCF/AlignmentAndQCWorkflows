@@ -1,0 +1,108 @@
+<configuration name='postMergeQCAnalysis' description='Quality control for NGS data using preexisting merged bam files.'
+               configurationType='analysis' class='de.dkfz.roddy.core.Analysis'
+               workflowClass='de.dkfz.b080.co.qcworkflow.PostMergeQCAnalysisWorkflow'
+               imports="commonCOWorkflowsSettings"
+               canCreateTestdata='true'
+               listOfUsedTools="qcSummary,postMergeQCAnalysis,coveragePlot,coveragePlotSingle"
+               usedToolFolders="qcPipeline,qcPipelineTools,devel,tools">
+    <configurationvalues>
+        <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
+        <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
+
+        <cvalue name='runCoveragePlots' value='true' type='boolean'/>
+
+        <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
+    </configurationvalues>
+
+    <processingTools>
+
+        <tool name='commonAlignmentSettingsScript' value='bwaCommonAlignmentSettings.sh' basepath='qcPipeline'/>
+
+        <tool name='fakeDupmarkMetrics' value='fakeDupmarkMetrics.pl' basepath='qcPipeline'/>
+
+        <tool name='bwaErrorCheckingScript' value='bwaErrorChecking.sh' basepath='qcPipeline'/>
+        <tool name='insilicoGenotyperScript' value='insilicoGenotyper.py' basepath='qcPipeline'/>
+        <tool name='pairedEndReadAberrationsScript' value='pairedEndReadAberrations.py' basepath='qcPipeline'/>
+        <tool name='coveragePlotScript' value='coveragePlot.R' basepath='qcPipeline'/>
+        <tool name='insertSizesBucketSortScript' value='isizes_bucketsort.pl' basepath='qcPipeline'/>
+        <tool name='insertSizePlotScript' value='insertsizePlot.R' basepath='qcPipeline'/>
+        <!--<tool name='writeQcSummary' value='writeQCSummary.py' basepath='qcPipeline'/>-->
+        <tool name='writeQcSummary' value='writeQCsummary.pl' basepath='qcPipeline'/>
+
+        <tool name='sequencerDetection' value='PhredOrIllumina.pl' basepath='qcPipeline'/>
+        <tool name='plotDiffchrom' value='chrom_diff.r' basepath='qcPipeline'/>
+        <tool name='coverageQc' value='coverageQc.py' basepath='qcPipeline'/>
+        <tool name='filterReadBins' value='filter_readbins.pl' basepath='qcPipeline'/>
+        <tool name='genomeCoveragePyScript' value='genomeCoverage.py' basepath='qcPipeline'/>
+        <tool name='coverageQcDImpl' value='coverageQcD/coverageQc' basepath="qcPipelineTools"/>
+        <tool name='genomeCoverageDImpl' value='genomeCoverage/genomeCoverage' basepath="qcPipelineTools"/>
+
+        <tool name='readBinsCoverage' value='genomeCoverageReadBins.sh' basepath='qcPipeline'>
+            <resourcesets>
+                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
+            </resourcesets>
+            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
+            <output type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="OUTFILENAME"/>
+        </tool>
+        <tool name='coveragePlot' value='genomeCoveragePlots.sh' basepath='qcPipeline'>
+            <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_CONTROL"/>
+            <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_TUMOR"/>
+            <output type="file" typeof="de.dkfz.b080.co.files.GenomeCoveragePlotFile" scriptparameter="PLOTFILE"/>
+        </tool>
+        <tool name='coveragePlotSingle' value='genomeCoveragePlots.sh' basepath='qcPipeline'>
+            <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_CONTROL"/>
+            <output type="file" fnpatternselectiontag="singlePlot" typeof="de.dkfz.b080.co.files.GenomeCoveragePlotFile" scriptparameter="PLOTFILE"/>
+        </tool>
+        <tool name='qcSummary' value='writeQCSummary.sh' basepath='qcPipeline'/>
+        <tool name="postMergeQCAnalysis" value="postMergeQCAnalysisOnly.sh" basepath="qcPipeline">
+            <resourcesets>
+                <rset size="xs" memory="3" cores="1" nodes="1" walltime="1"/>
+                <rset size="s" memory="4" cores="4" nodes="1" walltime="2"/>
+                <rset size="m" memory="5" cores="2" nodes="1" walltime="7"/>
+                <rset size="l" memory="6" cores="2" nodes="1" walltime="80"/>
+                <rset size="xl" memory="7" cores="1" nodes="1" walltime="120"/>
+            </resourcesets>
+            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_MERGEDBAM"/>
+            <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
+            <output type="tuple">
+                <output type="file" variable="indexFile" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="FILENAME_INDEX"/>
+                <output type="file" variable="flagstatsFile" typeof="de.dkfz.b080.co.files.FlagstatsFile" scriptparameter="FILENAME_FLAGSTATS"/>
+                <output type="file" variable="extendedFlagstatsFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_EXTENDED_FLAGSTATS"/>
+                <output type="file" variable="metricsFile" typeof="de.dkfz.b080.co.files.BamMetricsFile" scriptparameter="FILENAME_METRICS"/>
+                <output type="file" variable="chromosomeDiffStatisticsFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAME_DIFFCHROM_STATISTICS"/>
+                <output type="file" variable="chromosomeDiffMatrixFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffTextFile" scriptparameter="FILENAME_DIFFCHROM_MATRIX"/>
+                <output type="file" variable="chromosomeDiffPlotFile" check="false" typeof="de.dkfz.b080.co.files.ChromosomeDiffPlotFile" scriptparameter="FILENAME_DIFFCHROM_PLOT"/>
+                <output type="file" variable="insertSizesStatisticsFile" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAME_ISIZES_STATISTICS"/>
+                <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
+                <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
+                <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
+                <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
+            </output>
+        </tool>
+        <tool name="checkAlreadyMergedLanes" value="alreadyMergedLanes.pl" basepath="qcPipeline"/>
+        <tool name='combinedBamAnalysis' value='flags_isizes_PEaberrations.pl' basepath='qcPipeline'/>
+
+    </processingTools>
+    <filenames package='de.dkfz.b080.co.files' filestagesbase='de.dkfz.b080.co.files.COFileStage'>
+        <filename class='BamIndexFile' derivedFrom='BamFile' pattern='${sourcefile}.bai'/>
+        <filename class='BamMetricsFile' derivedFrom='BamFile' pattern='${sourcefile}.dupmark_metrics.txt'/>
+        <filename class='FlagstatsFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_flagstats.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.performPostMergeQCAnalysis' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.performPostMergeQCAnalysis' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class="TextFile" derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
+
+        <filename class='ChromosomeDiffPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png'/>
+        <filename class='ChromosomeDiffTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.txt'/>
+        <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png_qcValues.txt'/>
+
+        <filename class='InsertSizesPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png'/>
+        <filename class='InsertSizesTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsizes.txt'/>
+        <filename class='InsertSizesValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png_qcValues.txt'/>
+
+        <filename class='QCSummaryFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_${sourcefileProperty,type}_wroteQcSummary.txt'/>
+
+        <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile[2]' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample[0]}_vs_${sample[1]}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
+        <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile' selectiontag="singlePlot" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
+    </filenames>
+</configuration>
