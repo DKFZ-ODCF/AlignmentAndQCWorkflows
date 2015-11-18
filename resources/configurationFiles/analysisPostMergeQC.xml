@@ -56,11 +56,11 @@
         <tool name='qcSummary' value='writeQCSummary.sh' basepath='qcPipeline'/>
         <tool name="postMergeQCAnalysis" value="postMergeQCAnalysisOnly.sh" basepath="qcPipeline">
             <resourcesets>
-                <rset size="xs" memory="3" cores="1" nodes="1" walltime="1"/>
-                <rset size="s" memory="4" cores="4" nodes="1" walltime="2"/>
-                <rset size="m" memory="5" cores="2" nodes="1" walltime="7"/>
-                <rset size="l" memory="6" cores="2" nodes="1" walltime="80"/>
-                <rset size="xl" memory="7" cores="1" nodes="1" walltime="120"/>
+                <rset size="xs" memory="4" cores="4" nodes="1" walltime="1"/>
+                <rset size="s" memory="4" cores="8" nodes="1" walltime="2"/>
+                <rset size="m" memory="4" cores="8" nodes="1" walltime="10"/>
+                <rset size="l" memory="4" cores="8" nodes="1" walltime="40"/>
+                <rset size="xl" memory="4" cores="8" nodes="1" walltime="120"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_MERGEDBAM"/>
             <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
