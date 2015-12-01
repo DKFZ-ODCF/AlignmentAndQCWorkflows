@@ -17,6 +17,8 @@ overrideBamFiles
 
 == Changelist
 
+* Version update to 1.0.180
+
 * Version update to 1.0.178
 
 * Version update to 1.0.177

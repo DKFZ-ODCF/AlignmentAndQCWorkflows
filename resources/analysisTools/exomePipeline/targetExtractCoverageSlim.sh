@@ -12,6 +12,8 @@
 # the parent BAM's coverageQC file is needed
 
 source ${CONFIG_FILE}
+source "$(dirname $(readlink -f "$BASH_SOURCE/../qcPipeline"))/bashLib.sh"
+printInfo
 
 set -o pipefail
 
@@ -51,21 +53,21 @@ $COVERAGEBED_BINARY $COVERAGEBED_OPTIONS -abam stdin -b $TARGET_REGIONS_FILE | \
 ${PERL_BINARY} ${TOOL_TARGET_COVERAGE_PERL_SCRIPT} - > ${FILENAME_TARGETS_WITH_COVERAGE_TEXT}.tmp ; \
 echo $? > ${DIR_TEMP}/${samplepid}_ec_target) & procIDtargetExtr=$!
 
-wait $procIDtargetExtr; [[ ! `cat ${DIR_TEMP}/${samplepid}_ec_target` -eq "0" ]] && echo "intersectBed - samtools pipe returned a non-zero exit code and the job will die now." && exit 100
+wait $procIDtargetExtr; [[ ! `cat ${DIR_TEMP}/${samplepid}_ec_target` -eq "0" ]] && throw 100 "intersectBed - samtools pipe returned a non-zero exit code and the job will die now."
 
-wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 11
-wait $procIDSamtoolsFlagstat; [[ $? -gt 0 ]] && echo "Error from samtools flagstats" && exit 12
-wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 13
+wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && throw 11 "Error from coverageQCD"
+wait $procIDSamtoolsFlagstat; [[ $? -gt 0 ]] && throw 12 "Error from samtools flagstats"
+wait $procIDCBA; [[ $? -gt 0 ]] && throw 13 "Error from combined QC perl script"
 
 
-mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX}
-mv ${FILENAME_ISIZES_MATRIX}.tmp ${FILENAME_ISIZES_MATRIX}
-mv ${FILENAME_EXTENDED_FLAGSTATS}.tmp ${FILENAME_EXTENDED_FLAGSTATS}
-mv ${FILENAME_ISIZES_STATISTICS}.tmp ${FILENAME_ISIZES_STATISTICS}
-mv ${FILENAME_DIFFCHROM_STATISTICS}.tmp ${FILENAME_DIFFCHROM_STATISTICS}
-mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE}
-mv ${FILENAME_FLAGSTATS}.tmp ${FILENAME_FLAGSTATS}
-mv ${FILENAME_TARGETS_WITH_COVERAGE_TEXT}.tmp ${FILENAME_TARGETS_WITH_COVERAGE_TEXT}
+mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
+mv ${FILENAME_ISIZES_MATRIX}.tmp ${FILENAME_ISIZES_MATRIX} || throw 29 "Could not move file"
+mv ${FILENAME_EXTENDED_FLAGSTATS}.tmp ${FILENAME_EXTENDED_FLAGSTATS} || throw 30 "Could not move file"
+mv ${FILENAME_ISIZES_STATISTICS}.tmp ${FILENAME_ISIZES_STATISTICS} || throw 31 "Could not move file"
+mv ${FILENAME_DIFFCHROM_STATISTICS}.tmp ${FILENAME_DIFFCHROM_STATISTICS} || throw 32 "Could not move file"
+mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
+mv ${FILENAME_FLAGSTATS}.tmp ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
+mv ${FILENAME_TARGETS_WITH_COVERAGE_TEXT}.tmp ${FILENAME_TARGETS_WITH_COVERAGE_TEXT} || throw 43 "Could not move file"
 
 
 # QC summary gets the parent coverageQC file $FILENAME_PARENTBAM_COVERAGE
@@ -75,16 +77,28 @@ mv ${FILENAME_TARGETS_WITH_COVERAGE_TEXT}.tmp ${FILENAME_TARGETS_WITH_COVERAGE_T
 (${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l exome_target -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_PARENTBAM_COVERAGE -t $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}.tmp && mv ${FILENAME_QCSUMMARY}.tmp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 14)
 
 # plot the cumulative target coverage
-${RSCRIPT_BINARY} ${TOOL_ON_TARGET_COVERAGE_PLOTTER_BINARY} ${FILENAME_TARGETS_WITH_COVERAGE_TEXT} ${TARGETS_PLOT}.tmp "${samplepid}" && mv ${TARGETS_PLOT}.tmp ${TARGETS_PLOT} || ( echo "Error from on target coverage plotter" && exit 15)
+${RSCRIPT_BINARY} ${TOOL_ON_TARGET_COVERAGE_PLOTTER_BINARY} ${FILENAME_TARGETS_WITH_COVERAGE_TEXT} ${TARGETS_PLOT}.tmp "${samplepid}" \
+    && mv ${TARGETS_PLOT}.tmp ${TARGETS_PLOT} \
+    || throw 15 "Error from on target coverage plotter"
+
+# Produce qualitycontrol.json for OTP.
+${PERL_BINARY} ${TOOL_QC_JSON} \
+    ${FILENAME_GENOME_COVERAGE} \
+    ${FILENAME_ISIZES_STATISTICS} \
+    ${FILENAME_FLAGSTATS} \
+    ${FILENAME_DIFFCHROM_STATISTICS} \
+    > ${FILENAME_QCJSON}.tmp \
+    || throw 25 "Error when compiling qualitycontrol.json for ${FILENAME}"
+mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # if the BAM only contains single end reads, there can be no pairs to have insert sizes or ends mapping to different chromosomes
 # and plotting would fail
 grep -w "NA" $FILENAME_DIFFCHROM_STATISTICS && useSingleEndProcessing=true
 
-[[ ${useSingleEndProcessing-false} == true ]] && exit 0
+if [[ ${useSingleEndProcessing-false} == false ]]; then
+    # plot the insert size distribution
+    ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${FILEINFO} (rmdup)" && mv  ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || throw 16 "Error from insert sizes plotter"
 
-# plot the insert size distribution
-${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${FILEINFO} (rmdup)" && mv  ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || ( echo "Error from insert sizes plotter" && exit 16)
-
-# plot the paired end aberrations (reads on different chromosomes)
-${RSCRIPT_BINARY} ${TOOL_PLOT_DIFFCHROM} -i "$FILENAME_DIFFCHROM_MATRIX" -s "$FILENAME_DIFFCHROM_STATISTICS" -o "${FILENAME_DIFFCHROM_PLOT}.tmp" && mv ${FILENAME_DIFFCHROM_PLOT}.tmp ${FILENAME_DIFFCHROM_PLOT} || ( echo "Error from chromdiff plotter" && exit 17)
+    # plot the paired end aberrations (reads on different chromosomes)
+    ${RSCRIPT_BINARY} ${TOOL_PLOT_DIFFCHROM} -i "$FILENAME_DIFFCHROM_MATRIX" -s "$FILENAME_DIFFCHROM_STATISTICS" -o "${FILENAME_DIFFCHROM_PLOT}.tmp" && mv ${FILENAME_DIFFCHROM_PLOT}.tmp ${FILENAME_DIFFCHROM_PLOT} || throw 17 "Error from chromdiff plotter"
+fi
