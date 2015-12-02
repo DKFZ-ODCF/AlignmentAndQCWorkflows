@@ -4,16 +4,9 @@ import de.dkfz.b080.co.common.COProjectsRuntimeService;
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.StringConstants;
 import de.dkfz.roddy.config.Configuration;
-import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
-import de.dkfz.roddy.core.DataSet;
+import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
 import de.dkfz.roddy.core.ExecutionContext;
-import de.dkfz.roddy.core.ExecutionContextError;
-import de.dkfz.roddy.core.Workflow;
-
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import de.dkfz.roddy.core.ExecutionContextError
 
 import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES;
 
@@ -47,7 +40,7 @@ public class QCPipelinePancancerSlim extends QCPipeline {
         if(overrideSampleNames) {
             samples = overrideSampleNames.collect { String sname -> new Sample(context, sname) }
         } else {
-            samples = runtimeService.getSamplesForRun(context);
+            samples = runtimeService.getSamplesForContext(context);
         }
         if (!samples)
             return false;

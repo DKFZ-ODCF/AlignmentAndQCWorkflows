@@ -1,0 +1,47 @@
+<configuration name='bisulfiteCoreAnalysis' description=''
+               configurationType='analysis' class='de.dkfz.roddy.core.Analysis'
+               workflowClass='de.dkfz.b080.co.qcworkflow.BisulfiteCoreWorkflow'
+               imports="commonCOWorkflowsSettings,qcAnalysis"
+               canCreateTestdata='true'
+               listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,qcSummary,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"
+               usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
+               cleanupScript="cleanupScript">
+    <configurationvalues>
+        <cvalue name='runCoveragePlotsOnly' value='true' type='boolean'/>
+    </configurationvalues>
+    <processingTools>
+        <tool name='alignAndPairSlimWithReadConversionForBisulfiteData' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='qcPipeline'>
+            <resourcesets>
+                <!-- ChIP-Seq -->
+                <rset size="s" memory="12" cores="8" nodes="1" walltime="2"/>
+                <!-- exome part lane -->
+                <rset size="m" memory="17" cores="8" nodes="1" walltime="6"/>
+                <!-- HiSeq full lane. 24 h would be OK but as soon as there are I/O problems on the node, not even 36 h are sufficient - biobambam sort might also be slower than samtools, it seems to use fewer sorting threads	 -->
+                <rset size="l" memory="20" cores="8" nodes="1" walltime="60"/>
+                <!-- X10 lane -->
+                <rset size="xl" memory="20" cores="8" nodes="1" walltime="120"/>
+            </resourcesets>
+            <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_1"/>
+            <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_2"/>
+            <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
+            <input type="string" setby="callingCode" scriptparameter="RUN"/>
+            <input type="string" setby="callingCode" scriptparameter="LANE"/>
+            <input type="string" setby="callingCode" scriptparameter="LB"/>
+            <input type="string" setby="callingCode" scriptparameter="RAW_SEQ_FILE_1_INDEX"/>
+            <input type="string" setby="callingCode" scriptparameter="RAW_SEQ_FILE_2_INDEX"/>
+            <output type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_SORTED_BAM">
+                <output type="file" variable="flagstatsFile" typeof="de.dkfz.b080.co.files.FlagstatsFile" scriptparameter="FILENAME_FLAGSTATS"/>
+                <output type="file" variable="extendedFlagstatsFile" fnpatternselectiontag="extendedFlagstats" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_EXTENDED_FLAGSTATS"/>
+                <output type="file" variable="chromosomeDiffStatisticsFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAME_DIFFCHROM_STATISTICS"/>
+                <output type="file" variable="chromosomeDiffMatrixFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffTextFile" scriptparameter="FILENAME_DIFFCHROM_MATRIX"/>
+                <output type="file" variable="chromosomeDiffPlotFile" check="false" typeof="de.dkfz.b080.co.files.ChromosomeDiffPlotFile" scriptparameter="FILENAME_DIFFCHROM_PLOT"/>
+                <output type="file" variable="insertSizesStatisticsFile" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAME_ISIZES_STATISTICS"/>
+                <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
+                <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
+                <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
+                <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
+        </tool>
+    </processingTools>
+</configuration>

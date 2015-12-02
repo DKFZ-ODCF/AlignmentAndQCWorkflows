@@ -1,14 +1,12 @@
 package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.common.COProjectsRuntimeService;
-import de.dkfz.b080.co.common.WorkflowUsingMergedBams;
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.core.ExecutionContextError;
 import de.dkfz.roddy.core.Workflow;
-import de.dkfz.roddy.knowledge.files.Tuple13;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,7 +33,7 @@ public class PostMergeQCAnalysisWorkflow extends Workflow {
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
 

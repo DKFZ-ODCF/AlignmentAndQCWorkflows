@@ -3,7 +3,6 @@ package de.dkfz.b080.co.qcworkflow;
 import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*;
 import de.dkfz.roddy.config.Configuration;
-import de.dkfz.roddy.config.ConfigurationValue;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
 import de.dkfz.roddy.core.*;
 
@@ -34,7 +33,7 @@ public class QCPipeline extends Workflow {
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
 
@@ -214,7 +213,7 @@ public class QCPipeline extends Workflow {
     @Override
     public boolean checkExecutability(ExecutionContext context) {
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
 
@@ -241,7 +240,7 @@ public class QCPipeline extends Workflow {
         boolean allOk = true;
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         for (Sample sample : samples) {
             List<LaneFile> files = new LinkedList<LaneFile>();
             LaneFileGroup allLaneFiles = new LaneFileGroup(context, "allLaneFiles", "noSpecificRun", sample, files);
