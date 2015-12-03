@@ -97,7 +97,7 @@ public class QCPipeline extends Workflow {
     /**
      * This entry is used for caching purposes.
      */
-    private Map<DataSet, Map<String, List<LaneFileGroup>>> foundRawSequenceFileGroups = new LinkedHashMap<>();
+    protected Map<DataSet, Map<String, List<LaneFileGroup>>> foundRawSequenceFileGroups = new LinkedHashMap<>();
 
     /**
      * Provides a cached method for loading lane files from a sample.

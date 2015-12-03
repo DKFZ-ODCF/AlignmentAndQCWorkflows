@@ -1,5 +1,7 @@
 <configuration name='exomeAnalysis' description='The exome pipeline / analysis is an extension to the qc pipeline / analysis.'
-               configurationType='analysis' class='de.dkfz.roddy.core.Analysis' workflowClass='de.dkfz.b080.co.qcworkflow.QCPipeline'
+               configurationType='analysis'
+               class='de.dkfz.roddy.core.Analysis'
+               workflowClass='de.dkfz.b080.co.qcworkflow.QCPipeline'
                imports='qcAnalysis'
                canCreateTestdata='true'
                listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,readBinsCoverage,qcSummary,onTargetCoverage,onTargetCoveragePlotter,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff,targetExtractCoverageSlim"

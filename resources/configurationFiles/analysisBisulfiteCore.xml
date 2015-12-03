@@ -1,5 +1,6 @@
 <configuration name='bisulfiteCoreAnalysis' description=''
-               configurationType='analysis' class='de.dkfz.roddy.core.Analysis'
+               configurationType='analysis'
+               class='de.dkfz.roddy.core.Analysis'
                workflowClass='de.dkfz.b080.co.qcworkflow.BisulfiteCoreWorkflow'
                imports="commonCOWorkflowsSettings,qcAnalysis"
                canCreateTestdata='true'
@@ -42,6 +43,7 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
+            </output>
         </tool>
     </processingTools>
 </configuration>

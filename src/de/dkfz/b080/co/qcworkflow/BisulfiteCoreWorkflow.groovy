@@ -13,6 +13,7 @@ import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT
 /**
  * @author michael
  */
+@groovy.transform.CompileStatic
 public class BisulfiteCoreWorkflow extends QCPipeline {
 
     @Override
@@ -33,7 +34,6 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         List<Sample> samples = runtimeService.getSamplesForContext(context);
 
         BamFileGroup mergedBamFiles = new BamFileGroup();
-//        Map<Sample, Map<String, BamFile>> mergedBamFilesForSamplesAndLibraries = [:];
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample in samples) {
@@ -42,7 +42,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
             BamFileGroup mergedBamsPerLibrary = new BamFileGroup();
 
             // Create per library merged bams
-            for(String library in availableLibrariesForSample) {
+            for (String library in availableLibrariesForSample) {
                 BamFileGroup sortedBamFiles = []
                 List<LaneFileGroup> rawSequenceGroups = loadLaneFilesForSampleAndLibrary(context, sample, library)
                 if (rawSequenceGroups == null || rawSequenceGroups.size() > 0) {
@@ -94,7 +94,6 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         return true;
     }
 
-
     /**
      * Provides a cached method for loading lane files from a sample.
      *
@@ -106,7 +105,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
             foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
         }
-        String sampleID = sample.getName();
+        String sampleID = sample.getName() + "_" + library;
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
             List<LaneFileGroup> laneFileGroups = sample.getLanes(library);
@@ -124,6 +123,28 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
             copyOfLaneFileGroups.add(new LaneFileGroup(context, lfg.getId(), lfg.getRun(), sample, copyOfFiles));
         }
         return copyOfLaneFileGroups;
+    }
+
+    @Override
+    public boolean checkExecutability(ExecutionContext context) {
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
+        if (samples.size() == 0)
+            return false;
+
+        //Check if at least one file is available. Maybe for two if paired is used...?
+        int cnt = 0;
+        for (Sample sample : samples) {
+            List<LaneFileGroup> laneFileGroups = [];
+            for (String lib : sample.getLibraries()) {
+                laneFileGroups += loadLaneFilesForSampleAndLibrary(context, sample, lib);
+            }
+
+            for (LaneFileGroup lfg : laneFileGroups) {
+                cnt += lfg.getFilesInGroup().size();
+            }
+        }
+        return cnt > 0;
     }
 
 }
