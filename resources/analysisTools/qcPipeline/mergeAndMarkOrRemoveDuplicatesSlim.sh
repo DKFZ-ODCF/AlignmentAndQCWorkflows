@@ -11,8 +11,7 @@ today=`date +'%Y-%m-%d_%Hh%M'`
 localScratchDirectory=${RODDY_SCRATCH}	# is for PBS $PBS_SCRATCHDIR/$PBS_JOBID, for SGE /tmp/roddyScratch/jobid
 tempDirectory=${FILENAME}_MOMDUP
 
-# TODO: tempBamFile=${tempDirectory}/${FILENAME}_TMP
-tempBamFile=${tempDirectory}/FILENAME_TMP
+tempBamFile=${tempDirectory}/$(basename "$FILENAME")_TMP
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 tempIndexFile=${tempBamFile}.bai.tmp
 tempMd5File=${tempBamFile}.md5.tmp
@@ -120,7 +119,6 @@ else
     # using $workDirectory was a bad idea for biobambam: each time it crashes, there are large files left over
     # and they will never be deleted because the directory is different for another job ID - because do not use the scratch
     # so use $tempDirectory instead
-    # Philip: You may solve this by setting a trap on ERR or even EXIT, which ensures the file is deleted. See bash doku.
     if [[ ${bamFileExists} == false ]]; then
         (${MARKDUPLICATES_BINARY} \
             M=${FILENAME_METRICS}.tmp \
@@ -146,7 +144,7 @@ else
         # make a SAM pipe for the Perl tool
         ${SAMTOOLS_BINARY} view ${NP_SAM_IN} | ${MBUF_2G} > ${NP_COMBINEDANALYSIS_IN} & procIDSAMpipe=$!
     else
-        (cat ${FILENAME} | ${MBUF_2G} | tee ${NP_FLAGSTATS_IN} rm${NP_COVERAGEQC_IN} ${NP_READBINS_IN} | ${SAMTOOLS_BINARY} view - > ${NP_COMBINEDANALYSIS_IN}) & procIDSAMpipe=$!; procIDBBB=$procIDSAMpipe
+        (cat ${FILENAME} | ${MBUF_2G} | tee ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} | ${SAMTOOLS_BINARY} view - > ${NP_COMBINEDANALYSIS_IN}) & procIDSAMpipe=$!; procIDBBB=$procIDSAMpipe
     fi
 fi
 
@@ -191,7 +189,6 @@ else
     if [[ ${bamFileExists} == false ]]; then
 	    [[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Biobambam returned an exit code and the job will die now." && exit 100
 	    # always rename BAM, even if other jobs might have failed
-	    # TODO: This results in incomplete BAMs, if for instance biobambam fails! The next call to roddy will not be triggered for this BAM merging and a corrupt BAM may be used for further analyses!
 	    mv ${tempBamFile} ${FILENAME} || throw 40 "Could not move file"
 	    mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
         mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 42 "Could not move file"

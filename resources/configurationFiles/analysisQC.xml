@@ -32,6 +32,7 @@
         </tool>
         <tool name='fastqc' value='checkFastQC.sh' basepath='qcPipeline'>
             <resourcesets>
+                <rset size="t" nodes="1" walltime="1"/>
                 <rset size="l" nodes="1" walltime="10"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter='RAW_SEQ'/>
@@ -108,6 +109,8 @@
         </tool>
         <tool name='alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
+                <!-- Test -->
+                <rset size="t" memory="12" cores="8" nodes="1" walltime="1"/>
                 <!-- ChIP-Seq -->
                 <rset size="s" memory="12" cores="8" nodes="1" walltime="2"/>
                 <!-- exome part lane -->
@@ -144,6 +147,7 @@
         </tool>
         <tool name='accelerated:alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
+                <rset size="t" memory="20" cores="12" nodes="1" walltime="1" queue="convey" nodeflag="hc2ex"/>
                 <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey" nodeflag="hc2ex"/>
                 <rset size="m" memory="26" cores="12" nodes="1" walltime="5" queue="convey" nodeflag="hc2ex"/>
                 <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey" nodeflag="hc2ex"/>
@@ -228,6 +232,7 @@
         </tool>
         <tool name='genomeCoverage' value='genomeCoverage.sh' basepath='qcPipeline'>
             <resourcesets>
+                <rset size="t" memory="0.05" cores="4" nodes="1" walltime="1"/>
                 <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
@@ -270,6 +275,7 @@
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimPicard' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
+                <rset size="t" memory="50" cores="8" nodes="1" walltime="1"/>
                 <rset size="xs" memory="50" cores="8" nodes="1" walltime="1"/>
                 <rset size="s" memory="55" cores="8" nodes="1" walltime="2"/>
                 <rset size="m" memory="62" cores="8" nodes="1" walltime="5"/>
@@ -301,6 +307,7 @@
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimBioBambam' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
+                <rset size="t" memory="5" cores="1" nodes="1" walltime="1"/>
                 <rset size="xs" memory="5" cores="1" nodes="1" walltime="1"/>
                 <rset size="s" memory="5" cores="1" nodes="1" walltime="2"/>
                 <rset size="m" memory="5" cores="1" nodes="1" walltime="12"/>
