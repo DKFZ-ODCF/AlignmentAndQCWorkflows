@@ -1,8 +1,13 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
+source "$TOOL_BASH_LIB"
+
+printInfo
 
 set -o pipefail
+
+ON_CONVEY=$(runningOnConvey)
 
 # use scratch dir for temp files: samtools sort uses the current working directory for them
 WORKDIR=${DIR_TEMP}/${PBS_JOBID}
@@ -104,7 +109,7 @@ INPUT_PIPES=""
 [[ ${LENGTH_SEQ_2} == 0 ]] && cat $FNPIPE2 >/dev/null
 
 
-if [[ ${PBS_QUEUE} == "convey" ]]; then
+if [[ "$ON_CONVEY" == "true" ]]; then
     bamname=`basename ${FILENAME_SORTED_BAM}`
     useBioBamBamSort=false;
     bwaBinary=${BWA_ACCELERATED_BINARY}
@@ -155,14 +160,14 @@ errorString="There was a non-zero exit code in the bwa sampe - samtools sort pip
 [[ -f ${TMP_FILE_INDEX} ]] && mv ${TMP_FILE_INDEX} ${INDEX_FILE}
 
 source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
-[[ ! ${PBS_QUEUE} == "convey" ]] && [[ ! -s ${INDEX_FILE} ]] && echo "Bam Index is of size 0; Exitting" && exit 5
+[[ "$ON_CONVEY" == "false" ]] && [[ ! -s ${INDEX_FILE} ]] && echo "Bam Index is of size 0; Exitting" && exit 5
 
 #rm $FILE_BENCHMARK_STAYALIVE
 #wait $utilizationLogProcess
 
 mv ${FLAGSTAT_TMP} ${FILENAME_FLAGSTAT}
 mv ${TMP_FILE_SAMTOOLS} ${FILENAME_SORTED_BAM}
-[[ ! ${PBS_QUEUE} == "convey" ]] && touch ${INDEX_FILE}
+[[ "$ON_CONVEY" == "false" ]] && touch ${INDEX_FILE}
 
 
 rm $FNPIPE1

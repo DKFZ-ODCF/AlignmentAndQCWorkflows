@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
-source "$(dirname $(readlink -f "$BASH_SOURCE"))/bashLib.sh"
+source "$TOOL_BASH_LIB"
 printInfo
 
 set -o pipefail
@@ -231,8 +231,8 @@ ${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $analy
 
 [[ -d $tempDirectory ]] && rm -rf $tempDirectory
 
-# Produced qualitycontrol.json for OTP.
-if [[ 1 || ${PBS_QUEUE} == "convey" ]]; then
+# Produced qualitycontrol.json for OTP. Remove the first branch as soon as the dip-statistics is implemented.
+if [[ 1 ]]; then
   ${PERL_BINARY} ${TOOL_QC_JSON} \
 	${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \

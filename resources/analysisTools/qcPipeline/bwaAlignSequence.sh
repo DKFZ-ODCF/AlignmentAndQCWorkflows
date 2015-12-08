@@ -7,8 +7,13 @@
 #PBS -m a
 
 source ${CONFIG_FILE}
+source "$TOOL_BASH_LIB"
+
+printInfo
 
 set -o pipefail
+
+ON_CONVEY=$(runningOnConvey)
 
 TMP_FILE=${FILENAME_ALIGNMENT}_temp
 # error tracking because bwa never exits anything but 0
@@ -34,7 +39,7 @@ alnThreadOptions="8"
 useConvey=false
 
 # If things go wrong with this, one could use which with the convey binary!
-if [[ ${PBS_QUEUE} == "convey" ]]
+if [[ "$ON_CONVEY" == "true" ]]
 then
     bwaBinary=${BWA_ACCELERATED_BINARY}
     useConvey=true

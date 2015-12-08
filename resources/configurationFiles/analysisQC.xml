@@ -25,6 +25,7 @@
     <!--</testdataoptions>-->
 
     <processingTools>
+        <tool name="bashLib" value="bashLib.sh" basepath="qcPipeline"/>
         <tool name="cleanupScript" value="cleanupScript.sh" basepath="qcPipeline" >
             <resourcesets>
                 <rset size="l" memory="0.1" cores="1" nodes="1" walltime="1"/>
@@ -101,10 +102,11 @@
         </tool>
         <tool name='accelerated:alignAndPair' value='bwaMemSort.sh' basepath='qcPipeline'>
             <resourcesets>
-                <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey" nodeflag="hc2ex"/>
-                <rset size="m" memory="20" cores="12" nodes="1" walltime="5" queue="convey" nodeflag="hc2ex"/>
-                <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey" nodeflag="hc2ex"/>
-                <rset size="xl" memory="26" cores="12" nodes="1" walltime="30" queue="convey" nodeflag="hc2ex"/>
+                <rset size="t" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
+                <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
+                <rset size="m" memory="20" cores="12" nodes="1" walltime="5" queue="convey"/>
+                <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey"/>
+                <rset size="xl" memory="26" cores="12" nodes="1" walltime="30" queue="convey"/>
             </resourcesets>
         </tool>
         <tool name='alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
@@ -147,11 +149,11 @@
         </tool>
         <tool name='accelerated:alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
-                <rset size="t" memory="20" cores="12" nodes="1" walltime="1" queue="convey" nodeflag="hc2ex"/>
-                <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey" nodeflag="hc2ex"/>
-                <rset size="m" memory="26" cores="12" nodes="1" walltime="5" queue="convey" nodeflag="hc2ex"/>
-                <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey" nodeflag="hc2ex"/>
-                <rset size="xl" memory="26" cores="12" nodes="1" walltime="30" queue="convey" nodeflag="hc2ex"/>
+                <rset size="t" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
+                <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
+                <rset size="m" memory="26" cores="12" nodes="1" walltime="5" queue="convey"/>
+                <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey"/>
+                <rset size="xl" memory="26" cores="12" nodes="1" walltime="30" queue="convey"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_1"/>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_2"/>

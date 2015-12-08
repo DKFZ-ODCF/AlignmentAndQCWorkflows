@@ -12,7 +12,7 @@
 # the parent BAM's coverageQC file is needed
 
 source ${CONFIG_FILE}
-source "$(dirname $(readlink -f "$BASH_SOURCE/../qcPipeline"))/bashLib.sh"
+source "$TOOL_BASH_LIB"
 printInfo
 
 set -o pipefail

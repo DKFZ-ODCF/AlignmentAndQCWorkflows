@@ -6,8 +6,11 @@
 #PBS -m a
 
 source ${CONFIG_FILE}
+source "$TOOL_BASH_LIB"
 
 set -o pipefail
+
+ON_CONVEY=$(runningOnConvey)
 
 # use scratch dir for temp files: samtools sort uses the current working directory for them
 LCLSCRATCH=${PBS_SCRATCH_DIR}/${PBS_JOBID}
@@ -44,7 +47,7 @@ SAMTOOLS_SORT_BINARY=samtools-0.1.19
 bwaBinary="${BWA_BINARY}"
 useConvey=false
 # If things go wrong with this, one could use which with the convey binary!
-if [[ ${PBS_QUEUE} == "convey" ]]
+if [[ "$ON_CONVEY" == "true" ]]
 then
     bwaBinary=${BWA_ACCELERATED_BINARY}
     useConvey=true

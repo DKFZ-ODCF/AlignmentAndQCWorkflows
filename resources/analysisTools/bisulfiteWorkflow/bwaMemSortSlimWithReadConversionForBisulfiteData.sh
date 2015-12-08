@@ -1,11 +1,18 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
-source "$(dirname $(readlink -f "$BASH_SOURCE"))/bashLib.sh"
+source "$TOOL_BASH_LIB"
 
 printInfo
 
 set -o pipefail
+
+if [[ ${PBS_QUEUE} == convey* ]]; then
+	ON_CONVEY=true
+else
+	ON_CONVEY=false
+fi
+
 
 ID=${RUN}_${LANE}
 SM=sample_${SAMPLE}_${PID}
@@ -137,7 +144,7 @@ then
 	# make all the pipes
 	(cat ${FILENAME_SORTED_BAM} | ${MBUF_2G} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_2G} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 else
-	if [[ ${PBS_QUEUE} == "convey" ]]
+	if [[ "$ON_CONVEY" == "true" ]]
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
 		# here, we use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
@@ -218,8 +225,8 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]] && rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
 (${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 14)
 
-# Produced qualitycontrol.json for OTP.
-if [[ 1 || ${PBS_QUEUE} == "convey" ]]; then
+# Produced qualitycontrol.json for OTP. Remove the 1 short-circuit as soon as the dip-statistic is available.
+if [[ 1 || "$ON_CONVEY" == "true" ]]; then
   ${PERL_BINARY} ${TOOL_QC_JSON} \
 	${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
@@ -240,7 +247,7 @@ fi
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey
-[[ ${useSingleEndProcessing-false} == true ]] || [[ ${PBS_QUEUE} == "convey" ]] && exit 0
+[[ ${useSingleEndProcessing-false} == true ]] || [[ "$ON_CONVEY" == "true" ]] && exit 0
 
 ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${bamname}" && mv ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || ( echo "Error from insert sizes plotter" && exit 22)
 

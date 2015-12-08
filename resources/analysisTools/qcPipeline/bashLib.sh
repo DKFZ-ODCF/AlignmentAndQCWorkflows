@@ -1,6 +1,6 @@
 # Library of BASH function. Please import using
 #
-#        source "$(dirname $(readlink -f "$BASH_SOURCE"))/bashLib.sh"
+#        source "$TOOL_BASH_LIB"
 
 
 ## throw [code [msg]]
@@ -19,4 +19,12 @@ function printInfo {
     echo "user="$(whoami)
     echo "umask="$(umask)
     echo "groups="$(groups)
+}
+
+function runningOnConvey {
+    if [[ "$PBS_QUEUE" == convey* ]]; then
+    	echo "true"
+    else
+    	echo "false"
+    fi
 }
