@@ -24,6 +24,8 @@ then
 	fi
 
 	mv $tmp_sex_file ${FILENAME_SEX}
+else
+    echo "Gender-determination unsafe for tumor sample." > "$FILENAME_SEX"
 fi
 #reformat original coverage file so it can be annotated with annotate_vcf.pl
 

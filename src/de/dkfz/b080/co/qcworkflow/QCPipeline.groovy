@@ -167,7 +167,7 @@ public class QCPipeline extends Workflow {
                 if (cfg.windowSize == 1) {
                     aceSeqQc(bamFile.readBinsCoverageTextFile)
                 } else {
-                    // throw "This won't work with s.th. else than 1kb!
+                    throw RuntimeException("Not implemented!")
                     // TODO commonCOWorkflowSettings: 10kb, exome 10kb
                 }
             }

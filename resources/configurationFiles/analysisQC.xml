@@ -18,9 +18,9 @@
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer" description="Threads for bwa mem."/>
 
 
-        <cvalue name='aceseqOutputDirectory' value='correctedGcBias' type="path"/>
-        <cvalue name='cnvSnpOutputDirectory' value='${aceseqOutputDirectory}/cnv_snp' type="path"/>
-        <cvalue name='plotOutputDirectory' value='${aceseqOutputDirectory}/plots' type="path"/>
+        <cvalue name='gccorOutputDirectory' value='correctedGcBias' type="path"/>
+        <cvalue name='gccorCnvSnpOutputDirectory' value='${gccorOutputDirectory}/cnv_snp' type="path"/>
+        <cvalue name='gccorPlotOutputDirectory' value='${gccorOutputDirectory}/plots' type="path"/>
 
         <!-- TODO @Kortine: Do any of the following files also exist for other assemblies? -->
         <cvalue name="MAPPABILITY_FILE" value="${hg19DatabaseUCSCDirectory}/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz" type="path"/>
@@ -376,27 +376,25 @@
 
 
         <!-- TODO: What is this section. Why are some tools in this tag, and others not in the ACEseq WF. -->
-        <processingTools>
-            <tool name="annotateCnvVcf" value="annotate_vcf.pl" basepath="copyNumberEstimationWorkflow"/>
-            <tool name="addMappability" value="addMappability.py" basepath="copyNumberEstimationWorkflow"/>
-            <tool name="estimateSex" value="getSex.R" basepath="copyNumberEstimationWorkflow"/>
-            <tool name="mergeFilterCnv" value="merge_and_filter_cnv.py" basepath="copyNumberEstimationWorkflow"/>
-            <tool name="correctGcBiasR" value="correctGCBias.R" basepath="copyNumberEstimationWorkflow"/>
-            <tool name="convertToJson" value="convertTabToJson.py" basepath="copyNumberEstimationWorkflow"/>
-        </processingTools>
+        <tool name="annotateCnvVcf" value="annotate_vcf.pl" basepath="copyNumberEstimationWorkflow"/>
+        <tool name="addMappability" value="addMappability.py" basepath="copyNumberEstimationWorkflow"/>
+        <tool name="estimateSex" value="getSex.R" basepath="copyNumberEstimationWorkflow"/>
+        <tool name="mergeFilterCnv" value="merge_and_filter_cnv.py" basepath="copyNumberEstimationWorkflow"/>
+        <tool name="correctGcBiasR" value="correctGCBias.R" basepath="copyNumberEstimationWorkflow"/>
+        <tool name="convertToJson" value="convertTabToJson.py" basepath="copyNumberEstimationWorkflow"/>
 
-        <tool name="annotateCnvFiles" value="vcfAnno.sh" basepath="copyNumberEstimationWorkflow">
+        <tool name="annotateCovWindows" value="vcfAnno.sh" basepath="qcPipeline">
             <resourcesets>
                 <rset size="l" memory="0.2" cores="2" nodes="1" walltime="4"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_1KB"/>
-            <output type="file">
+            <output type="tuple">
                 <output type="file" fnpatternselectiontag="windowAnnotation" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_1KB_ANNO"/>
                 <output type="file" fnpatternselectiontag="sex" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_SEX"/>
             </output>
         </tool>
 
-        <tool name="mergeAndFilterCnvFiles" value="cnvMergeFilter.sh" basepath="copyNumberEstimationWorkflow">
+        <tool name="mergeAndFilterCovWindows" value="cnvMergeFilter.sh" basepath="qcPipeline">
             <resourcesets>
                 <rset size="l" memory="0.2" cores="2" nodes="1" walltime="5"/>
             </resourcesets>
@@ -404,7 +402,7 @@
             <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_WG"/>
         </tool>
 
-        <tool name="correctGcBias" value="correct_gc_bias.sh" basepath="copyNumberEstimationWorkflow">
+        <tool name="correctGc" value="correct_gc_bias.sh" basepath="qcPipeline">
             <resourcesets>
                 <rset size="l" memory="2" walltime="1"/>
             </resourcesets>
@@ -414,7 +412,6 @@
                 <output type="file" fnpatternselectiontag="tab" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_QUALITY"/>
                 <output type="file" fnpatternselectiontag="tabSlim" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QC_GC_CORRECTION_JSON" />
             </output>
-
         </tool>
 
 
@@ -504,12 +501,18 @@
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
 
         <!-- GC-bias corrected statistics from ACEseq workflow -->
-        <filename class="TextFile" onMethod="CoverageWindowsFileGroupByChromosome.annotate" selectiontag="windowAnnotation" pattern='${outputAnalysisBaseDirectory}/${aceseqoutputDirectory}/${sample}_${run}.readCoverage_1kb_windows.anno.txt'/>
-        <filename class="TextFile" onMethod="CoverageWindowsFileGroupByChromosome.annotate" selectiontag="sex" pattern='${outputAnalysisBaseDirectory}/${aceseqOutputDirectory}/${sample}_${run}_sex.txt'/>
-        <filename class="TextFile" onMethod="CoverageWindowsFileAnnotationResult.mergeAndFilterCoverageWindowFiles" pattern='${outputAnalysisBaseDirectory}/${aceseqOutputDirectory}/i@{sample}_${pid}_readCoverage_10kb_windows.filtered.txt'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.aceseq.ACESeqMethods.correctGC" selectiontag="correctedWindows" pattern='${outputAnalysisBaseDirectory}/${aceseqOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.aceseq.ACESeqMethods.correctGC" selectiontag="tabSlim" pattern='${outputAnalysisBaseDirectory}/${plotOutputDirectory}/${sample}_${run}_qc_gc_corrected.json'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.aceseq.ACESeqMethods.correctGC" selectiontag="tab" pattern='${outputAnalysisBaseDirectory}/${plotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>
+        <filename class="TextFile" onMethod="ACESeqMethods.annotateCovWindows" selectiontag="windowAnnotation"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}.readCoverage_1kb_windows.anno.txt'/>
+        <filename class="TextFile" onMethod="ACESeqMethods.annotateCovWindows" selectiontag="sex"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_sex.txt'/>
+        <filename class="TextFile" onMethod="ACESeqMethods.mergeAndFilterCovWindows"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/i@{sample}_$run}_readCoverage_10kb_windows.filtered.txt'/>
+        <filename class="TextFile" onMethod="ACESeqMethods.correctGC" selectiontag="correctedWindows"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt'/>
+        <filename class="TextFile" onMethod="ACESeqMethods.correctGC" selectiontag="tabSlim"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.json'/>
+        <filename class="TextFile" onMethod="ACESeqMethods.correctGC" selectiontag="tab"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>
 
     </filenames>
 </configuration>

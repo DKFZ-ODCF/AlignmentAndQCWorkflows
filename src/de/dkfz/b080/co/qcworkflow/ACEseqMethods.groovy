@@ -2,6 +2,7 @@ package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.execution.jobs.*;
+import de.dkfz.roddy.knowledge.files.Tuple2;
 import de.dkfz.roddy.knowledge.files.Tuple3;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
 
@@ -18,8 +19,8 @@ public final class AceSeqQC {
     }
 
     @ScriptCallingMethod
-    public static TextFile mergeAndFilterCovWindows(TextFile annotatedCoverageFile) {
-        return (TextFile) GenericMethod.callGenericTool(COConstants.TOOL_ADD_HAPLOTYPES_TO_SNP_FILE, annotatedCoverageFile);
+    public static Tuple2<TextFile, TextFile> mergeAndFilterCovWindows(TextFile annotatedCoverageFile) {
+        return (Tuple2<TextFile, TextFile>) GenericMethod.callGenericTool(COConstants.TOOL_ADD_HAPLOTYPES_TO_SNP_FILE, annotatedCoverageFile);
     }
 
     @ScriptCallingMethod
