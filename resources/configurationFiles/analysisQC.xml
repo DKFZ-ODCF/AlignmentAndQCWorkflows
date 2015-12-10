@@ -16,6 +16,37 @@
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer" description="Threads for bwa mem."/>
+
+
+        <cvalue name='aceseqOutputDirectory' value='correctedGcBias' type="path"/>
+        <cvalue name='cnvSnpOutputDirectory' value='${aceseqOutputDirectory}/cnv_snp' type="path"/>
+        <cvalue name='plotOutputDirectory' value='${aceseqOutputDirectory}/plots' type="path"/>
+
+        <!-- TODO @Kortine: Do any of the following files also exist for other assemblies? -->
+        <cvalue name="MAPPABILITY_FILE" value="${hg19DatabaseUCSCDirectory}/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz" type="path"/>
+        <!-- TODO @Kortine: Is this vvvvvv not identical to the chromosome sizes file, that is also used in the QCWF? -->
+        <cvalue name="CHROMOSOME_LENGTH_FILE" value="${assembliesHG191000GenomesDirectory}/stats/chrlengths.txt" type="path"/>
+        <cvalue name="REPLICATION_TIME_FILE" value="${hg19DatabasesDirectory}/ENCODE/ReplicationTime_10cellines_mean_10KB.Rda" type="path"/>
+        <cvalue name="GC_CONTENT_FILE" value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_10kb.txt" type="path"/>
+
+        <!--annotateCnvFiles Opts-->
+        <cvalue name='min_X_ratio' value='0.8' type="float"/>
+        <cvalue name='min_Y_ratio' value='0.12' type="float"/>
+
+        <!--cnvMergeFilter Opts-->
+
+        <!--cnv_min_coverage should be 50 for controls and 0 for tumors-->
+        <cvalue name='cnv_min_coverage' value='50' type="integer"/>
+        <cvalue name='mapping_quality' value='1000' type="integer"/>
+        <cvalue name='min_windows' value='5' type="integer"/>
+
+        <!--correctGC Opts-->
+        <cvalue name='LOWESS_F' value='0.1' type="float"/>
+        <cvalue name='SCALE_FACTOR' value='0.9' type="float"/>
+        <cvalue name='COVERAGEPLOT_YLIMS' value='4' type="float"/>
+        <cvalue name='FILENAME_GC_CORRECT_PLOT' value='${plotOutputDirectory}/${pid}_gc_corrected.png' type="path"/>
+        <cvalue name='GC_bias_json_key' value='gc-bias' type="string"/>
+
     </configurationvalues>
     <!--<testdataoptions>-->
         <!--&lt;!&ndash; id is the name of the test data option set-->
@@ -343,7 +374,52 @@
         <tool name="checkAlreadyMergedLanes" value="alreadyMergedLanes.pl" basepath="qcPipeline"/>
         <tool name='combinedBamAnalysis' value='flags_isizes_PEaberrations.pl' basepath='qcPipeline'/>
 
+
+        <!-- TODO: What is this section. Why are some tools in this tag, and others not in the ACEseq WF. -->
+        <processingTools>
+            <tool name="annotateCnvVcf" value="annotate_vcf.pl" basepath="copyNumberEstimationWorkflow"/>
+            <tool name="addMappability" value="addMappability.py" basepath="copyNumberEstimationWorkflow"/>
+            <tool name="estimateSex" value="getSex.R" basepath="copyNumberEstimationWorkflow"/>
+            <tool name="mergeFilterCnv" value="merge_and_filter_cnv.py" basepath="copyNumberEstimationWorkflow"/>
+            <tool name="correctGcBiasR" value="correctGCBias.R" basepath="copyNumberEstimationWorkflow"/>
+            <tool name="convertToJson" value="convertTabToJson.py" basepath="copyNumberEstimationWorkflow"/>
+        </processingTools>
+
+        <tool name="annotateCnvFiles" value="vcfAnno.sh" basepath="copyNumberEstimationWorkflow">
+            <resourcesets>
+                <rset size="l" memory="0.2" cores="2" nodes="1" walltime="4"/>
+            </resourcesets>
+            <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_1KB"/>
+            <output type="file">
+                <output type="file" fnpatternselectiontag="windowAnnotation" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_1KB_ANNO"/>
+                <output type="file" fnpatternselectiontag="sex" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_SEX"/>
+            </output>
+        </tool>
+
+        <tool name="mergeAndFilterCnvFiles" value="cnvMergeFilter.sh" basepath="copyNumberEstimationWorkflow">
+            <resourcesets>
+                <rset size="l" memory="0.2" cores="2" nodes="1" walltime="5"/>
+            </resourcesets>
+            <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_1KB_ANNO"/>
+            <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_WG"/>
+        </tool>
+
+        <tool name="correctGcBias" value="correct_gc_bias.sh" basepath="copyNumberEstimationWorkflow">
+            <resourcesets>
+                <rset size="l" memory="2" walltime="1"/>
+            </resourcesets>
+            <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_WG"/>
+            <output type="tuple">
+                <output type="file" fnpatternselectiontag="correctedWindows" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_WINDOWS"/>
+                <output type="file" fnpatternselectiontag="tab" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_QUALITY"/>
+                <output type="file" fnpatternselectiontag="tabSlim" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QC_GC_CORRECTION_JSON" />
+            </output>
+
+        </tool>
+
+
     </processingTools>
+
     <filenames package='de.dkfz.b080.co.files' filestagesbase='de.dkfz.b080.co.files.COFileStage'>
         <!-- Filenames are always stored in the pid's output folder -->
         <!-- Different variables can be used:
@@ -427,6 +503,13 @@
         <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile' selectiontag="singlePlot"
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
 
+        <!-- GC-bias corrected statistics from ACEseq workflow -->
+        <filename class="TextFile" onMethod="CoverageWindowsFileGroupByChromosome.annotate" selectiontag="windowAnnotation" pattern='${outputAnalysisBaseDirectory}/${aceseqoutputDirectory}/${sample}_${run}.readCoverage_1kb_windows.anno.txt'/>
+        <filename class="TextFile" onMethod="CoverageWindowsFileGroupByChromosome.annotate" selectiontag="sex" pattern='${outputAnalysisBaseDirectory}/${aceseqOutputDirectory}/${sample}_${run}_sex.txt'/>
+        <filename class="TextFile" onMethod="CoverageWindowsFileAnnotationResult.mergeAndFilterCoverageWindowFiles" pattern='${outputAnalysisBaseDirectory}/${aceseqOutputDirectory}/i@{sample}_${pid}_readCoverage_10kb_windows.filtered.txt'/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.aceseq.ACESeqMethods.correctGC" selectiontag="correctedWindows" pattern='${outputAnalysisBaseDirectory}/${aceseqOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt'/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.aceseq.ACESeqMethods.correctGC" selectiontag="tabSlim" pattern='${outputAnalysisBaseDirectory}/${plotOutputDirectory}/${sample}_${run}_qc_gc_corrected.json'/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.aceseq.ACESeqMethods.correctGC" selectiontag="tab" pattern='${outputAnalysisBaseDirectory}/${plotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>
 
     </filenames>
 </configuration>

@@ -1,14 +1,11 @@
 package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*;
-import de.dkfz.b080.co.common.*;
-import de.dkfz.roddy.config.Configuration;
-import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
-import de.dkfz.roddy.core.*;
+import de.dkfz.b080.co.common.*
+import de.dkfz.roddy.core.*
+import de.dkfz.roddy.knowledge.files.Tuple3
 
-import java.util.*;
-
-import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES;
+import java.util.*
 
 /**
  * @author michael
@@ -19,18 +16,8 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean execute(ExecutionContext context) {
-        Configuration cfg = context.getConfiguration();
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "false", "boolean"); //Disable sample extraction from output for alignment workflows.
-
-        // Run flags
-        final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false);
-        final boolean runAlignmentOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false);
-        final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
-        final boolean runSlimWorkflow = cfgValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false);
-        final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
-        final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
-
+        QCConfig cfg = new QCConfig(context)
+        cfg.sampleExtractionFromOutputFiles = false
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
@@ -41,22 +28,22 @@ public class QCPipeline extends Workflow {
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
 
         for (Sample sample : samples) {
-            BamFileGroup sortedBamFiles = createSortedBams(context, runtimeService, sample);
+            BamFileGroup sortedBamFiles = createSortedBams(cfg, runtimeService, sample);
 
             if (sortedBamFiles.getFilesInGroup().size() == 0) continue;
 
-            if (runFastQCOnly || runAlignmentOnly) continue;
+            if (cfg.runFastQCOnly || cfg.runAlignmentOnly) continue;
 
             BamFile mergedBam;
-            if (runSlimWorkflow) {
+            if (cfg.runSlimWorkflow) {
                 mergedBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
-                if (runCollectBamFileMetrics) mergedBam.collectMetrics();
+                if (cfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
             } else {
-                mergedBam = mergeAndRemoveDuplicatesFat(context, sample, sortedBamFiles);
+                mergedBam = mergeAndRemoveDuplicatesFat(cfg, sample, sortedBamFiles);
             }
 
-            if (runExomeAnalysis) {
-                if(!runSlimWorkflow) mergedBam.rawBamCoverage();
+            if (cfg.runExomeAnalysis) {
+                if(!cfg.runSlimWorkflow) mergedBam.rawBamCoverage();
                 BamFile targetOnlyBamFile = mergedBam.extractTargetsCalculateCoverage();
             }
 
@@ -73,10 +60,10 @@ public class QCPipeline extends Workflow {
             return false;
         }
 
-        if (runFastQCOnly)
+        if (cfg.runFastQCOnly)
             return true;
 
-        if (runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
+        if (cfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
             coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
         } else if (coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
@@ -131,67 +118,65 @@ public class QCPipeline extends Workflow {
         return copyOfLaneFileGroups;
     }
 
-    private BamFileGroup createSortedBams(ExecutionContext context, COProjectsRuntimeService runtimeService, Sample sample) {
-        Configuration cfg = context.getConfiguration();
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        // Run flags
-        final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false);
-        final boolean runFastQC = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC, true);
-        final boolean runAlignmentOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false);
+    private void aceSeqQc(CoverageTextFile windowedCoverageTextFile) {
+        TextFile annotationResult = AceSeqQC.annotateCovWindows(windowedCoverageTextFile);
+        TextFile mergedAndFilteredCoverageWindowFiles = AceSeqQC.mergeAndFilterCovWindows(annotationResult);
+        Tuple3<TextFile, TextFile, TextFile> correctedWindowFile = AceSeqQC.correctGC(mergedAndFilteredCoverageWindowFiles);
+    }
 
-        final boolean useExistingPairedBams = cfgValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
-        // Usage flags
-        final boolean useCombinedAlignAndSampe = cfgValues.getBoolean(COConstants.FLAG_USE_COMBINED_ALIGN_AND_SAMPE, false);
-        final boolean runSlimWorkflow = cfgValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false);
-
+    private BamFileGroup createSortedBams(QCConfig cfg, COProjectsRuntimeService runtimeService, Sample sample) {
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
-        if (useExistingPairedBams) {
+        if (cfg.useExistingPairedBams) {
             //Start from the paired bams instead of the lane files.
-            sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(context, sample);
-        } else {
+            sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(cfg.context, sample);
 
+        } else {
             //Create bam files out of the lane files
-            List<LaneFileGroup> rawSequenceGroups = loadLaneFilesForSample(context, sample);
+            List<LaneFileGroup> rawSequenceGroups = loadLaneFilesForSample(cfg.context, sample);
             if (rawSequenceGroups == null || rawSequenceGroups.size() == 0)
                 return sortedBamFiles;
             for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
-                if (runFastQC && !runAlignmentOnly)
+                if (cfg.runFastqQC && !cfg.runAlignmentOnly)
                     rawSequenceGroup.calcFastqcForAll();
-                if (runFastQCOnly)
+                if (cfg.runFastQCOnly)
                     continue;
-
 
                 BamFile bamFile = null;
 
-                if (useCombinedAlignAndSampe) { //I.e. bwa mem
-                    if (runSlimWorkflow) {
+                if (cfg.useCombinedAlignAndSampe) { //I.e. bwa mem
+                    if (cfg.runSlimWorkflow) {
                         bamFile = rawSequenceGroup.alignAndPairSlim();
                     } else {
                         bamFile = rawSequenceGroup.alignAndPair();
                     }
                 } else { //I.e. bwa align
                     rawSequenceGroup.alignAll();
-                    if(runSlimWorkflow) {
+                    if (cfg.runSlimWorkflow) {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
                     } else {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSort();
                     }
                 }
 
+                // @Michael: The comments suggests that this should only be called in the else branch above!?
+                // @Michael: Why should BAM files created with sai files be temporary?
                 bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
                 sortedBamFiles.addFile(bamFile);
+
+                if (cfg.windowSize == 1) {
+                    aceSeqQc(bamFile.readBinsCoverageTextFile)
+                } else {
+                    // throw "This won't work with s.th. else than 1kb!
+                    // TODO commonCOWorkflowSettings: 10kb, exome 10kb
+                }
             }
 
         }
         return sortedBamFiles;
     }
 
-    private BamFile mergeAndRemoveDuplicatesFat(ExecutionContext context, Sample sample, BamFileGroup sortedBamFiles) {
-        Configuration cfg = context.getConfiguration();
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
-        final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
+    private BamFile mergeAndRemoveDuplicatesFat(QCConfig cfg, Sample sample, BamFileGroup sortedBamFiles) {
 
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
@@ -200,7 +185,7 @@ public class QCPipeline extends Workflow {
 
         BamFile mergedBam = sortedBamFiles.mergeAndRemoveDuplicates();
 
-        if (runCollectBamFileMetrics) mergedBam.collectMetrics();
+        if (cfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
         mergedBam.runDefaultOperations();
         mergedBam.calcCoverage();
 
@@ -213,14 +198,13 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
+        QCConfig cfg = new QCConfig(context)
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
 
-        final boolean useExistingPairedBams = context.getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
-
-        if (!useExistingPairedBams) {
+        if (!cfg.useExistingPairedBams) {
             //Check if at least one file is available. Maybe for two if paired is used...?
             int cnt = 0;
             for (Sample sample : samples) {
