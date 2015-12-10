@@ -13,8 +13,8 @@
 # and combining the 1k windows into 10k windows.
 
 import gzip
-from python_modules import Tabfile
-from python_modules import Options
+from gccorrection_python_modules import Tabfile
+from gccorrection_python_modules import Options
 
 options = Options.parse( { "inputfile"   : str,
                            "output"      : str,   "coverage"    : int,

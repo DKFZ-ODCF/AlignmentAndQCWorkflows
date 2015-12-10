@@ -7,7 +7,7 @@
 import argparse
 import gzip
 import sys
-from python_modules import Tabfile
+from gccorrection_python_modules import Tabfile
 
 parser=argparse.ArgumentParser(description="Sum mappability values as output from vcf_annotate.pl")
 parser.add_argument( "--infile",   "-i", type=argparse.FileType('r'), default=sys.stdin, help="Tab-seperatd input file for which mappability values should be added up, (default: STDIN)" )

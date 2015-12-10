@@ -255,7 +255,7 @@ if ( ! length(diffPeaks) == sum( is.na(diffPeaks) ) ) {
 #create coverage and gc/replication-timing plots
 if (plot_flag) {
   
- if(sample == "control" | sample=="normal" | sample== "Control" | sample == "Normal"){
+ if(tolower(sample) == "control" | tolower(sample) == "normal"){
   for( chr in unique(sub_order_file$chromosome) ) {
     selSub <- which(sub_order_file$chromosome==chr)
     sub <- sub_order_file[selSub,]

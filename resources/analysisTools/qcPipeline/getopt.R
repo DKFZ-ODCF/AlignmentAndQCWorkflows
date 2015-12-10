@@ -1,5 +1,6 @@
-source("/home/kleinhei/R_lib/qq.R")
 require(getopt)
+source(file.path(dirname(get_Rscript_filename()), "qq.R"));
+
 getopt2 = function(..., attach = parent.frame()) {
 	global_obj_name = ls(envir = attach)
 	
