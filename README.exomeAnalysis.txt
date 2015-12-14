@@ -5,6 +5,8 @@ The workflows are the same.
 
 == Changelist
 
+* Version update to 1.0.182
+
 * Version update to 1.0.180
 
 - qualitycontrol_targetExtract.json

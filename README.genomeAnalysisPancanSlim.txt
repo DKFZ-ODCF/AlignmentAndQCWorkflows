@@ -17,6 +17,11 @@ overrideBamFiles
 
 == Changelist
 
+* Version update to 1.0.182
+
+- The resource requests for jobs were increased to be on the safe side when switching to the new cluster (in particular concerning OOM killer).
+- Adapted QCWF scripts to match PBS_QUEUE on convey* rather than "convey", to ensure operation on the new cluster, where queues are named convey_fast, convey_medium and convey_long.
+
 * Version update to 1.0.180
 
 * Version update to 1.0.178
