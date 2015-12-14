@@ -32,7 +32,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
 
         BamFileGroup mergedBamFiles = new BamFileGroup();
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]

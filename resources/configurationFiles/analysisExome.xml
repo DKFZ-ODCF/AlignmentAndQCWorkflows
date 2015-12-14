@@ -66,5 +66,12 @@
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
             </output>
         </tool>
+
+        <!-- GC-corrected coverage is not implemented for exome sequencing. These definitions override the complex
+             definitions with output files, so that Roddy does not search for these files with exome data. -->
+        <tool name="annotateCovWindows" value="vcfAnno.sh" basepath="qcPipeline"/>
+        <tool name="mergeAndFilterCovWindows" value="cnvMergeFilter.sh" basepath="qcPipeline"/>
+        <tool name="correctGc" value="correct_gc_bias.sh" basepath="qcPipeline"/>
+
     </processingTools>
 </configuration>
