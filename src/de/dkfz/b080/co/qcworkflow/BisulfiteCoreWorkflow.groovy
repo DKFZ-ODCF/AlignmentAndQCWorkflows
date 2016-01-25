@@ -1,5 +1,6 @@
 package de.dkfz.b080.co.qcworkflow
 
+import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService
 import de.dkfz.b080.co.common.COProjectsRuntimeService
 import de.dkfz.b080.co.files.*
 import de.dkfz.roddy.config.Configuration
@@ -29,7 +30,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
 
@@ -105,10 +106,11 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
             foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
         }
+        def runtimeService = context.getRuntimeService() as COProjectsRuntimeService
         String sampleID = sample.getName() + "_" + library;
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
-            List<LaneFileGroup> laneFileGroups = sample.getLanes(library);
+            List<LaneFileGroup> laneFileGroups = runtimeService.getLanesForSample(context, sample);
             mapForDataSet.put(sampleID, laneFileGroups);
         }
 
@@ -127,7 +129,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;

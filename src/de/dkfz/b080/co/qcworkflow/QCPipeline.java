@@ -110,10 +110,11 @@ public class QCPipeline extends Workflow {
         if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
             foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
         }
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
         String sampleID = sample.getName();
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
-            List<LaneFileGroup> laneFileGroups = sample.getLanes();
+            List<LaneFileGroup> laneFileGroups = runtimeService.getLanesForSample(context, sample);
             mapForDataSet.put(sampleID, laneFileGroups);
         }
 
@@ -212,7 +213,7 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
@@ -245,7 +246,7 @@ public class QCPipeline extends Workflow {
             List<LaneFile> files = new LinkedList<LaneFile>();
             LaneFileGroup allLaneFiles = new LaneFileGroup(context, "allLaneFiles", "noSpecificRun", sample, files);
 
-            List<LaneFileGroup> rawSequenceGroups = sample.getLanes();
+            List<LaneFileGroup> rawSequenceGroups = runtimeService.getLanesForSample(context, sample);
             for (LaneFileGroup lfg : rawSequenceGroups) {
                 for (LaneFile lf : lfg.getFilesInGroup()) {
                     allLaneFiles.addFile(lf);

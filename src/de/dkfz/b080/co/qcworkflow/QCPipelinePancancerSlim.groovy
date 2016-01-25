@@ -1,6 +1,6 @@
 package de.dkfz.b080.co.qcworkflow;
 
-import de.dkfz.b080.co.common.COProjectsRuntimeService;
+import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService;
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.StringConstants;
 import de.dkfz.roddy.config.Configuration;
@@ -34,7 +34,7 @@ public class QCPipelinePancancerSlim extends QCPipeline {
         String controlBamName = overrideMergedBamFiles[0];
         String[] tumorBamNames = overrideMergedBamFiles[1 .. -1];
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
 
         List<Sample> samples
         if(overrideSampleNames) {
@@ -84,7 +84,7 @@ public class QCPipelinePancancerSlim extends QCPipeline {
         return true;
     }
 
-    private BamFileGroup createSortedBams(ExecutionContext context, COProjectsRuntimeService runtimeService, Sample sample) {
+    private BamFileGroup createSortedBams(ExecutionContext context, BasicCOProjectsRuntimeService runtimeService, Sample sample) {
         Configuration cfg = context.getConfiguration();
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         // Run flags

@@ -1,5 +1,6 @@
 package de.dkfz.b080.co.qcworkflow;
 
+import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService;
 import de.dkfz.b080.co.common.COProjectsRuntimeService;
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.config.Configuration;
@@ -41,7 +42,7 @@ public class PostMergeQCAnalysisWorkflow extends Workflow {
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
 
         for (Sample sample : samples) {
-            BamFile mergedBam = runtimeService.getMergedBamFileForDataSetAndSample(context, sample);
+            BamFile mergedBam = new BamFile(runtimeService.getMergedBamFileForDataSetAndSample(context, sample));
 
             mergedBam.performPostMergeQCAnalysis();
             if (runExomeAnalysis) {
