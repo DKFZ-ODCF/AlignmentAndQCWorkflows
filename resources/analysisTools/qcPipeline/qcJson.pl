@@ -39,12 +39,6 @@ sub runTests () {
 		is($docRes->{"all"}->{"genome_w/o_N coverage QC bases"}, "46.03x", "genome coverage w/o N");
     };
 
-  TODO: {
-      subtest 'parseDipStatistics' => sub {
-		  fail("Missing dip stats tests");
-      };
-    }
-
     subtest 'parseInsertSize' => sub {
 	eval {
 	    parseInsertSize(qw(1 2));
@@ -57,7 +51,7 @@ sub runTests () {
     };
 
 
-    my @testFlagstats = (
+    my @testFlagstats_0_1_19 = (
 		"421309 + 0 in total (QC-passed reads + QC-failed reads)",
 		"805 + 0 duplicates",
 		"420369 + 0 mapped (99.78%:-nan%)",
@@ -71,9 +65,9 @@ sub runTests () {
 		"6161 + 0 with mate mapped to a different chr (mapQ>=5)"
 	);
 
-    subtest 'parseFlagstats' => sub {
+    subtest 'parseFlagstats-samtools-0.1.19' => sub {
 	eval {
-	    parseFlagstats("421XXXX309 + 0 in total (QC-passed reads + QC-failed reads)",
+	    parseFlagstats("421-THIS-SHOULD-CAUSE-A-PARSE-ERROR-309 + 0 in total (QC-passed reads + QC-failed reads)",
 			   "805 + 0 duplicates",
 			   "420369 + 0 mapped (99.78%:-nan%)",
 			   "421309 + 0 paired in sequencing",
@@ -86,8 +80,9 @@ sub runTests () {
 			   "6161 + 0 with mate mapped to a different chr (mapQ>=5)"
 		);
 	};
-	like($@, qr/Parse error/, "parse error");
-	my $stats = parseFlagstats(@testFlagstats);
+	like($@, qr/^Parse error/, "parse error");
+
+	my $stats = parseFlagstats(@testFlagstats_0_1_19);
 	is($stats->{-total}, 421309, "total");
 	is($stats->{-duplicates}, 805, "duplicates");
 	is($stats->{-mapped}, 420369, "mapped");
@@ -103,6 +98,43 @@ sub runTests () {
 	is($stats->{-with_mate_mapped_to_different_chr}, 33635, "with mate mapped to a different chr");
 	is($stats->{-with_mate_mapped_to_different_chr_mapQge5}, 6161, "with mate mapped to a different chr (mapQ>=5)");
     };
+
+
+    my @testFlagstats_1_2 = (
+        "34583223 + 0 in total (QC-passed reads + QC-failed reads)",
+        "0 + 0 secondary",
+        "451127 + 0 supplementary",
+        "1099698 + 0 duplicates",
+        "34580448 + 0 mapped (99.99%:-nan%)",
+        "34132096 + 0 paired in sequencing",
+        "17066048 + 0 read1",
+        "17066048 + 0 read2",
+        "32913464 + 0 properly paired (96.43%:-nan%)",
+        "34126560 + 0 with itself and mate mapped",
+        "2761 + 0 singletons (0.01%:-nan%)",
+        "1077890 + 0 with mate mapped to a different chr",
+        "992251 + 0 with mate mapped to a different chr (mapQ>=5)"
+    );
+    subtest 'parseFlagstats-samtools-1.2' => sub {
+	my $stats = parseFlagstats(@testFlagstats_1_2);
+	is($stats->{-total}, 34583223, "total");
+	is($stats->{-secondary}, 0, "secondary");
+	is($stats->{-supplementary}, 451127, "supplementary");
+	is($stats->{-duplicates}, 1099698, "duplicates");
+	is($stats->{-mapped}, 34580448, "mapped");
+	is($stats->{-percentage_mapped}, 99.99, "percentage mapped");
+	is($stats->{-paired_in_sequencing}, 34132096, "paired in sequencing");
+	is($stats->{-read1}, 17066048, "read1");
+	is($stats->{-read2}, 17066048, "read2");
+	is($stats->{-properly_paired}, 32913464, "properly paired");
+	is($stats->{-percentage_properly_paired}, 96.43, "percentage properly paired");
+	is($stats->{-with_itself_and_mate_mapped}, 34126560, "with itself and mate mapped");
+	is($stats->{-singletons}, 2761, "singletons");
+	is($stats->{-percentage_singletons}, 0.01, "percentage singletons");
+	is($stats->{-with_mate_mapped_to_different_chr}, 1077890, "with mate mapped to a different chr");
+	is($stats->{-with_mate_mapped_to_different_chr_mapQge5}, 992251, "with mate mapped to a different chr (mapQ>=5)");
+    };
+
 
 
     subtest 'parseDiffChrom' => sub {
@@ -141,8 +173,7 @@ sub runTests () {
     subtest 'mapQcValues' => sub {
 	my $res1 = mapQcValues(-depthOfCoverage => parseDepthOfCoverage(@testDepthOfCoverage),
 					       -insertSize => parseInsertSize(qw(399 23 93)),
-					       #-dipStatistics => parseDipStatistics(readFile($dipStatisticsFile)),
-			       		   -flagstats => parseFlagstats(@testFlagstats),
+			       		   -flagstats => parseFlagstats(@testFlagstats_0_1_19),
 			       		   -diffChrom => parseDiffChrom(1.55));
 	my $exp1 = {
           '1' => {
@@ -244,7 +275,7 @@ sub extract ($$) {
 
 =head1
 
-    Take two list refs and return a list ref with the elements of the input lists interleaved, starting with\
+    Take two list refs and return a list ref with the elements of the input lists interleaved, starting with
     the first element of the first list. The two input lists need to have identical lengths.
 
 =cut
@@ -257,7 +288,7 @@ sub zip ($$) {
     for (my $idx = 0; $idx < scalar(@$alist); ++$idx) {
 		push(@res, ($alist->[$idx], $blist->[$idx]));
     }
-    return \@res;
+    return wantarray ? @res : \@res;
 }
 
 
@@ -289,48 +320,57 @@ sub parseInsertSize (@) {
 }
 
 
-sub parseDipStatistics (@) {
-    return {};
+sub assertAllFieldsParsed ($@) {
+    my ($hash, @fields) = @_;
+    foreach my $field (@fields) {
+        if (!exists $hash->{$field}) {
+            confess "Could not parse value for field '$field'";
+        }
+    }
 }
 
 
 sub parseFlagstats (@) {
     my @lines = @_;
-    return {
-		@{zip([-total, -total_qcfailed],
-		      [extract($lines[0], qr/^(\d+) \+ (\d+) in total \(QC-passed reads \+ QC-failed reads\)$/)])
-		},
-		@{zip([-duplicates, -duplicates_qcfailed],
-		      [extract($lines[1], qr/^(\d+) \+ (\d+) duplicates$/)])
-		},
-		@{zip([-mapped, -mapped_qcfailed, -percentage_mapped],
-		      [extract($lines[2], qr/^(\d+) \+ (\d+) mapped \((\d+\.\d+)%:-nan%\)$/)])
-		},
-		@{zip([-paired_in_sequencing, -paired_in_sequencing_qcfailed],
-		      [extract($lines[3], qr/^(\d+) \+ (\d+) paired in sequencing$/)])
-		},
-		@{zip([-read1, -read1_qcfailed],
-		      [extract($lines[4], qr/^(\d+) \+ (\d+) read1$/)])
-		},
-		@{zip([-read2, -read2_qcfailed],
-		      [extract($lines[5], qr/^(\d+) \+ (\d+) read2$/)])
-		},
-        @{zip([-properly_paired, -properly_paired_qcfailed, -percentage_properly_paired],
-		    [extract($lines[6], qr/^(\d+) \+ (\d+) properly paired \((\d+\.\d+)%:-nan%\)$/)])
-		},
-		@{zip([-with_itself_and_mate_mapped, -with_itself_and_mate_mapped_qcfailed],
-		      [extract($lines[7], qr/^(\d+) \+ (\d+) with itself and mate mapped$/)])
-		},
-        @{zip([-singletons, -singletons_qcfailed, -percentage_singletons],
-		    [extract($lines[8], qr/^(\d+) \+ (\d+) singletons \((\d+\.\d+)%:-nan%\)$/)])
-		},
-        @{zip([-with_mate_mapped_to_different_chr, -with_mate_mapped_to_different_chr_qcfailed],
-		      [extract($lines[9], qr/^(\d+) \+ (\d+) with mate mapped to a different chr$/)])
-		},
-        @{zip([-with_mate_mapped_to_different_chr_mapQge5, -with_mate_mapped_to_different_chr_mapQge5_qcfailed],
-		      [extract($lines[10], qr/^(\d+) \+ (\d+) with mate mapped to a different chr \(mapQ>=5\)$/)])
+
+    my %patterns = (
+        qr/^(\d+) \+ (\d+) in total \(QC-passed reads \+ QC-failed reads\)$/ => ["-total", "-total_qcfailed"],
+        qr/^(\d+) \+ (\d+) secondary$/                                       => ["-secondary", "-secondary_qcfailed"],
+        qr/^(\d+) \+ (\d+) supplementary$/                                   => ["-supplementary", "-supplementary_qcfailed"],
+        qr/^(\d+) \+ (\d+) duplicates$/                                      => ["-duplicates", "-duplicates_qcfailed"],
+        qr/^(\d+) \+ (\d+) mapped \((\d+\.\d+)%:-nan%\)$/                    => ["-mapped", "-mapped_qcfailed", "-percentage_mapped"],
+    	qr/^(\d+) \+ (\d+) paired in sequencing$/                            => ["-paired_in_sequencing", "-paired_in_sequencing_qcfailed"],
+        qr/^(\d+) \+ (\d+) read1$/                                           => ["-read1", "-read1_qcfailed"],
+    	qr/^(\d+) \+ (\d+) read2$/                                           => ["-read2", "-read2_qcfailed"],
+        qr/^(\d+) \+ (\d+) properly paired \((\d+\.\d+)%:-nan%\)$/           => ["-properly_paired", "-properly_paired_qcfailed", "-percentage_properly_paired"],
+        qr/^(\d+) \+ (\d+) with itself and mate mapped$/                     => ["-with_itself_and_mate_mapped", "-with_itself_and_mate_mapped_qcfailed"],
+        qr/^(\d+) \+ (\d+) singletons \((\d+\.\d+)%:-nan%\)$/                => ["-singletons", "-singletons_qcfailed", "-percentage_singletons"],
+        qr/^(\d+) \+ (\d+) with mate mapped to a different chr$/             => ["-with_mate_mapped_to_different_chr", "-with_mate_mapped_to_different_chr_qcfailed"],
+        qr/^(\d+) \+ (\d+) with mate mapped to a different chr \(mapQ>=5\)$/ => ["-with_mate_mapped_to_different_chr_mapQge5", "-with_mate_mapped_to_different_chr_mapQge5_qcfailed"]
+    );
+
+    my %parseResults = ();
+
+    foreach my $line (@lines) {
+		my $matchedPatterns = 0;
+        foreach my $pattern (keys %patterns) {
+            if (my @extractedValues = $line =~ /$pattern/) {
+				++$matchedPatterns;
+                my %nameValues = zip($patterns{$pattern}, \@extractedValues);
+                foreach my $name (keys %nameValues) {
+					if (exists $parseResults{$name}) {
+						confess "Parse error: Pattern '$pattern' matched two lines in flagstats file! Second is '$line'";
+					}
+                    $parseResults{$name} = $nameValues{$name};
+                }
+            }
+        }
+		if (0 == $matchedPatterns) {
+			confess "Parse error: Line did not match any pattern: '$line'";
 		}
-    };
+    }
+    #assertAllFieldsParsed(\%parseResults, map { @{ $_ } } values %patterns);
+    return \%parseResults;
 }
 
 
@@ -381,7 +421,7 @@ sub mapQcValues (%) {
 		"singletons" => $parseResults{-flagstats}->{-singletons},
 		"insertSizeMedian" => $parseResults{-insertSize}->{-median},
 		"insertSizeSD" => $parseResults{-insertSize}->{-stddev},
-		"insertSizeCV" => $parseResults{-insertSize}->{-varcoef},        ## New value. Coefficien of variation.
+		"insertSizeCV" => $parseResults{-insertSize}->{-varcoef},        ## New value. Coefficient of variation.
 		"percentageMatesOnDifferentChr" => $parseResults{-diffChrom}->{-percentage_mates_on_different_chr} ## New value.
     };
     return \%results;
@@ -466,8 +506,7 @@ sub toJSON ($) {
 my ($depthOfCoverageFile,
     $insertSizeFile,
     $flagstatsFile,
-    $diffChromFile,
-    $dipStatisticsFile) = @ARGV;
+    $diffChromFile) = @ARGV;
 
 if (defined $depthOfCoverageFile && $depthOfCoverageFile eq "test") {
     runTests();
@@ -483,10 +522,6 @@ my %parse_results = (
     -diffChrom => parseDiffChrom(readFile($diffChromFile))
     );
 
-if (defined($dipStatisticsFile)) {
-	%parse_results = (%parse_results, -dipStatistics => parseDipStatistics(readFile($dipStatisticsFile)));
-}
-
 print STDOUT toJSON(mapQcValues(%parse_results));
 
 
@@ -500,7 +535,7 @@ qcJson.pl     Read in a number of QC and statistics files and compile (some of) 
 
 qcJson.pl test
 
-qcJson.pl depthOfCoverageFile insertSizeFile flagstatsFile diffChromFile [dipStatisticsFile] > outFile
+qcJson.pl depthOfCoverageFile insertSizeFile flagstatsFile diffChromFile > outFile
 
 =head1 BACKGROUND
 
@@ -510,7 +545,6 @@ From discussion of Ivo, Kortine, Philip 13-07-2015:
 =item insertsize
            - median*		$readgroup/insertsize_distribution/control_ICGC_MB99_insertsize_plot.png_qcValues.txt (Median, SD, ?)
            - 10 and 90% quartile ( not done yet ) ==> add to Joachims skript
-           - (p-value Joachim Weischenfedt)* ==> ToDo $readgroup/insertsize_distribution/${pid}_HartigansDip.txt
 =item % reads mapped*             $readgroup/flagstats/control_ICGC_MB99_merged.mdup.bam_flagstats.txt (mapped)
 =item proper pairs*	        $readgroup/flagstats/control_ICGC_MB99_merged.mdup.bam_flagstats.txt (properly paired, convert to % of paired)
 =item singletons*	                $readgroup/flagstats/control_ICGC_MB99_merged.mdup.bam_flagstats.txt (singletons, convert to % of total mapped)
