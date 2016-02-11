@@ -6,8 +6,7 @@ package de.dkfz.b080.co.files;
  */
 public class BamMetricsFile extends COBaseFile {
 
-    public BamMetricsFile(BamFile bamFile) {
-        super(bamFile);
+    public BamMetricsFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
     }
-
 }

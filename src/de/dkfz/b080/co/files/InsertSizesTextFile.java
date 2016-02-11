@@ -6,8 +6,7 @@ package de.dkfz.b080.co.files;
  */
 public class InsertSizesTextFile extends COBaseFile {
 
-    public InsertSizesTextFile(BamFile parentFile) {
-        super(parentFile);
+    public InsertSizesTextFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
     }
-
 }

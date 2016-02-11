@@ -56,9 +56,9 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
 
         LaneFile parentFile = (LaneFile) filesInGroup.get(0).getParentFiles().get(0);
         Configuration configuration = context.getConfiguration();
-        BamFile bamFile = new BamFile(this);
-        FlagstatsFile flagstatsFile = new FlagstatsFile(bamFile);
-        BamIndexFile indexFile = new BamIndexFile(bamFile);
+        BamFile bamFile = (BamFile)BaseFile.constructManual(BamFile.class, this);
+        FlagstatsFile flagstatsFile = (FlagstatsFile)BaseFile.constructManual(FlagstatsFile.class, bamFile);
+        BamIndexFile indexFile = (BamIndexFile) BaseFile.constructManual(BamIndexFile.class, bamFile);
 
         //Which info is necessary? File timestamp, maybe svn version, last changes, last file, parameters?
         String libString = configuration.getConfigurationValues().get(COConstants.PRM_CVAL_LIBRARY).toString();

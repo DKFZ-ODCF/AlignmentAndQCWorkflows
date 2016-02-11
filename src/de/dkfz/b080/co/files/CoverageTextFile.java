@@ -20,13 +20,9 @@ public class CoverageTextFile extends COBaseFile {
 
     private final CoverageType coverageType;
 
-    public CoverageTextFile(BamFile bamFile) {
-        this(bamFile, CoverageType.Default);
-    }
-
-    public CoverageTextFile(BamFile bamFile, CoverageType coverageType) {
-        super(bamFile);
-        this.coverageType = coverageType;
+    public CoverageTextFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
+        this.coverageType =CoverageType.Default;
     }
 
     public CoverageType getCoverageType() {

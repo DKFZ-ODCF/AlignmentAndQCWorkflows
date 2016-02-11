@@ -1,5 +1,8 @@
 package de.dkfz.b080.co.files
+
 import de.dkfz.b080.co.methods.Samtools
+import de.dkfz.roddy.knowledge.files.BaseFile.ConstructionHelperForManualCreation;
+
 /**
  * Created with IntelliJ IDEA.
  * User: michael
@@ -12,8 +15,8 @@ public class OnTargetCoverageTextFile extends COBaseFile {
 
     private de.dkfz.b080.co.files.OnTargetCoveragePlotFile plotFile;
 
-    public OnTargetCoverageTextFile(BamFile bamFile) {
-        super(bamFile, bamFile.getFileStage());
+    public OnTargetCoverageTextFile(BamFile parentFile) {
+        super(new ConstructionHelperForManualCreation(parentFile, null, null,null,null,null,null,null));
     }
 //    OnTargetCoverageTextFile(File path, ExecutionContext executionContext, JobResult creatingJobsResult, List<BaseFile> parentFiles, FileStageSettings settings) {
 //        super(path, executionContext, creatingJobsResult, parentFiles, settings)

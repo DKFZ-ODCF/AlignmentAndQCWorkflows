@@ -88,7 +88,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
             List<String> listOfRunIDs = listOfFastqFilesForSample.collect { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] }.unique() as List<String>
             listOfRunIDs.each { String runID ->
                 List<File> fastqFilesForRun = listOfFastqFilesForSample.findAll { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] == runID } as List<File>
-                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.' sortAndPairLaneFilesToGroupsForSampleAndRun'(context, sample, runID, fastqFilesForRun);
+                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, runID, fastqFilesForRun);
                 laneFiles.addAll(bundleFiles);
             }
 
@@ -107,7 +107,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
                 if (files.size() == 0)
                     logger.postAlwaysInfo("\t There were no lane files in directory ${sequenceDirectory}")
                 //Find file bundles
-                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.' sortAndPairLaneFilesToGroupsForSampleAndRun'(context, sample, run.getName(), files);
+                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, run.getName(), files);
                 laneFiles.addAll(bundleFiles);
             }
         }
@@ -143,8 +143,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
                 String lane = String.format("L%03d", laneID);
 
 
-                BamFile bamFile = new BamFile(f, context, new COFileStageSettings(lane, run, sample, context.getDataSet()))
-                bamFile.setAsSourceFile();
+                BamFile bamFile = COBaseFile.constructSourceFile(BamFile, f, context, new COFileStageSettings(lane, run, sample, context.getDataSet())) as BamFile
                 return bamFile;
         })
         BamFileGroup bamFileGroup = new BamFileGroup(bamFiles);

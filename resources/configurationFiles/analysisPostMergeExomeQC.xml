@@ -1,6 +1,7 @@
 <configuration name='postMergeExomeQCAnalysis' description='Quality control for NGS data using preexisting merged bam files.'
                configurationType='analysis' class='de.dkfz.roddy.core.Analysis'
                workflowClass='de.dkfz.b080.co.qcworkflow.PostMergeQCAnalysisWorkflow'
+               runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
                imports="commonCOWorkflowsSettings"
                canCreateTestdata='true'
                listOfUsedTools="qcSummary,postMergeQCAnalysis,coveragePlot,coveragePlotSingle"

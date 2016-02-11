@@ -14,6 +14,7 @@ import de.dkfz.roddy.execution.jobs.cluster.pbs.ChangedProcessDependencyProcessi
 import de.dkfz.roddy.knowledge.files.*;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
 import de.dkfz.roddy.tools.LoggerWrapper;
+import examples.Exec;
 
 import java.io.File;
 import java.util.Arrays;
@@ -36,9 +37,19 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
     private FastqcFile fastqcFile;
     private AlignedSequenceFile alignedSequenceFile;
 
-    public LaneFile(File path, ExecutionContext executionContext, JobResult creatingJobsResult, List<BaseFile> parentFiles, FileStageSettings settings) {
-        super(path, executionContext, creatingJobsResult, parentFiles, settings);
-        setAsSourceFile(); // Lane files are always source files.
+    public LaneFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
+    }
+
+    /** Copy constructor **/
+    public LaneFile(LaneFile parent, ExecutionContext newContext) {
+        super(parent);
+        this.sequencerID = parent.sequencerID;
+        this.decompressionString = parent.decompressionString;
+        this.recompressionString = parent.recompressionString;
+        this.fastqcFile = parent.fastqcFile;
+        this.alignedSequenceFile = parent.alignedSequenceFile;
+        this.setExecutionContext(newContext);
     }
 
     @Override

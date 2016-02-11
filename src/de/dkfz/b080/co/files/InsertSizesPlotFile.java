@@ -6,8 +6,7 @@ package de.dkfz.b080.co.files;
  */
 public class InsertSizesPlotFile extends COBaseFile {
 
-    public InsertSizesPlotFile(BamFile parentFile) {
-        super(parentFile);
+    public InsertSizesPlotFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
     }
-
 }

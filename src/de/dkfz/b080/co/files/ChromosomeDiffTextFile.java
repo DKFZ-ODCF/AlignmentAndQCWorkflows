@@ -5,9 +5,8 @@ package de.dkfz.b080.co.files;
  * @author michael
  */
 public class ChromosomeDiffTextFile extends COBaseFile {
-    public ChromosomeDiffTextFile(BamFile parentFile) {
-        super(parentFile);
+    public ChromosomeDiffTextFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
         setAsTemporaryFile();
     }
-
 }

@@ -1,4 +1,7 @@
 package de.dkfz.b080.co.files
+
+import de.dkfz.roddy.knowledge.files.BaseFile.ConstructionHelperForManualCreation;
+
 /**
  * Created with IntelliJ IDEA.
  * User: michael
@@ -6,8 +9,9 @@ package de.dkfz.b080.co.files
  * Time: 10:40
  * To change this template use File | Settings | File Templates.
  */
+@groovy.transform.CompileStatic
 public class OnTargetCoveragePlotFile extends COBaseFile {
-    public OnTargetCoveragePlotFile(OnTargetCoverageTextFile textFile) {
-        super(textFile);
+    public OnTargetCoveragePlotFile(OnTargetCoverageTextFile parentFile) {
+        super(new ConstructionHelperForManualCreation(parentFile, null, null,null,null,null,null,null));
     }
 }

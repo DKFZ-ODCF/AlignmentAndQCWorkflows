@@ -46,42 +46,51 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     private TextFile dipStatisticsFile;
     private InsertSizesPlotFile dipStatisticsPlotFile;
 
+    public BamFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
+    }
+//
+//    private static ConstructionHelperForBaseFiles adaptHelperBasedOnInput(ConstructionHelperForBaseFiles helper) {
+//        if (helper instanceof ConstructionHelperForSourceFiles) {
+//            return helper;
+//        } else if (helper instanceof ConstructionHelperForGenericCreation) {
+//            ConstructionHelperForGenericCreation h = (ConstructionHelperForGenericCreation) (helper);
+//            /* This is a bit complicated and I did not know how to solve it in a more convenient way, but:
+//             * BamFile fomerly had a lot of different constructors for different input. Most of them
+//             * decreased the file stage level of the parent object. Now we have only one constructor, which just checks
+//             * if we have a BamFile as the parent file(in this case, we do not decrease levels)
+//             */
+//            FileStageSettings newFS = h.fileStageSettings;
+//            if (!(h.parentObject instanceof BamFile)) {
+//                if(h.parentObject instanceof FileGroup) {
+//                    newFS = ((BaseFile)((FileGroup)h.parentObject).getFilesInGroup().get(0)).getFileStage().decreaseLevel();
+//                } else {
+//                    newFS = ((BaseFile)h.parentObject).getFileStage().decreaseLevel();
+//                }
+//            } else {
+//                newFS = ((BamFile)h.parentObject).getFileStage();
+//            }
+//
+//            //Reset the previous construction helper with the new filestage settings. Do a copy?
+//
+//        } else {
+//            throw new RuntimeException("Oh oh, there is an unresolved case for the BamFile constructor.");
+//        }
+//    }
+
+    /**
+     * "Copy" constructor for Bam conversion.
+     *
+     * @param minorBam
+     */
     public BamFile(BasicBamFile minorBam) {
-        this(minorBam.getPath(), minorBam.getExecutionContext(), minorBam.getFileStage());
-    }
-
-    public BamFile(File path, ExecutionContext context, FileStageSettings fileStageSettings) {
-        super(path, context, new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null), null, fileStageSettings);
-    }
-
-    public BamFile(BamFile bamFile) {
-        super(bamFile, bamFile.getFileStage());
-    }
-
-    public BamFile(AlignedSequenceFileGroup parentFiles) {
-        super(parentFiles, parentFiles.getFilesInGroup().get(0).getFileStage().decreaseLevel());
-    }
-
-    public BamFile(AlignedSequenceFile parentFile) {
-        super((AlignedSequenceFileGroup)parentFile.getFileGroups().get(0), parentFile.getFileStage().decreaseLevel());
-    }
-
-    public BamFile(LaneFile laneFile) {
-        super((LaneFileGroup)laneFile.getFileGroups().get(0), laneFile.getFileStage().decreaseLevel());
-    }
-
-    public BamFile(LaneFileGroup parentFiles) {
-        super(parentFiles, parentFiles.getFilesInGroup().get(0).getFileStage().decreaseLevel());
-    }
-
-    public BamFile(BamFileGroup parentFiles) {
-        super(parentFiles, parentFiles.getFilesInGroup().get(0).getFileStage().decreaseLevel());
+        super(minorBam);
     }
 
     @Override
     public void setAsTemporaryFile() {
         super.setAsTemporaryFile();
-        if(hasIndex()) index().setAsTemporaryFile(); //Also indexFile files created by a or for a temporary bam file are temporary
+        if (hasIndex()) index().setAsTemporaryFile(); //Also indexFile files created by a or for a temporary bam file are temporary
     }
 
     public String getType() {
@@ -89,7 +98,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     }
 
     public Sample getSample() {
-        return ((COFileStageSettings)getFileStage()).getSample();
+        return ((COFileStageSettings) getFileStage()).getSample();
     }
 
     public boolean hasIndex() {
@@ -200,11 +209,17 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return qcSummaryFile;
     }
 
-    public TextFile getQcJsonFile() { return qcJsonFile; }
+    public TextFile getQcJsonFile() {
+        return qcJsonFile;
+    }
 
-    public TextFile getDipStatisticsFile() { return dipStatisticsFile; }
+    public TextFile getDipStatisticsFile() {
+        return dipStatisticsFile;
+    }
 
-    public InsertSizesPlotFile getDipStatisticsPlotFile() { return dipStatisticsPlotFile; }
+    public InsertSizesPlotFile getDipStatisticsPlotFile() {
+        return dipStatisticsPlotFile;
+    }
 
     public void setChromosomeDiffStatisticsFile(ChromosomeDiffValueFile chromosomeDiffStatisticsFile) {
         this.chromosomeDiffStatisticsFile = chromosomeDiffStatisticsFile;
@@ -246,11 +261,17 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         this.qcSummaryFile = qcSummaryFile;
     }
 
-    public void setQcJsonFile(TextFile qcJsonFile) { this.qcJsonFile = qcJsonFile; }
+    public void setQcJsonFile(TextFile qcJsonFile) {
+        this.qcJsonFile = qcJsonFile;
+    }
 
-    public void setDipStatisticsFile (TextFile dipStatisticsFile) { this.dipStatisticsFile = dipStatisticsFile; }
+    public void setDipStatisticsFile(TextFile dipStatisticsFile) {
+        this.dipStatisticsFile = dipStatisticsFile;
+    }
 
-    public void setDipStatisticsPlotFile (InsertSizesPlotFile dipStatisticsPlotFile) { this.dipStatisticsPlotFile = dipStatisticsPlotFile; }
+    public void setDipStatisticsPlotFile(InsertSizesPlotFile dipStatisticsPlotFile) {
+        this.dipStatisticsPlotFile = dipStatisticsPlotFile;
+    }
 
     public ChromosomeDiffValueFile getChromosomeDiffStatisticsFile() {
         return chromosomeDiffStatisticsFile;
@@ -272,7 +293,9 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return insertSizesMatrixFile;
     }
 
-    public InsertSizesPlotFile getInsertSizesPlotFile() { return insertSizesPlotFile; }
+    public InsertSizesPlotFile getInsertSizesPlotFile() {
+        return insertSizesPlotFile;
+    }
 
     public BamMetricsFile getBamMetricsFile() {
         return bamMetricsFile;
@@ -409,7 +432,6 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     }
 
 
-
     public boolean hasReadBinsCoverageTextFile() {
         return readBinsCoverageTextFile != null;
     }
@@ -430,7 +452,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     }
 
     public void performPostMergeQCAnalysis() {
-        if(insertSizesPlotFile == null && chromosomeDiffPlotFile == null) {
+        if (insertSizesPlotFile == null && chromosomeDiffPlotFile == null) {
             Tuple13<BamIndexFile, FlagstatsFile, TextFile, BamMetricsFile, ChromosomeDiffValueFile, ChromosomeDiffTextFile, ChromosomeDiffPlotFile, InsertSizesValueFile, InsertSizesTextFile, InsertSizesPlotFile, CoverageTextFile, CoverageTextFile, QCSummaryFile> results = GenericMethod.callGenericTool("postMergeQCAnalysis", this, "SAMPLE=" + this.getSample().getName());
             setIndexFile(results._a);
             setFlagstatsFile(results._b);
@@ -491,7 +513,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
 
     @ScriptCallingMethod
     public QCSummaryFile createQCSummaryFile() {
-        if(qcSummaryFile == null)
+        if (qcSummaryFile == null)
             qcSummaryFile = QCSummaryFile.createFromFileList(getExecutionContext(), this, getCreatedFiles());
         return qcSummaryFile;
     }

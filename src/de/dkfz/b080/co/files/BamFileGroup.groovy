@@ -45,10 +45,10 @@ public class BamFileGroup extends FileGroup<BamFile> {
         List<BaseFile> parentFiles = new LinkedList<BaseFile>();
         getFilesInGroup().each { BamFile it -> parentFiles.add((BaseFile) it); }
 
-        BamFile bamFile = new BamFile(this);
-        bamFile.setFlagstatsFile(new FlagstatsFile(bamFile));
-        bamFile.setMetricsFile(new BamMetricsFile(bamFile));
-        if (useBioBamBamMarkDuplicates) bamFile.setIndexFile(new BamIndexFile(bamFile));
+        BamFile bamFile = (BamFile)BaseFile.constructManual(BamFile.class, this);
+        bamFile.setFlagstatsFile((FlagstatsFile)BaseFile.constructManual(FlagstatsFile.class, bamFile));
+        bamFile.setMetricsFile((BamMetricsFile)BaseFile.constructManual(BamMetricsFile.class, bamFile));
+        if (useBioBamBamMarkDuplicates) bamFile.setIndexFile((BamIndexFile)BaseFile.constructManual(BamIndexFile, bamFile));
         String parentFilePaths = parentFiles.collect { BaseFile pf -> pf.path.absolutePath }.join(":");
 
         Map<String, Object> parameters = run.getDefaultJobParameters(MERGEANDRMDUP);

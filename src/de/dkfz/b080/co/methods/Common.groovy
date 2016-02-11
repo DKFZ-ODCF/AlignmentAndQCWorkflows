@@ -6,6 +6,8 @@ import de.dkfz.roddy.execution.jobs.JobResult
 import de.dkfz.roddy.execution.jobs.ScriptCallingMethod
 import de.dkfz.roddy.execution.jobs.StaticScriptProviderClass
 import de.dkfz.roddy.knowledge.files.BaseFile
+import de.dkfz.roddy.knowledge.files.FileObject
+
 /**
  *
  * @author michael
@@ -96,8 +98,8 @@ class Common {
     public static ChromosomeDiffFileGroup differentiateChromosomesForBamFile(ExecutionContext run, BamFile bamFile) {
         if (!bamFile.hasIndex()) bamFile.index();
 
-        ChromosomeDiffTextFile tFile = new ChromosomeDiffTextFile(bamFile);
-        ChromosomeDiffPlotFile pFile = new ChromosomeDiffPlotFile(bamFile);
+        ChromosomeDiffTextFile tFile = BaseFile.constructManual(ChromosomeDiffTextFile, bamFile) as ChromosomeDiffTextFile;
+        ChromosomeDiffPlotFile pFile = BaseFile.constructManual(ChromosomeDiffPlotFile, bamFile) as ChromosomeDiffPlotFile;
 
         File filePathD = tFile.path;
         File filePathP = pFile.path;
@@ -155,7 +157,7 @@ class Common {
 
     @ScriptCallingMethod
     public static QCSummaryFile createQCSummaryFileFromList(ExecutionContext run, BamFile bamFile, List<COBaseFile> files) {
-        QCSummaryFile qcSummaryFile = new QCSummaryFile(bamFile, files);//filePath, context, jobResult, files, files[0].getFileStage());
+        QCSummaryFile qcSummaryFile = BaseFile.constructManual(QCSummaryFile, bamFile, files as List<FileObject>, null, null,null,null,null,null) as QCSummaryFile;
 
         LaneFile laneFile = recursivelySearchLaneFile([(BaseFile) bamFile]);
         COFileStageSettings bamFileFileStage = (COFileStageSettings) bamFile.getFileStage()

@@ -7,11 +7,11 @@ package de.dkfz.b080.co.files;
 public class GenomeCoveragePlotFile extends COBaseFile {
 
     public GenomeCoveragePlotFile(CoverageTextFile parentFile) {
-        super(parentFile);
+        super(new ConstructionHelperForManualCreation(parentFile, null, null,null,null,null,null,null));
     }
 
     public GenomeCoveragePlotFile(BamFileGroup group) {
-        super(group, group.getFilesInGroup().get(0).getFileStage());
+        super(new ConstructionHelperForManualCreation(group, null, null,null,null,null,null,null));
     }
 
 }

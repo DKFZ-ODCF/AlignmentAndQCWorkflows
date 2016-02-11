@@ -5,6 +5,7 @@ import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.execution.jobs.JobDependencyID
 import de.dkfz.roddy.execution.jobs.JobResult
+import de.dkfz.roddy.knowledge.files.BaseFile
 import de.dkfz.roddy.tools.LoggerWrapper
 
 @groovy.transform.CompileStatic
@@ -49,8 +50,9 @@ class QCPipelineScriptFileServiceHelper {
 
                 JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
                 LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>(Arrays.asList(
-                        new LaneFile(_f0, context, result, null, new COFileStageSettings(id, index, 0, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE)),
-                        new LaneFile(_f1, context, result, null, new COFileStageSettings(id, index2, 1, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE))));
+                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index, 0, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result),
+                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index2, 1, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result)
+                ));
                 filesInGroup[1].setFileIsValid();
                 fileGroups << new LaneFileGroup(context, id, runName, sample, filesInGroup)
             }
@@ -92,8 +94,9 @@ class QCPipelineScriptFileServiceHelper {
                     LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>();
 
                     JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
-                    filesInGroup << new LaneFile(_f0, context, result, null, new COFileStageSettings(id, index0, 0, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE));
-                    filesInGroup << new LaneFile(_f1, context, result, null, new COFileStageSettings(id, index1, 1, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE));
+
+                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index0, 0, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
+                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index1, 1, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
 
                     fileGroups << new LaneFileGroup(context, id, runName, sample, filesInGroup)
                 }

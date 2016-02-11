@@ -133,9 +133,9 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
         LaneFile laneFile1 = filesInGroup.get(1);
 
         Configuration configuration = run.getConfiguration();
-        BamFile bamFile = new BamFile(this);
-        FlagstatsFile flagstatsFile = new FlagstatsFile(bamFile);
-        BamIndexFile bamIndexFile = new BamIndexFile(bamFile);
+        BamFile bamFile = (BamFile) BaseFile.constructManual(BamFile.class, this);
+        FlagstatsFile flagstatsFile = (FlagstatsFile)BaseFile.constructManual(FlagstatsFile.class, bamFile);
+        BamIndexFile bamIndexFile = (BamIndexFile) BaseFile.constructManual(BamIndexFile.class, bamFile);
 
         //Which info is necessary? File timestamp, maybe svn version, last changes, last file, parameters?
         String libString = configuration.getConfigurationValues().getString(COConstants.PRM_CVAL_LIBRARY);

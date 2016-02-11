@@ -123,7 +123,7 @@ public class QCPipeline extends Workflow {
         for (LaneFileGroup lfg : laneFileGroups) {
             List<LaneFile> copyOfFiles = new LinkedList<>();
             for (LaneFile lf : lfg.getFilesInGroup()) {
-                LaneFile copyOfFile = new LaneFile(lf.getPath(), context, lf.getCreatingJobsResult(), lf.getParentFiles(), lf.getFileStage());
+                LaneFile copyOfFile = new LaneFile(lf, context);//lf.getPath(), context, lf.getCreatingJobsResult(), lf.getParentFiles(), lf.getFileStage());
                 copyOfFiles.add(copyOfFile);
             }
             copyOfLaneFileGroups.add(new LaneFileGroup(context, lfg.getId(), lfg.getRun(), sample, copyOfFiles));

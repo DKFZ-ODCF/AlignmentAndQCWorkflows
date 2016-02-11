@@ -1,6 +1,7 @@
 <configuration name='qcAnalysis' description='Quality control for NGS data.'
                configurationType='analysis' class='de.dkfz.roddy.core.Analysis'
                workflowClass='de.dkfz.b080.co.qcworkflow.QCPipeline'
+               runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
                imports="commonCOWorkflowsSettings"
                canCreateTestdata='true'
                listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,qcSummary,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"
