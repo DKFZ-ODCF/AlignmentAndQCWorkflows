@@ -375,7 +375,7 @@
         <tool name='combinedBamAnalysis' value='flags_isizes_PEaberrations.pl' basepath='qcPipeline'/>
 
 
-        <!-- TODO: What is this section. Why are some tools in this tag, and others not in the ACEseq WF. -->
+
         <tool name="annotateCnvVcf" value="annotate_vcf.pl" basepath="copyNumberEstimationWorkflow"/>
         <tool name="addMappability" value="addMappability.py" basepath="copyNumberEstimationWorkflow"/>
         <tool name="estimateSex" value="getSex.R" basepath="copyNumberEstimationWorkflow"/>
@@ -501,17 +501,19 @@
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
 
         <!-- GC-bias corrected statistics from ACEseq workflow -->
-        <filename class="TextFile" onMethod="ACESeqMethods.annotateCovWindows" selectiontag="windowAnnotation"
+        <filename class="TextFile" onMethod="ACEseqMethods.annotateCovWindows" selectiontag="windowAnnotation"
                   pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}.readCoverage_1kb_windows.anno.txt'/>
-        <filename class="TextFile" onMethod="ACESeqMethods.annotateCovWindows" selectiontag="sex"
+        <filename class="TextFile" onMethod="ACEseqMethods.annotateCovWindows" selectiontag="sex"
                   pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_sex.txt'/>
-        <filename class="TextFile" onMethod="ACESeqMethods.mergeAndFilterCovWindows"
+
+        <filename class="TextFile" onMethod="ACEseqMethods.mergeAndFilterCovWindows"
                   pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/i@{sample}_$run}_readCoverage_10kb_windows.filtered.txt'/>
-        <filename class="TextFile" onMethod="ACESeqMethods.correctGC" selectiontag="correctedWindows"
+
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.correctGc" selectiontag="correctedWindows"
                   pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt'/>
-        <filename class="TextFile" onMethod="ACESeqMethods.correctGC" selectiontag="tabSlim"
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.correctGc" selectiontag="tabSlim"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.json'/>
-        <filename class="TextFile" onMethod="ACESeqMethods.correctGC" selectiontag="tab"
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.correctGc" selectiontag="tab"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>
 
     </filenames>
