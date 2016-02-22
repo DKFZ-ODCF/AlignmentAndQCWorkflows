@@ -228,15 +228,6 @@ if [[ 1 || "$ON_CONVEY" == "true" ]]; then
     ${FILENAME_DIFFCHROM_STATISTICS} \
     > ${FILENAME_QCJSON}.tmp \
     || throw 25 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
-else
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
-  	${FILENAME_GENOME_COVERAGE} \
-    ${FILENAME_ISIZES_STATISTICS} \
-    ${FILENAME_FLAGSTATS} \
-    ${FILENAME_DIFFCHROM_STATISTICS} \
-    ${FILENAME_DIP_STATISTICS} \
-    > ${FILENAME_QCJSON}.tmp \
-    || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
 fi
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
