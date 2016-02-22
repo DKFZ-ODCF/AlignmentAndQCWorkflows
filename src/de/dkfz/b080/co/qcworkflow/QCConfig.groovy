@@ -20,7 +20,7 @@ class QCConfig {
     }
 
     // This is used so often, it should be part of ExecutionContext.
-    public extractConfigValue(ExecutionContext context) {
+    public Object extractConfigValue(ExecutionContext context) {
         context.getConfiguration().getConfigurationValues();
     }
 
@@ -64,11 +64,11 @@ class QCConfig {
         extractConfigValue(context).getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false)
     }
 
-    public String[] getWindowSize() {
-        extractConfigValue(context).getString(COConstants.CVALUE_WINDOW_SIZE, 1)
+    public String getWindowSize() {
+        extractConfigValue(context).getString(COConstants.CVALUE_WINDOW_SIZE, "1")
     }
 
-    public String getOverrideFastqFiles() {
+    public String[] getOverrideFastqFiles() {
         extractConfigValue(context).getString("overrideFastqFiles", "")
     }
 

@@ -1,9 +1,8 @@
 package de.dkfz.b080.co.qcworkflow;
 
-import de.dkfz.b080.co.files.*;
+import de.dkfz.b080.co.files.*
 import de.dkfz.b080.co.common.*
 import de.dkfz.roddy.core.*
-import de.dkfz.roddy.knowledge.files.Tuple3
 
 import java.util.*
 
@@ -118,12 +117,6 @@ public class QCPipeline extends Workflow {
         return copyOfLaneFileGroups;
     }
 
-    private void aceSeqQc(CoverageTextFile windowedCoverageTextFile) {
-        TextFile annotationResult = AceSeqQC.annotateCovWindows(windowedCoverageTextFile);
-        TextFile mergedAndFilteredCoverageWindowFiles = AceSeqQC.mergeAndFilterCovWindows(annotationResult);
-        Tuple3<TextFile, TextFile, TextFile> correctedWindowFile = AceSeqQC.correctGC(mergedAndFilteredCoverageWindowFiles);
-    }
-
     private BamFileGroup createSortedBams(QCConfig cfg, COProjectsRuntimeService runtimeService, Sample sample) {
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
@@ -164,10 +157,10 @@ public class QCPipeline extends Workflow {
                 bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
                 sortedBamFiles.addFile(bamFile);
 
-                if (cfg.windowSize == 1) {
-                    aceSeqQc(bamFile.readBinsCoverageTextFile)
+                if (cfg.windowSize.toInteger() == 1) {
+                    ACEseqMethods.aceSeqQc(bamFile.readBinsCoverageTextFile)
                 } else {
-                    throw RuntimeException("Not implemented!")
+                    throw RuntimeException("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${cfg.windowSize}")
                     // TODO commonCOWorkflowSettings: 10kb, exome 10kb
                 }
             }

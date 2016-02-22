@@ -1,2 +1,2 @@
 dependson=PluginBase:1.0.24
-dependson=COWorkflows
+dependson=COWorkflowsACEseqQC:current
