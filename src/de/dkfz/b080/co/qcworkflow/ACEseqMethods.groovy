@@ -1,4 +1,4 @@
-package de.dkfz.b080.co.qcworkflow;
+package de.dkfz.b080.co.qcworkflow
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.execution.jobs.*;
@@ -6,9 +6,7 @@ import de.dkfz.roddy.knowledge.files.Tuple2;
 import de.dkfz.roddy.knowledge.files.Tuple3;
 import de.dkfz.roddy.knowledge.methods.GenericMethod
 
-/**
- * Created by kleinhei on 6/16/14.
- */
+
 @StaticScriptProviderClass
 public final class ACEseqMethods {
 

@@ -14,4 +14,8 @@ public class GenomeCoveragePlotFile extends COBaseFile {
         super(new ConstructionHelperForManualCreation(group, null, null,null,null,null,null,null));
     }
 
+    public GenomeCoveragePlotFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
+    }
+
 }

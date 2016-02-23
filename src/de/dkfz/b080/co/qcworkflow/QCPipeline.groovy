@@ -160,7 +160,7 @@ public class QCPipeline extends Workflow {
                 if (cfg.windowSize.toInteger() == 1) {
                     ACEseqMethods.aceSeqQc(bamFile.readBinsCoverageTextFile)
                 } else {
-                    throw RuntimeException("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${cfg.windowSize}")
+                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${cfg.windowSize}"))
                     // TODO commonCOWorkflowSettings: 10kb, exome 10kb
                 }
             }
