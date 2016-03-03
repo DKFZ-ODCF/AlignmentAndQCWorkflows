@@ -6,7 +6,7 @@ import de.dkfz.roddy.config.ConfigurationValue;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
-import de.dkfz.roddy.execution.io.fs.FileSystemInfoProvider;
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
 import de.dkfz.roddy.execution.jobs.CommandFactory;
 import de.dkfz.roddy.execution.jobs.Job;
 import de.dkfz.roddy.execution.jobs.JobResult;
@@ -202,7 +202,7 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
         File targetFilePath = new File(testdataBasePath + File.separator + context.getDataSet() + fileRelativePath);
         ExecutionService es = ExecutionService.getInstance();
 
-        if (!FileSystemInfoProvider.getInstance().checkDirectory(targetFilePath.getParentFile(), context, true)) {
+        if (!FileSystemAccessProvider.getInstance().checkDirectory(targetFilePath.getParentFile(), context, true)) {
             throw new RuntimeException("Could not create output directory " + targetFilePath.getParentFile());
         }
 //        String zipTool = cfg.getConfigurationValue("ZIPTOOL").toString();
