@@ -1,11 +1,11 @@
 package de.dkfz.b080.co.qcworkflow
 
+import de.dkfz.b080.co.files.AlignmentConstants
 import de.dkfz.b080.co.files.COConstants
 import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.core.ExecutionContext
 
 import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES
-import static de.dkfz.b080.co.files.COConstants.FLAG_IS_DEBUG_CONFIGURATION;
 
 class QCConfig {
 
@@ -57,7 +57,7 @@ class QCConfig {
     }
 
     public boolean getRunCoveragePlotsOnly() {
-        extractConfigValue(context).getBoolean("runCoveragePlotsOnly", false)
+        extractConfigValue(context).getBoolean(AlignmentConstants.CVALUE_RUN_COVERAGE_PLOTS_ONLY, false)
     }
 
     public boolean getRunSlimWorkflow() {
@@ -69,15 +69,15 @@ class QCConfig {
     }
 
     public String[] getOverrideFastqFiles() {
-        extractConfigValue(context).getString("overrideFastqFiles", "")
+        extractConfigValue(context).getString(AlignmentConstants.CVALUE_OVERRIDE_FASTQ_FILES, "")
     }
 
     public String[] getOverrideMergedBamFiles() {
-        extractConfigValue(context).getString("overrideBamFiles", "").split(StringConstants.SPLIT_SEMICOLON)
+        extractConfigValue(context).getString(AlignmentConstants.CVALUE_OVERRIDE_BAM_FILES, "").split(StringConstants.SPLIT_SEMICOLON)
     }
 
     public String[] getOverrideSampleNames() {
-        extractConfigValue(context).getString("overrideSampleNames", "").split(StringConstants.SPLIT_SEMICOLON)
+        extractConfigValue(context).getString(AlignmentConstants.CVALUE_OVERRIDE_SAMPLE_NAMES, "").split(StringConstants.SPLIT_SEMICOLON)
     }
 
     public String getControlBamName() {
@@ -92,6 +92,20 @@ class QCConfig {
         setConfig(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, value.toString(), "boolean" )
     }
 
+    public String getMappabilityFile () {
+        extractConfigValue(context).getString(AlignmentConstants.CVALUE_MAPPABILITY_FILE)
+    }
 
+    public String getReplicationTimeFile () {
+        extractConfigValue(context).getString(AlignmentConstants.CVALUE_REPLICATION_TIME_FILE)
+    }
+
+    public String getGcContentFile () {
+        extractConfigValue(context).getString(AlignmentConstants.CVALUE_GC_CONTENT_FILE)
+    }
+
+    public boolean getRunACEseqQC () {
+        extractConfigValue(context).getBoolean(AlignmentConstants.CVALUE_RUN_ACESEQ_QC, true)
+    }
 
 }
