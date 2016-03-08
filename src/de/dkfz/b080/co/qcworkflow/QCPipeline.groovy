@@ -152,17 +152,26 @@ public class QCPipeline extends Workflow {
                     }
                 }
 
-                // @Michael: The comments suggests that this should only be called in the else branch above!?
+                // @Michael: The comment suggests that this should only be called in the else branch above!?
                 // @Michael: Why should BAM files created with sai files be temporary?
                 bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
                 sortedBamFiles.addFile(bamFile);
 
-                if (cfg.windowSize.toInteger() == 1) {
-                    ACEseqMethods.aceSeqQc(bamFile.readBinsCoverageTextFile)
-                } else {
-                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${cfg.windowSize}"))
-                    // TODO commonCOWorkflowSettings: 10kb, exome 10kb
+                if (cfg.runACEseqQC) {
+                    if (cfg.windowSize.toInteger() != 1) {
+                        cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${cfg.windowSize}. SKIPPING!"))
+                        // TODO commonCOWorkflowSettings: 10kb, exome 10kb
+                    } else if (cfg.mappabilityFile == null) {
+                        cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require MAPPABILITY_FILE to be set. SKIPPING!"))
+                    } else if (cfg.replicationTimeFile == null) {
+                        cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require REPLICATION_TIME_FILE to be set. SKIPPING!"))
+                    } else if (cfg.gcContentFile == null) {
+                        cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require GC_CONTENT_FILE to be set. SKIPPING!"))
+                    } else {
+                        ACEseqMethods.aceSeqQc(bamFile.readBinsCoverageTextFile, sample)
+                    }
                 }
+
             }
 
         }
