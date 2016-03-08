@@ -28,3 +28,34 @@ function runningOnConvey {
     	echo "false"
     fi
 }
+
+# Stolen from http://stackoverflow.com/questions/3685970/check-if-an-array-contains-a-value
+function arrayContains {
+    local ELEMENT="${1}"
+    local DELIM=","
+    printf "${DELIM}%s${DELIM}" "${@:2}" | grep -q "${DELIM}${ELEMENT}${DELIM}"
+}
+
+function matchPrefixInArray {
+    local ELEMENT="${1}"
+    local DELIM=","
+    printf "${DELIM}%s${DELIM}" "${@:2}" | grep -q -P "${DELIM}${ELEMENT}[^${DELIM}]*${DELIM}"
+}
+
+function isControlSample {
+    matchPrefixInArray "$1" "${possibleControlSampleNamePrefixes[@]}"
+}
+
+function isTumorSample {
+    matchPrefixInArray "$1" "${possibleTumorSampleNamePrefixes[@]}"
+}
+
+function sampleType {
+    if isControl $1; then
+        echo "control"
+    elif isTumor $1; then
+        echo "tumor"
+    else
+        echo "$1 is neither control nor tumor" > /dev/stderr
+    fi
+}
