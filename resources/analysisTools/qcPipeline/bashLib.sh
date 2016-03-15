@@ -3,6 +3,8 @@
 #        source "$TOOL_BASH_LIB"
 
 
+ILLEGAL_ARGUMENT_ERROR=200
+
 ## throw [code [msg]]
 ## Write message (Unspecified error) to STDERR and exit with code (default 1)
 function throw {
@@ -32,30 +34,51 @@ function runningOnConvey {
 # Stolen from http://stackoverflow.com/questions/3685970/check-if-an-array-contains-a-value
 function arrayContains {
     local ELEMENT="${1}"
+    if [[ "$ELEMENT" == "" ]]; then
+        throw "arrayContains called without parameters"
+    fi
     local DELIM=","
     printf "${DELIM}%s${DELIM}" "${@:2}" | grep -q "${DELIM}${ELEMENT}${DELIM}"
 }
 
 function matchPrefixInArray {
     local ELEMENT="${1}"
+    if [[ "$ELEMENT" == "" ]]; then
+        throw "matchPrefixInArray called without parameters"
+    fi
     local DELIM=","
     printf "${DELIM}%s${DELIM}" "${@:2}" | grep -q -P "${DELIM}${ELEMENT}[^${DELIM}]*${DELIM}"
 }
 
 function isControlSample {
+    if [[ "$1" == "" ]]; then
+        throw $ILLEGAL_ARGUMENT_ERROR "isControlSample expects sample type name as single parameter"
+    fi
+    if [[ "$possibleControlSampleNamePrefixes" == "" ]]; then
+        throw $ILLEGAL_ARGUMENT_ERROR "Undefined/empty possibleControlSampleNamePrefixes"
+    fi
     matchPrefixInArray "$1" "${possibleControlSampleNamePrefixes[@]}"
 }
 
 function isTumorSample {
+    if [[ "$1" == "" ]]; then
+        throw $ILLEGAL_ARGUMENT_ERROR "isTumorSample expects sample type name as single parameter"
+    fi
+    if [[ "$possibleTumorSampleNamePrefixes" == "" ]]; then
+        throw $ILLEGAL_ARGUMENT_ERROR "Undefined/empty possibleTumorSampleNamePrefixes"
+    fi
     matchPrefixInArray "$1" "${possibleTumorSampleNamePrefixes[@]}"
 }
 
 function sampleType {
-    if isControl $1; then
+    if [[ "$1" == "" ]]; then
+        throw $ILLEGAL_ARGUMENT_ERROR "sampleType expects sample type name as single parameter"
+    fi
+    if isControlSample "$1"; then
         echo "control"
-    elif isTumor $1; then
+    elif isTumorSample "$1"; then
         echo "tumor"
     else
-        echo "$1 is neither control nor tumor" > /dev/stderr
+        throw $ILLEGAL_ARGUMENT_ERROR "'$1' is neither control nor tumor"
     fi
 }
