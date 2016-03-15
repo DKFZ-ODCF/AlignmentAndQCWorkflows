@@ -180,8 +180,6 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
-                <!--<output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" />-->
-                <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
             </output>
         </tool>
         <tool name='accelerated:alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
@@ -211,8 +209,6 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
-                <!-- <output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" /> -->
-                <!-- <output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" /> -->
             </output>
         </tool>
 
@@ -227,7 +223,6 @@
         <!--<tool name='writeQcSummary' value='writeQCSummary.py' basepath='qcPipeline'/>-->
         <tool name='writeQcSummary' value='writeQCsummary.pl' basepath='qcPipeline'/>
         <tool name='qcJson' value='qcJson.pl' basepath='qcPipeline'/>
-        <tool name='dipStatistics' value='hartigansDip.R' basepath='qcPipeline'/>
 
         <tool name='samtoolsIndex' value='samtoolsIndexBamfile.sh' basepath='qcPipeline'>
             <resourcesets>
@@ -340,8 +335,6 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
-                <!--<output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" />-->
-                <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
             </output>
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimBioBambam' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -372,8 +365,6 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
-                <!--<output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" />-->
-                <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
             </output>
         </tool>
         <tool name="checkAlreadyMergedLanes" value="alreadyMergedLanes.pl" basepath="qcPipeline"/>
@@ -489,9 +480,6 @@
         <filename class='InsertSizesTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsizes.txt'/>
         <filename class='InsertSizesValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png_qcValues.txt'/>
 
-        <!--<filename class='TextFile' derivedFrom="BamFile" selectiontag="dipStatistics" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_HartigansDip.txt'/>-->
-        <!--<filename class='InsertSizesPlotFile' derivedFrom="BamFile" selectiontag="dipStatistics" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_HartigansDip_densityPlot.png'/>-->
-
         <filename class='InsertSizesPlotFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png'/>
         <filename class='InsertSizesTextFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsizes.txt'/>
         <filename class='InsertSizesValueFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png_qcValues.txt'/>
@@ -509,22 +497,22 @@
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
 
         <!-- GC-bias corrected statistics from ACEseq workflow -->
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.annotateCovWindows" selectiontag="windowAnnotation"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}.readCoverage_1kb_windows.anno.txt'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.annotateCovWindows" selectiontag="sex"
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.annotateCovWindows" selectiontag="windowAnnotation"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.anno.txt.gz'/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.annotateCovWindows" selectiontag="sex"
                   pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_sex.txt'/>
 
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.mergeAndFilterCovWindows"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.txt'/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.mergeAndFilterCovWindows"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.txt.gz'/>
 
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.correctGc" selectiontag="correctedWindows"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.correctGc" selectiontag="tabSlim"
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedWindows"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt.gz'/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="tabSlim"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.json'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.correctGc" selectiontag="tab"
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="tab"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.qcworkflow.ACEseqMethods.correctGc" selectiontag="correctedGcPlot"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${pid}_gc_corrected.png' type="path"/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedGcPlot"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${pid}_gc_corrected.png'/>
 
     </filenames>
 </configuration>
