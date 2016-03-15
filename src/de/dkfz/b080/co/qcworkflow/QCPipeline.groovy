@@ -2,6 +2,7 @@ package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*
 import de.dkfz.b080.co.common.*
+import de.dkfz.b080.co.methods.ACEseq
 import de.dkfz.roddy.core.*
 
 import java.util.*
@@ -52,6 +53,23 @@ public class QCPipeline extends Workflow {
             coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage());
 
             mergedBamFiles.addFile(mergedBam);
+
+            // The ACEseq QC could also be done per lane/run, but for non X10 data there is not the required >30x coverage (Kortine).
+            if (cfg.runACEseqQC) {
+                if (cfg.windowSize.toInteger() != 1) {
+                    // Kortine: The mappability file may have other than the same window size as the input data (i.e. WINDOW_SIZE),
+                    //          the replication timing and GC content files need to have the same window size as the input.
+                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${cfg.windowSize}. SKIPPING!"))
+                } else if (cfg.mappabilityFile == null) {
+                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require MAPPABILITY_FILE to be set. SKIPPING!"))
+                } else if (cfg.replicationTimeFile == null) {
+                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require REPLICATION_TIME_FILE to be set. SKIPPING!"))
+                } else if (cfg.gcContentFile == null) {
+                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require GC_CONTENT_FILE to be set. SKIPPING!"))
+                } else {
+                    ACEseq.aceSeqQc(mergedBam.readBinsCoverageTextFile, sample)
+                }
+            }
         }
 
         if (mergedBamFiles.getFilesInGroup().size() == 0) {
@@ -156,22 +174,6 @@ public class QCPipeline extends Workflow {
                 // @Michael: Why should BAM files created with sai files be temporary?
                 bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
                 sortedBamFiles.addFile(bamFile);
-
-                if (cfg.runACEseqQC) {
-                    if (cfg.windowSize.toInteger() != 1) {
-                        cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${cfg.windowSize}. SKIPPING!"))
-                        // TODO commonCOWorkflowSettings: 10kb, exome 10kb
-                    } else if (cfg.mappabilityFile == null) {
-                        cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require MAPPABILITY_FILE to be set. SKIPPING!"))
-                    } else if (cfg.replicationTimeFile == null) {
-                        cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require REPLICATION_TIME_FILE to be set. SKIPPING!"))
-                    } else if (cfg.gcContentFile == null) {
-                        cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require GC_CONTENT_FILE to be set. SKIPPING!"))
-                    } else {
-                        ACEseqMethods.aceSeqQc(bamFile.readBinsCoverageTextFile, sample)
-                    }
-                }
-
             }
 
         }
