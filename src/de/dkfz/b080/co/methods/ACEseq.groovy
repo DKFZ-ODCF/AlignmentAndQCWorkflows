@@ -1,4 +1,4 @@
-package de.dkfz.b080.co.qcworkflow
+package de.dkfz.b080.co.methods
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.execution.jobs.*;
@@ -9,7 +9,7 @@ import de.dkfz.roddy.knowledge.methods.GenericMethod
 
 
 @StaticScriptProviderClass
-public final class ACEseqMethods {
+public final class ACEseq {
 
 
     @ScriptCallingMethod
@@ -28,9 +28,9 @@ public final class ACEseqMethods {
     }
 
     private static Tuple3<TextFile, TextFile, TextFile> aceSeqQc(CoverageTextFile windowedCoverageTextFile, Sample sample) {
-        Tuple2<TextFile, TextFile> annotationResult = ACEseqMethods.annotateCovWindows(windowedCoverageTextFile, sample);
-        TextFile mergedAndFilteredCoverageWindowFile = ACEseqMethods.mergeAndFilterCovWindows(annotationResult.value0);
-        Tuple3<TextFile, TextFile, TextFile, TextFile> correctedWindowFile = ACEseqMethods.correctGc(mergedAndFilteredCoverageWindowFile, sample);
+        Tuple2<TextFile, TextFile> annotationResult = ACEseq.annotateCovWindows(windowedCoverageTextFile, sample);
+        TextFile mergedAndFilteredCoverageWindowFile = ACEseq.mergeAndFilterCovWindows(annotationResult.value0);
+        Tuple3<TextFile, TextFile, TextFile, TextFile> correctedWindowFile = ACEseq.correctGc(mergedAndFilteredCoverageWindowFile, sample);
         return new Tuple3(annotationResult, mergedAndFilteredCoverageWindowFile, correctedWindowFile)
     }
 
