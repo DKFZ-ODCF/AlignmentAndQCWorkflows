@@ -10,7 +10,6 @@ Switch                      Default Description
 runCoveragePlotsOnly        false
 
 Value                       Description
-overrideFastqFiles          A list of
 overrideSamples
 overrideBamFiles
 

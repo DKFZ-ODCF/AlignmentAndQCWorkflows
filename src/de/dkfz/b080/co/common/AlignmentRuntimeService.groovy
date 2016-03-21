@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  * Created by heinold on 15.01.16.
  */
 @groovy.transform.CompileStatic
-public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
+public class AlignmentRuntimeService extends BasicCOProjectsRuntimeService {
     private static LoggerWrapper logger = LoggerWrapper.getLogger(BasicCOProjectsRuntimeService.class.getName());
 
     protected static void getFileCompression(ExecutionContext run, List<LaneFile> allLaneFiles) {

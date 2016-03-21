@@ -1,7 +1,7 @@
 <configuration name='genomeAnalysisPancanSlim' description='Pancancer based quality control workflow for NGS data in a slim and optimized version. The workflow is based on the original genome / exome qc workflow'
                configurationType='analysis' class='de.dkfz.roddy.core.Analysis'
                workflowClass='de.dkfz.b080.co.qcworkflow.QCPipelinePancancerSlim'
-               runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
+               runtimeServiceClass='de.dkfz.b080.co.common.AlignmentRuntimeService'
                imports="commonCOWorkflowsSettings,qcAnalysis"
                canCreateTestdata='true'
                listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,qcSummary,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"

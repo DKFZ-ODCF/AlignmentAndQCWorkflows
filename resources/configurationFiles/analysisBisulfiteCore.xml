@@ -2,7 +2,7 @@
                configurationType='analysis'
                class='de.dkfz.roddy.core.Analysis'
                workflowClass='de.dkfz.b080.co.qcworkflow.BisulfiteCoreWorkflow'
-               runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
+               runtimeServiceClass='de.dkfz.b080.co.common.AlignmentRuntimeService'
                imports="commonCOWorkflowsSettings,qcAnalysis"
                canCreateTestdata='true'
                listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,qcSummary,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"

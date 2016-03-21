@@ -12,7 +12,7 @@ public class QCPipelinePancancerSlim extends QCPipeline {
 
     @Override
     public boolean execute(ExecutionContext context) {
-        QCConfig cfg = new QCConfig(context)
+        AlignmentConfig cfg = new AlignmentConfig(context)
         cfg.sampleExtractionFromOutputFiles = false
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
 
@@ -68,7 +68,7 @@ public class QCPipelinePancancerSlim extends QCPipeline {
     }
 
     private BamFileGroup createSortedBams(ExecutionContext context, BasicCOProjectsRuntimeService runtimeService, Sample sample) {
-        QCConfig cfg = new QCConfig(context)
+        AlignmentConfig cfg = new AlignmentConfig(context)
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
         //Create bam files out of the lane files

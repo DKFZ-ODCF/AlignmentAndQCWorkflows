@@ -16,9 +16,9 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean execute(ExecutionContext context) {
-        QCConfig cfg = new QCConfig(context)
+        AlignmentConfig cfg = new AlignmentConfig(context)
         cfg.sampleExtractionFromOutputFiles = false
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        AlignmentRuntimeService runtimeService = (AlignmentRuntimeService) context.getProject().getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
@@ -47,10 +47,10 @@ public class QCPipeline extends Workflow {
                 BamFile targetOnlyBamFile = mergedBam.extractTargetsCalculateCoverage();
             }
 
-            Sample.SampleType sampleType = sample.getType();
-            if (!coverageTextFilesBySample.containsKey(sampleType))
-                coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
-            coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage());
+
+            if (!coverageTextFilesBySample.containsKey(sample.sampleType))
+                coverageTextFilesBySample.put(sample.sampleType, new CoverageTextFileGroup());
+            coverageTextFilesBySample.get(sample.sampleType).addFile(mergedBam.calcReadBinsCoverage());
 
             mergedBamFiles.addFile(mergedBam);
 
@@ -114,7 +114,7 @@ public class QCPipeline extends Workflow {
         if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
             foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
         }
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
+        AlignmentRuntimeService runtimeService = (AlignmentRuntimeService) context.getRuntimeService();
         String sampleID = sample.getName();
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
@@ -135,7 +135,7 @@ public class QCPipeline extends Workflow {
         return copyOfLaneFileGroups;
     }
 
-    private BamFileGroup createSortedBams(QCConfig cfg, COProjectsRuntimeService runtimeService, Sample sample) {
+    private BamFileGroup createSortedBams(AlignmentConfig cfg, AlignmentRuntimeService runtimeService, Sample sample) {
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
         if (cfg.useExistingPairedBams) {
@@ -180,7 +180,7 @@ public class QCPipeline extends Workflow {
         return sortedBamFiles;
     }
 
-    private BamFile mergeAndRemoveDuplicatesFat(QCConfig cfg, Sample sample, BamFileGroup sortedBamFiles) {
+    private BamFile mergeAndRemoveDuplicatesFat(AlignmentConfig cfg, Sample sample, BamFileGroup sortedBamFiles) {
 
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
@@ -202,7 +202,7 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        QCConfig cfg = new QCConfig(context)
+        AlignmentConfig cfg = new AlignmentConfig(context)
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
@@ -227,7 +227,7 @@ public class QCPipeline extends Workflow {
     @Override
     public boolean createTestdata(ExecutionContext context) {
         boolean allOk = true;
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        AlignmentRuntimeService runtimeService = (AlignmentRuntimeService) context.getProject().getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         for (Sample sample : samples) {

@@ -1,7 +1,7 @@
 package de.dkfz.b080.co.qcworkflow
 
 import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService
-import de.dkfz.b080.co.common.COProjectsRuntimeService
+import de.dkfz.b080.co.common.AlignmentRuntimeService
 import de.dkfz.b080.co.files.*
 import de.dkfz.roddy.config.Configuration
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
@@ -38,12 +38,10 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample in samples) {
-
-            List<String> availableLibrariesForSample = runtimeService.getLibrariesForSample(sample);
             BamFileGroup mergedBamsPerLibrary = new BamFileGroup();
 
             // Create per library merged bams
-            for (String library in availableLibrariesForSample) {
+            for (String library in sample.libraries) {
                 BamFileGroup sortedBamFiles = []
                 List<LaneFileGroup> rawSequenceGroups = loadLaneFilesForSampleAndLibrary(context, sample, library)
                 if (rawSequenceGroups == null || rawSequenceGroups.size() > 0) {
@@ -106,7 +104,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
             foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
         }
-        def runtimeService = context.getRuntimeService() as COProjectsRuntimeService
+        def runtimeService = context.getRuntimeService() as AlignmentRuntimeService
         String sampleID = sample.getName() + "_" + library;
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
