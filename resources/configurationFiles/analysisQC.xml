@@ -15,6 +15,13 @@
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer" description="Threads for bwa mem."/>
+
+        <cvalue name='markDuplicatesVariant' value='' type="boolean"
+                description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
+
+        <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.5.9" type="string"/>
+        <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 6 -l 9 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'/>
+
     </configurationvalues>
     <!--<testdataoptions>-->
         <!--&lt;!&ndash; id is the name of the test data option set-->
@@ -112,7 +119,7 @@
         <tool name='alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="12" cores="8" nodes="1" walltime="1"/>
+                <rset size="t" memory="12" cores="8" nodes="1" walltime="1" queue="devel"/>
                 <!-- ChIP-Seq -->
                 <rset size="s" memory="12" cores="8" nodes="1" walltime="2"/>
                 <!-- exome part lane -->
@@ -277,7 +284,7 @@
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimPicard' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
-                <rset size="t" memory="50" cores="8" nodes="1" walltime="1"/>
+                <rset size="t" memory="50" cores="8" nodes="1" walltime="1" queue="devel"/>
                 <rset size="xs" memory="50" cores="8" nodes="1" walltime="1"/>
                 <rset size="s" memory="55" cores="8" nodes="1" walltime="2"/>
                 <rset size="m" memory="62" cores="8" nodes="1" walltime="5"/>
@@ -309,7 +316,7 @@
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimBioBambam' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
-                <rset size="t" memory="5" cores="3" nodes="1" walltime="1"/>
+                <rset size="t" memory="5" cores="3" nodes="1" walltime="1" queue="devel"/>
                 <rset size="xs" memory="5" cores="3" nodes="1" walltime="1"/>
                 <rset size="s" memory="5" cores="3" nodes="1" walltime="2"/>
                 <rset size="m" memory="5" cores="3" nodes="1" walltime="12"/>
@@ -339,6 +346,42 @@
                 <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
             </output>
         </tool>
+        <tool name='mergeAndRemoveDuplicatesSlimSambamba' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
+            <resourcesets>
+                <rset size="t" memory="30" cores="6" nodes="1" walltime="1" queue="devel"/>
+                <rset size="xs" memory="30" cores="6" nodes="1" walltime="1"/>
+                <rset size="s" memory="35" cores="6" nodes="1" walltime="2"/>
+                <rset size="m" memory="40" cores="6" nodes="1" walltime="5"/>
+                <rset size="l" memory="45" cores="6" nodes="1" walltime="15"/>
+                <rset size="xl" memory="50" cores="6" nodes="1" walltime="30"/>
+            </resourcesets>
+            <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
+            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>
+            <input type="filegroup" typeof="de.dkfz.b080.co.files.BamFileGroup" scriptparameter="INPUT_FILES" passas="array"/>
+            <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
+            <output type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME">
+                <output type="file" variable="indexFile" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="FILENAME_INDEX"/>
+                <output type="file" variable="flagstatsFile" typeof="de.dkfz.b080.co.files.FlagstatsFile" scriptparameter="FILENAME_FLAGSTATS"/>
+                <output type="file" variable="extendedFlagstatsFile" fnpatternselectiontag="extendedFlagstats" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_EXTENDED_FLAGSTATS"/>
+                <output type="file" variable="metricsFile" typeof="de.dkfz.b080.co.files.BamMetricsFile" scriptparameter="FILENAME_METRICS"/>
+                <output type="file" variable="chromosomeDiffStatisticsFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAME_DIFFCHROM_STATISTICS"/>
+                <output type="file" variable="chromosomeDiffMatrixFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffTextFile" scriptparameter="FILENAME_DIFFCHROM_MATRIX"/>
+                <output type="file" variable="chromosomeDiffPlotFile" check="false" typeof="de.dkfz.b080.co.files.ChromosomeDiffPlotFile" scriptparameter="FILENAME_DIFFCHROM_PLOT"/>
+                <output type="file" variable="insertSizesStatisticsFile" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAME_ISIZES_STATISTICS"/>
+                <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
+                <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
+                <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
+                <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
+                <!--<output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" />-->
+                <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
+            </output>
+        </tool>
+
+        <!-- not sure if that belongs here ... needed for sambamba markdup, which is no own tool -->
+	    <tool name='fakeDupmarkMetrics' value='fakeDupmarkMetrics.pl' basepath='qcPipeline'/>
+
         <tool name="checkAlreadyMergedLanes" value="alreadyMergedLanes.pl" basepath="qcPipeline"/>
         <tool name='combinedBamAnalysis' value='flags_isizes_PEaberrations.pl' basepath='qcPipeline'/>
 
