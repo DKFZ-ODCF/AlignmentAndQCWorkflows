@@ -5,7 +5,7 @@ import de.dkfz.roddy.StringConstants;
 import de.dkfz.roddy.core.*;
 import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
-import de.dkfz.roddy.execution.io.fs.FileSystemInfoProvider
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper
 
 import java.util.function.Consumer;
@@ -98,12 +98,12 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
             File sampleDirectory = getSampleDirectory(context, sample);
 
             logger.postAlwaysInfo("Searching for lane files in directory ${sampleDirectory}")
-            List<File> runsForSample = FileSystemInfoProvider.getInstance().listDirectoriesInDirectory(sampleDirectory);
+            List<File> runsForSample = FileSystemAccessProvider.getInstance().listDirectoriesInDirectory(sampleDirectory);
             for (File run : runsForSample) {
                 File sequenceDirectory = getSequenceDirectory(context, sample, run.getName());
-                if (!FileSystemInfoProvider.getInstance().checkDirectory(sequenceDirectory, context, false)) // Skip directories which do not exist
+                if (!FileSystemAccessProvider.getInstance().checkDirectory(sequenceDirectory, context, false)) // Skip directories which do not exist
                     continue;
-                List<File> files = FileSystemInfoProvider.getInstance().listFilesInDirectory(sequenceDirectory);
+                List<File> files = FileSystemAccessProvider.getInstance().listFilesInDirectory(sequenceDirectory);
                 if (files.size() == 0)
                     logger.postAlwaysInfo("\t There were no lane files in directory ${sequenceDirectory}")
                 //Find file bundles
@@ -125,7 +125,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         final String pairedBamSuffix = context.getConfiguration().getConfigurationValues().get("pairedBamSuffix", "paired.bam.sorted.bam")
         //TODO Create constants
         List<String> filters = ["${sample.getName()}*${pairedBamSuffix}".toString()]
-        List<File> pairedBamPaths = FileSystemInfoProvider.getInstance().listFilesInDirectory(alignmentDirectory, filters);
+        List<File> pairedBamPaths = FileSystemAccessProvider.getInstance().listFilesInDirectory(alignmentDirectory, filters);
 
         int laneID = 0;
         List<BamFile> bamFiles = pairedBamPaths.collect({

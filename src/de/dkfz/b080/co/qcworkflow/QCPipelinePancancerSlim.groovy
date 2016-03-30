@@ -34,7 +34,7 @@ public class QCPipelinePancancerSlim extends QCPipeline {
         String controlBamName = overrideMergedBamFiles[0];
         String[] tumorBamNames = overrideMergedBamFiles[1 .. -1];
 
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples
         if(overrideSampleNames) {
