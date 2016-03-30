@@ -74,7 +74,7 @@ useBioBamBamSort=${useBioBamBamSort-true}
 if [[ ${bamFileExists} == false ]]	# we have to make the BAM
 then
 	mkfifo ${FNPIPE1} ${FNPIPE2}
-	if [[ $useAdaptorTrimming == true ]] # [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
+	if [[ ${useAdaptorTrimming-false} == true ]] # [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
 	then
 		if [ "${qualityScore}" = "illumina" ]
 		then
@@ -220,24 +220,13 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 (${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 14)
 
 # Produced qualitycontrol.json for OTP. Remove the 1 short-circuit as soon as the dip-statistic is available.
-if [[ 1 || "$ON_CONVEY" == "true" ]]; then
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
-	${FILENAME_GENOME_COVERAGE} \
+${PERL_BINARY} ${TOOL_QC_JSON} \
+    ${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
     > ${FILENAME_QCJSON}.tmp \
     || throw 25 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
-else
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
-  	${FILENAME_GENOME_COVERAGE} \
-    ${FILENAME_ISIZES_STATISTICS} \
-    ${FILENAME_FLAGSTATS} \
-    ${FILENAME_DIFFCHROM_STATISTICS} \
-    ${FILENAME_DIP_STATISTICS} \
-    > ${FILENAME_QCJSON}.tmp \
-    || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
-fi
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey

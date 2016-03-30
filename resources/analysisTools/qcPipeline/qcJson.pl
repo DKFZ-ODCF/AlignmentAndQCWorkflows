@@ -135,9 +135,45 @@ sub runTests () {
 	is($stats->{-with_mate_mapped_to_different_chr_mapQge5}, 992251, "with mate mapped to a different chr (mapQ>=5)");
     };
 
+	my @testFlagstats_1_2_sambamba = (
+		"2120 + 0 in total (QC-passed reads + QC-failed reads)",
+		"0 + 0 secondary",
+		"120 + 0 supplementary",
+		"0 + 0 duplicates",
+		"2121 + 0 mapped (100.00%:N/A)",
+		"2001 + 0 paired in sequencing",
+		"1001 + 0 read1",
+		"1000 + 0 read2",
+		"1912 + 0 properly paired (95.60%:N/A)",
+		"2002 + 0 with itself and mate mapped",
+		"0 + 0 singletons (0.00%:N/A)",
+		"74 + 0 with mate mapped to a different chr",
+		"23 + 0 with mate mapped to a different chr (mapQ>=5)"
+	);
+	subtest 'parseFlagstats-samtools-1.2-sambamba' => sub {
+			my $stats = parseFlagstats(@testFlagstats_1_2_sambamba);
+			is($stats->{-total}, 2120, "total");
+			is($stats->{-secondary}, 0, "secondary");
+			is($stats->{-supplementary}, 120, "supplementary");
+			is($stats->{-duplicates}, 0, "duplicates");
+			is($stats->{-mapped}, 2121, "mapped");
+			is($stats->{-percentage_mapped}*1.0, 100, "percentage mapped");
+			is($stats->{-paired_in_sequencing}, 2001, "paired in sequencing");
+			is($stats->{-read1}, 1001, "read1");
+			is($stats->{-read2}, 1000, "read2");
+			is($stats->{-properly_paired}, 1912, "properly paired");
+			is($stats->{-percentage_properly_paired}*1.0, 95.60, "percentage properly paired");
+			is($stats->{-with_itself_and_mate_mapped}, 2002, "with itself and mate mapped");
+			is($stats->{-singletons}, 0, "singletons");
+			is($stats->{-percentage_singletons}*1.0, 0, "percentage singletons");
+			is($stats->{-with_mate_mapped_to_different_chr}, 74, "with mate mapped to a different chr");
+			is($stats->{-with_mate_mapped_to_different_chr_mapQge5}, 23, "with mate mapped to a different chr (mapQ>=5)");
+		};
 
 
-    subtest 'parseDiffChrom' => sub {
+
+
+	subtest 'parseDiffChrom' => sub {
 		my $stats = parseDiffChrom(1.55);
 		is($stats->{-percentage_mates_on_different_chr}, 1.55, "diffChrom");
     };
@@ -338,13 +374,13 @@ sub parseFlagstats (@) {
         qr/^(\d+) \+ (\d+) secondary$/                                       => ["-secondary", "-secondary_qcfailed"],
         qr/^(\d+) \+ (\d+) supplementary$/                                   => ["-supplementary", "-supplementary_qcfailed"],
         qr/^(\d+) \+ (\d+) duplicates$/                                      => ["-duplicates", "-duplicates_qcfailed"],
-        qr/^(\d+) \+ (\d+) mapped \((\d+\.\d+)%:-nan%\)$/                    => ["-mapped", "-mapped_qcfailed", "-percentage_mapped"],
+        qr/^(\d+) \+ (\d+) mapped \((\d+\.\d+)%:(?:-nan%|N\/A)\)$/           => ["-mapped", "-mapped_qcfailed", "-percentage_mapped"],
     	qr/^(\d+) \+ (\d+) paired in sequencing$/                            => ["-paired_in_sequencing", "-paired_in_sequencing_qcfailed"],
         qr/^(\d+) \+ (\d+) read1$/                                           => ["-read1", "-read1_qcfailed"],
     	qr/^(\d+) \+ (\d+) read2$/                                           => ["-read2", "-read2_qcfailed"],
-        qr/^(\d+) \+ (\d+) properly paired \((\d+\.\d+)%:-nan%\)$/           => ["-properly_paired", "-properly_paired_qcfailed", "-percentage_properly_paired"],
+        qr/^(\d+) \+ (\d+) properly paired \((\d+\.\d+)%:(?:-nan%|N\/A)\)$/  => ["-properly_paired", "-properly_paired_qcfailed", "-percentage_properly_paired"],
         qr/^(\d+) \+ (\d+) with itself and mate mapped$/                     => ["-with_itself_and_mate_mapped", "-with_itself_and_mate_mapped_qcfailed"],
-        qr/^(\d+) \+ (\d+) singletons \((\d+\.\d+)%:-nan%\)$/                => ["-singletons", "-singletons_qcfailed", "-percentage_singletons"],
+        qr/^(\d+) \+ (\d+) singletons \((\d+\.\d+)%:(?:-nan%|N\/A)\)$/       => ["-singletons", "-singletons_qcfailed", "-percentage_singletons"],
         qr/^(\d+) \+ (\d+) with mate mapped to a different chr$/             => ["-with_mate_mapped_to_different_chr", "-with_mate_mapped_to_different_chr_qcfailed"],
         qr/^(\d+) \+ (\d+) with mate mapped to a different chr \(mapQ>=5\)$/ => ["-with_mate_mapped_to_different_chr_mapQge5", "-with_mate_mapped_to_different_chr_mapQge5_qcfailed"]
     );

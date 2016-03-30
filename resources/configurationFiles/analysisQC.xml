@@ -119,7 +119,7 @@
         <tool name='alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="12" cores="8" nodes="1" walltime="1" queue="devel"/>
+                <rset size="t" memory="12" cores="8" nodes="1" walltime="1"/>
                 <!-- ChIP-Seq -->
                 <rset size="s" memory="12" cores="8" nodes="1" walltime="2"/>
                 <!-- exome part lane -->

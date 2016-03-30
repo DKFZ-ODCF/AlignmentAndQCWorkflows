@@ -69,9 +69,44 @@ my $covvalue = 0;	# without the x at the end
 my $warnstring = "";
 
 # flagstat => TOTAL_READ_COUNT %TOTAL_READ_MAPPED_BWA %properly_paired %singletons ALIGNED_READ_COUNT
+
+
+# usual content (samtools flagstat, sambamba_v0.4.6):
+# 45762344 + 0 in total (QC-passed reads + QC-failed reads)
+# 0 + 0 duplicates
+# 45577551 + 0 mapped (99.60%:-nan%)
+# 45762344 + 0 paired in sequencing
+# 22881172 + 0 read1
+# 22881172 + 0 read2
+# 45368164 + 0 properly paired (99.14%:-nan%)
+# 45489202 + 0 with itself and mate mapped
+# 88349 + 0 singletons (0.19%:-nan%)
+# 68095 + 0 with mate mapped to a different chr
+# 59832 + 0 with mate mapped to a different chr (mapQ>=5)
+
+# but from sambamba v0.5.9 on bwa mem mapped additional lines for secondary and supplementary
+# 46022245 + 0 in total (QC-passed reads + QC-failed reads)
+# 0 + 0 secondary
+# 259901 + 0 supplementary
+# 0 + 0 duplicates
+# 45954051 + 0 mapped (99.85%:N/A)
+# 45762344 + 0 paired in sequencing
+# 22881172 + 0 read1
+# 22881172 + 0 read2
+# 45288038 + 0 properly paired (98.96%:N/A)
+# 45631658 + 0 with itself and mate mapped
+# 62492 + 0 singletons (0.14%:N/A)
+# 194236 + 0 with mate mapped to a different chr
+# 127606 + 0 with mate mapped to a different chr (mapQ>=5)
+
 my $line = <FL>;	# in total	
 ($totalreads) = $line =~ (/^(\d+)/);# total number of reads
-$line = <FL>;	# duplicates
+$line = <FL>;	# duplicates - //or// secondary, followed by supplementary: in this case, skip over 2 lines
+if ($line !~ /duplicates/)
+{
+	$line = <FL>;
+	$line = <FL>;
+}
 $line = <FL>;	# mapped
 ($aligned) = $line =~ /^(\d+)/;	# number of mapped reads
 ($mappedreads) = $line =~ /\((.+)\%:/;	# mapped reads %
@@ -114,6 +149,7 @@ if (defined $metrics)
 		if ($_ =~ /^LIBRARY/)
 		{
 			$line = <ME>;
+			chomp $line;
 			# PERCENT_DUPLICATION is in fact a fraction, has to be converted to %
 			@sline = split ("\t", $line);
 			$dups = sprintf ("%2.2f", ($sline[7]*100));
@@ -121,7 +157,7 @@ if (defined $metrics)
 			{
 				$warnstring .= "DUPLICATION RATE ${dups}%\n";
 			}
-			($libsize) = $sline[8] =~ /(\d+)/;
+			$libsize = $sline[8];	# fake metrics from postmerge QC or sambamba does not have a number
 			last;
 		}
 	}
