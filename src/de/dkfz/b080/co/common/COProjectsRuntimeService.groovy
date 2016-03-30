@@ -101,6 +101,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
             List<File> runsForSample = FileSystemAccessProvider.getInstance().listDirectoriesInDirectory(sampleDirectory);
             for (File run : runsForSample) {
                 File sequenceDirectory = getSequenceDirectory(context, sample, run.getName());
+                logger.postSometimesInfo("\tChecking for run ${run.name} in sequence dir: ${sequenceDirectory}")
                 if (!FileSystemAccessProvider.getInstance().checkDirectory(sequenceDirectory, context, false)) // Skip directories which do not exist
                     continue;
                 List<File> files = FileSystemAccessProvider.getInstance().listFilesInDirectory(sequenceDirectory);
@@ -108,6 +109,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
                     logger.postAlwaysInfo("\t There were no lane files in directory ${sequenceDirectory}")
                 //Find file bundles
                 List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, run.getName(), files);
+                logger.postSometimesInfo("\tFound ${bundleFiles.size()} lane file groups in sequence directory.")
                 laneFiles.addAll(bundleFiles);
             }
         }

@@ -6,6 +6,10 @@ package de.dkfz.b080.co.files;
  */
 public class GenomeCoveragePlotFile extends COBaseFile {
 
+    public GenomeCoveragePlotFile(ConstructionHelperForBaseFiles helper) {
+        super(helper);
+    }
+
     public GenomeCoveragePlotFile(CoverageTextFile parentFile) {
         super(new ConstructionHelperForManualCreation(parentFile, null, null,null,null,null,null,null));
     }
