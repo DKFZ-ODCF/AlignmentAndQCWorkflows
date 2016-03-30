@@ -284,7 +284,7 @@
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimPicard' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
-                <rset size="t" memory="50" cores="8" nodes="1" walltime="1" queue="devel"/>
+                <rset size="t" memory="50" cores="8" nodes="1" walltime="1"/>
                 <rset size="xs" memory="50" cores="8" nodes="1" walltime="1"/>
                 <rset size="s" memory="55" cores="8" nodes="1" walltime="2"/>
                 <rset size="m" memory="62" cores="8" nodes="1" walltime="5"/>
@@ -316,7 +316,7 @@
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimBioBambam' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
-                <rset size="t" memory="5" cores="3" nodes="1" walltime="1" queue="devel"/>
+                <rset size="t" memory="5" cores="3" nodes="1" walltime="1"/>
                 <rset size="xs" memory="5" cores="3" nodes="1" walltime="1"/>
                 <rset size="s" memory="5" cores="3" nodes="1" walltime="2"/>
                 <rset size="m" memory="5" cores="3" nodes="1" walltime="12"/>
@@ -348,7 +348,7 @@
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimSambamba' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
-                <rset size="t" memory="30" cores="6" nodes="1" walltime="1" queue="devel"/>
+                <rset size="t" memory="30" cores="6" nodes="1" walltime="1"/>
                 <rset size="xs" memory="30" cores="6" nodes="1" walltime="1"/>
                 <rset size="s" memory="35" cores="6" nodes="1" walltime="2"/>
                 <rset size="m" memory="40" cores="6" nodes="1" walltime="5"/>
