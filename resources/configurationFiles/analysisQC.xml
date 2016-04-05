@@ -19,6 +19,7 @@
         <cvalue name='markDuplicatesVariant' value='' type="boolean"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
 
+        <cvalue name="SAMBAMBA_CONVEY_BINARY" value="sambamba_v0.4.6" type="string"/>
         <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.5.9" type="string"/>
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 6 -l 9 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'/>
 
