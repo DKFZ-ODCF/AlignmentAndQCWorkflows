@@ -31,7 +31,7 @@ public class QCPipeline extends Workflow {
         final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
@@ -213,7 +213,7 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
@@ -239,7 +239,7 @@ public class QCPipeline extends Workflow {
     @Override
     public boolean createTestdata(ExecutionContext context) {
         boolean allOk = true;
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         for (Sample sample : samples) {

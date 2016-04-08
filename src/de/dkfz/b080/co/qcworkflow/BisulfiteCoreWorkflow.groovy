@@ -30,7 +30,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
 
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
 
@@ -129,7 +129,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
