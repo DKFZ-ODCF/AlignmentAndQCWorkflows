@@ -2,6 +2,7 @@ package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*;
+import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
 import de.dkfz.roddy.core.*;
@@ -14,6 +15,8 @@ import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT
  * @author michael
  */
 public class QCPipeline extends Workflow {
+
+    private static LoggerWrapper logger = LoggerWrapper.getLogger(QCPipeline.class.getName());
 
     public QCPipeline() {}
 
@@ -221,14 +224,15 @@ public class QCPipeline extends Workflow {
         final boolean useExistingPairedBams = context.getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
 
         if (!useExistingPairedBams) {
+            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId());
             //Check if at least one file is available. Maybe for two if paired is used...?
             int cnt = 0;
             for (Sample sample : samples) {
-
                 List<LaneFileGroup> laneFileGroups = loadLaneFilesForSample(context, sample);
                 for (LaneFileGroup lfg : laneFileGroups) {
                     cnt += lfg.getFilesInGroup().size();
                 }
+                logger.postAlwaysInfo("Processed sample " + sample.getName() + " and found " + laneFileGroups.size() + " groups of lane files.");
             }
             return cnt > 0;
         } else {
