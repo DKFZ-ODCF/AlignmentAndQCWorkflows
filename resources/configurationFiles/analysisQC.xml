@@ -119,7 +119,7 @@
                 <!-- Test -->
                 <rset size="t" memory="20" cores="12" nodes="1" queue="convey_fast"/>
                 <!-- Production -->
-                <rset size="t" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
+                <rset size="xs" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
                 <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
                 <rset size="m" memory="20" cores="12" nodes="1" walltime="5" queue="convey"/>
                 <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey"/>
