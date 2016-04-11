@@ -8,12 +8,11 @@
       <sourceFolder url="file://$MODULE_DIR$/resources/configurationFiles" type="java-resource" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.8.0_77" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="COWorkflows" />
-    <orderEntry type="library" name="roddy" level="project" />
-    <orderEntry type="library" name="roddyBundledLibraries" level="project" />
-    <orderEntry type="library" name="groovy-2.3.6" level="application" />
-    <orderEntry type="library" name="PluginBase" level="project" />
+    <orderEntry type="library" name="PluginBase" level="application" />
+    <orderEntry type="library" name="roddy" level="application" />
+    <orderEntry type="library" name="roddyBundledLibraries" level="application" />
   </component>
 </module>
