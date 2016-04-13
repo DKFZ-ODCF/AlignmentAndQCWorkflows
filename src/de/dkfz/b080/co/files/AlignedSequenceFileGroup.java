@@ -22,6 +22,7 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
         super(files);
     }
 
+    // TODO This method could also be simpler. Most of the things are configurable or could be passed via config.
     public BamFile pairAndSortSlim() {
         ExecutionContext context = getExecutionContext();
         Configuration configuration = context.getConfiguration();
@@ -46,9 +47,10 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
         return bamFile;
     }
 
+    // TODO Rework the tool? Make the method simple. It is possible now.
     public BamFile pairAndSort() {
         ExecutionContext context = getExecutionContext();
-//            List<AlignedSequenceFile> filesInGroup = getFilesInGroup();
+
         AlignedSequenceFile seqFile0 = filesInGroup.get(0);
         AlignedSequenceFile seqFile1 = filesInGroup.get(1);
         LaneFile laneFile0 = (LaneFile) seqFile0.getParentFiles().get(0);
@@ -56,14 +58,17 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
 
         LaneFile parentFile = (LaneFile) filesInGroup.get(0).getParentFiles().get(0);
         Configuration configuration = context.getConfiguration();
+
+        // Can be configured
         BamFile bamFile = (BamFile)BaseFile.constructManual(BamFile.class, this);
         FlagstatsFile flagstatsFile = (FlagstatsFile)BaseFile.constructManual(FlagstatsFile.class, bamFile);
         BamIndexFile indexFile = (BamIndexFile) BaseFile.constructManual(BamIndexFile.class, bamFile);
 
-        //Which info is necessary? File timestamp, maybe svn version, last changes, last file, parameters?
+        // Which info is necessary? File timestamp, maybe svn version, last changes, last file, parameters?
         String libString = configuration.getConfigurationValues().get(COConstants.PRM_CVAL_LIBRARY).toString();
         boolean useAdaptorTrimming = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ADAPTOR_TRIMMING, false);
 
+        // All parameters via config
         Map<String, Object> parameters = context.getDefaultJobParameters( COConstants.TOOL_SAMPESORT);
         parameters.put(COConstants.PRM_FILENAME_SORTED_BAM, bamFile.getAbsolutePath());
         parameters.put(COConstants.PRM_FILENAME_SEQ_1, seqFile0.getAbsolutePath());
@@ -71,10 +76,13 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
         parameters.put(COConstants.PRM_FILENAME_FLAGSTAT, flagstatsFile.getAbsolutePath());
         parameters.put(COConstants.PRM_RAW_SEQ_1, laneFile0.getAbsolutePath());
         parameters.put(COConstants.PRM_RAW_SEQ_2, laneFile1.getAbsolutePath());
+
+        // Could be moved to the config / scripts
         parameters.put("ID", parentFile.getRunID() + "_" + parentFile.getLaneId());
         parameters.put("SM", "sample_" + parentFile.getSample().getName() + "_" + context.getDataSet());
         parameters.put("LB", parentFile.getSample().getName() + "_" + context.getDataSet() + (libString.equals("addToOldLib") ? "" : "_lib2"));
 
+        // Can be put in always.
         if(useAdaptorTrimming) {
             parameters.put(COConstants.PRM_RAW_SEQ_FILE_1_INDEX, "" + ((COFileStageSettings)seqFile0.getFileStage()).getNumericIndex());
             parameters.put(COConstants.PRM_RAW_SEQ_FILE_2_INDEX, "" + ((COFileStageSettings)seqFile1.getFileStage()).getNumericIndex());

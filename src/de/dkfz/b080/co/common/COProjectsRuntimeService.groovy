@@ -7,6 +7,7 @@ import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper
+import jdk.internal.util.xml.impl.Input
 
 import java.util.function.Consumer;
 
@@ -72,12 +73,27 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
     }
 
     public List getLanesForSample(ExecutionContext context, Sample sample, String library = null) {
+        COConfig coConfig = new COConfig(context);
+
         ProcessingFlag flag = context.setProcessingFlag(ProcessingFlag.STORE_FILES);
         List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>();
 
         def configurationValues = context.getConfiguration().getConfigurationValues()
         boolean getLanesFromFastqList = configurationValues.getString("fastq_list", "");
-        if (getLanesFromFastqList) {
+        boolean getLanesFromInputTable = coConfig.getExtractSamplesFromInputTable();
+
+        if (getLanesFromInputTable) {
+            InputTable inputTable = inputTableForDataset(context).subsetBySample(sample.name)
+            if (library) inputTable = inputTable.subsetByLibrary(library)
+
+            inputTable.listRunIDs().each {
+                String runID ->
+                    List<File> fastqFilesForRun = inputTable.subsetByColumn(COConstants.INPUT_TABLE_RUN_ID, runID).listFiles()
+                    List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, runID, fastqFilesForRun);
+                    laneFiles += bundleFiles
+            }
+
+        } else if (getLanesFromFastqList) {
             // If fastq_list was set via command line or via config file.
             List<File> fastqFiles = configurationValues.getString("fastq_list").split(StringConstants.SPLIT_SEMICOLON).collect { String it -> new File(it); };
             def sequenceDirectory = configurationValues.get(COConstants.CVALUE_SEQUENCE_DIRECTORY).toFile(context).getAbsolutePath();
