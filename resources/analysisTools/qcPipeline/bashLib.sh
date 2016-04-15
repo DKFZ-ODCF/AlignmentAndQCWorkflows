@@ -9,7 +9,6 @@ UNSPECIFIED_ERROR_CODE=1
 EMPTY_VALUE_MSG="Empty value"
 EMPTY_VALUE_CODE=200
 
-
 ## From http://unix.stackexchange.com/questions/26676/how-to-check-if-a-shell-is-login-interactive-batch
 shellIsInteractive () {
     case $- in
@@ -37,10 +36,10 @@ errout () {
 
 
 ## This is to effectively debug on the command line. The exit is only called, in non-interactive sessions.
-## You can either put 'maybeExitHere $code; return $?' at the end of functions, or you put
+## You can either put 'exitIfNonInteractive $code; return $?' at the end of functions, or you put
 ## 'exitHere $code || return $?' in the middle of functions to end the control flow in the function and
 ## return to the calling function.
-maybeExitHere () {
+exitIfNonInteractive () {
     local exitValue="$1"
     if [[ $(shellIsInteractive) == false ]]; then
       exit "$exitValue"
@@ -58,20 +57,7 @@ throw () {
   local msg="${2-$UNSPECIFIED_ERROR_MSG}"
   errout "$exitCode" "$msg"
   printStackTrace
-  maybeExitHere "$exitCode" || return $?
-}
-
-
-## raise [msg [code]]
-## Like throw but with reversed parameters
-## Code is copied because of the $BASH_SOURCE, FUNCNAME and BASH_LINENO variables all refer
-## to positions in the calling code.
-raise () {
-  local msg="${1-$UNSPECIFIED_ERROR_MSG}"
-  local exitCode="${2-$UNSPECIFIED_ERROR_CODE}"
-  errout "$exitCode" "$msg"
-  printStackTrace
-  maybeExitHere "$exitCode" || return $?
+  exitIfNonInteractive "$exitCode" || return $?
 }
 
 
@@ -110,7 +96,7 @@ waitAndMaybeExit () {
 stringJoin () {
     local separator="$1"
     shift
-    assertNonEmpty $separator "Undefined separator" || return $?
+    assertNonEmpty "$separator" "Undefined separator" || return $?
     declare -la values=($@)
     local result=""
     local first=true
@@ -126,74 +112,5 @@ stringJoin () {
 }
 
 
-##############################################################################
-## Domain-specific code (maybe put this into a dedicated library file)
-##############################################################################
-
-mbuf () {
-    local bufferSize="$1"
-    assertNonEmpty "$1" "No buffer size defined for mbuf()" || return $?
-    "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null
-}
-
-
-runningOnConvey () {
-    if [[ "$PBS_QUEUE" == convey* ]]; then
-    	echo "true"
-    else
-    	echo "false"
-    fi
-}
-
-
-analysisType () {
-    runExomeAnalyse="${runExomeAnalyses-false}"
-    if [ "$runExomeAnalysis" = "true" ]
-    then
-        echo "exome"
-    else
-        echo "genome"
-    fi
-}
-
-
-md5File () {
-   local inputFile="$1"
-   local outputFile="$2"
-   assertNonEmpty "$inputFile"  "inputFile not defined" || return $?
-   assertNonEmpty "$outputFile" "outputFile not defined" || return $?
-   cat "$inputFile" \
-        | ${CHECKSUM_BINARY} \
-        | cut -d ' ' -f 1 \
-        > "$outputFile"
-}
-
-
-samtoolsIndex () {
-   local inputFile="$1"
-   local outputFile="$2"
-   assertNonEmpty "$inputFile"  "inputFile not defined" || return $?
-   assertNonEmpty "$outputFile" "outputFile not defined" || return $?
-   "$SAMTOOLS_BINARY" index "$inputFile" "$outputFile"
-}
-
-
-fakeDupMarkMetrics () {
-   local inputFile="$1"
-   local outputFile="$2"
-   assertNonEmpty "$inputFile"  "inputFile not defined" || return $?
-   assertNonEmpty "$outputFile" "outputFile not defined" || return $?
-   "$PERL_BINARY" "$TOOL_FAKE_DUPMARK_METRICS" "$inputFile" "${SAMPLE}_${pid}" \
-        > "$outputFile"
-}
-
-
-toMinusIEqualsList () {
-    declare -la inputFiles=($@)
-    for inFile in ${inputFiles[@]}; do
-	    echo -n "I=$inFile "
-    done
-    echo
-}
 
 

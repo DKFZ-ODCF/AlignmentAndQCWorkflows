@@ -19,8 +19,13 @@
         <cvalue name='markDuplicatesVariant' value='' type="boolean"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
 
-        <cvalue name="SAMBAMBA_CONVEY_BINARY" value="sambamba_v0.4.6" type="string"/>
-        <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.5.9" type="string"/>
+        <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.4.6" type="string"
+                description="The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort."/>
+        <cvalue name="SAMBAMBA_FLAGSTATS_BINARY" value="sambamba_v0.4.6" type="string"
+                description="The sambamba version used only for making flagstats."/>
+        <!-- Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats. -->
+        <cvalue name="SAMBAMBA_MARKDUP_BINARY" value="sambamba_v0.5.9" type="string"
+                description="The sambamba version used only for duplication marking and merging."/>
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 6 -l 9 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'/>
 
     </configurationvalues>
@@ -34,6 +39,7 @@
 
     <processingTools>
         <tool name="bashLib" value="bashLib.sh" basepath="qcPipeline"/>
+        <tool name="workflowLib" value="workflowLib.sh" basepath="qcPipeline"/>
         <tool name="cleanupScript" value="cleanupScript.sh" basepath="qcPipeline" >
             <resourcesets>
                 <rset size="l" memory="0.1" cores="1" nodes="1" walltime="1"/>
@@ -383,7 +389,7 @@
                 <rset size="s" memory="35" cores="6" nodes="1" walltime="2"/>
                 <rset size="m" memory="40" cores="6" nodes="1" walltime="5"/>
                 <rset size="l" memory="45" cores="6" nodes="1" walltime="15"/>
-                <rset size="xl" memory="50" cores="6" nodes="1" walltime="30"/>
+                <rset size="xl" memory="80" cores="6" nodes="1" walltime="60"/>
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>
