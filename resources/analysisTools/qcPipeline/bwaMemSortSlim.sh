@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 
 printInfo
 
@@ -70,11 +70,13 @@ LENGTH_SEQ_2=`${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} 2>/dev/null | head 
 
 # make biobambam sort default
 useBioBamBamSort=${useBioBamBamSort-true}
+# Do not use adaptor trimming by default.
+useAdaptorTrimming=${useAdaptorTrimming-false}
 
 if [[ ${bamFileExists} == false ]]	# we have to make the BAM
 then
 	mkfifo ${FNPIPE1} ${FNPIPE2}
-	if [[ ${useAdaptorTrimming-false} == true ]] # [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
+	if [[ ${useAdaptorTrimming} == true ]]
 	then
 		if [ "${qualityScore}" = "illumina" ]
 		then
@@ -130,33 +132,22 @@ fi
 (set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_100M | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
 
 # use sambamba for flagstats
-(set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} flagstat /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
-
-## Workaround for segfault in sambamba_v0.4.6 view/sort on Convey.
-## When switching to a newer version than v0.5.9, this should be revised and likely unified to a single version.
-if [[ "$ON_CONVEY" == true ]]; then
-    SAMBAMBA_VIEW_BINARY="${SAMBAMBA_CONVEY_BINARY-$SAMBAMBA_BINARY}"
-    SAMBAMBA_SORT_BINARY="${SAMBAMBA_CONVEY_BINARY-$SAMBAMBA_BINARY}"
-else
-    SAMBAMBA_VIEW_BINARY="$SAMBAMBA_BINARY"
-    SAMBAMBA_SORT_BINARY="$SAMBAMBA_BINARY"
-fi
-
+${SAMBAMBA_FLAGSTATS_BINARY} flagstat "$NP_FLAGSTATS" > "$tempFlagstatsFile" & procIDFlagstat=$!
 
 if [[ ${bamFileExists} == true ]]
 then
 	echo "the BAM file already exists, re-creating other output files."
 	# make all the pipes
-	(cat ${FILENAME_SORTED_BAM} | ${MBUF_2G} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_VIEW_BINARY} view /dev/stdin | ${MBUF_2G} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
+	(cat ${FILENAME_SORTED_BAM} | ${MBUF_2G} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_2G} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 else
 	if [[ "$ON_CONVEY" == true ]]
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
 		# here, we use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
 		(set -o pipefail; ${BWA_ACCELERATED_BINARY} mem ${BWA_MEM_CONVEY_ADDITIONAL_OPTIONS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_2G | tee $NP_COMBINEDANALYSIS_IN | \
-		${SAMBAMBA_VIEW_BINARY} view -f bam -S -l 0 -t 8 /dev/stdin | $MBUF_2G | \
+		${SAMBAMBA_BINARY} view -f bam -S -l 0 -t 8 /dev/stdin | $MBUF_2G | \
 		tee ${NP_FLAGSTATS} | \
-		${SAMBAMBA_SORT_BINARY} sort --tmpdir=${RODDY_SCRATCH} -l 9 -t 8 -m ${SAMPESORT_MEMSIZE} /dev/stdin -o /dev/stdout 2>$NP_SORT_ERRLOG | \
+		${SAMBAMBA_BINARY} sort --tmpdir=${RODDY_SCRATCH} -l 9 -t 8 -m ${SAMPESORT_MEMSIZE} /dev/stdin -o /dev/stdout 2>$NP_SORT_ERRLOG | \
 		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} > $tempSortedBamFile; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
 
 		wait $procID_MEMSORT; [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem - sambamba pipe returned a non-zero exit code and the job will die now." && exit 100

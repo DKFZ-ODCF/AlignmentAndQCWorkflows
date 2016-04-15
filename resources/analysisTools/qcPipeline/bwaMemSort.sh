@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 
 printInfo
 

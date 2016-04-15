@@ -1,7 +1,8 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
-source "$TOOL_BASH_LIB"
+echo $markDuplicatesVariant
+source "$TOOL_WORKFLOW_LIB"
 printInfo
 
 set -o pipefail
@@ -39,18 +40,18 @@ declare -a INPUT_FILES="$INPUT_FILES"
 if [[ -f ${FILENAME} ]] && [[ -s ${FILENAME} ]]
 then
     singlebams=`${SAMTOOLS_BINARY} view -H ${FILENAME} | grep "^@RG"`
-    [[ -z "$singlebams" ]] && echo "could not detect single lane BAM files in ${FILENAME}, stopping here" && exit 23
+    [[ -z "$singlebams" ]] && throw 23 "could not detect single lane BAM files in ${FILENAME}, stopping here"
 
     notyetmerged=`perl ${TOOL_CHECK_ALREADY_MERGED_LANES} $(stringJoin ":" ${INPUT_FILES[@]}) "$singlebams" ${pairedBamSuffix} $SAMPLE`
-    [[ "$?" != 0 ]] && echo "something went wrong with the detection of merged files in ${FILENAME}, stopping here" && exit 24
+    [[ "$?" != 0 ]] && throw 24 "something went wrong with the detection of merged files in ${FILENAME}, stopping here"
 
     # the Perl script returns BAM names separated by :, ending with :
     if [ -z $notyetmerged ]; then
         bamFileExists=true
-        echo "All listed BAM files are already in ${FILENAME}, re-creating other output files."
+        echo "All listed BAM files (lanes) are already in ${FILENAME}, re-creating other output files."
     else	# new lane(s) need to be merged to the BAM
         # input files is now the merged file and the new file(s)
-        INPUT_FILES="$FILENAME $notyetmerged"
+        declare -a INPUT_FILES=("$FILENAME" $(echo $notyetmerged | sed -re 's/:/ /g'))
         # keep the old metrics file for comparison
         mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
     fi
@@ -64,7 +65,10 @@ useBioBamBamMarkDuplicates=${useBioBamBamMarkDuplicates-true}
 
 bamFileExists=${bamFileExists-false}
 
-if [[ "$markDuplicatesVariant" == "picard" || ("$markDuplicatesVariant" == "" && "$useBioBamBamMarkDuplicates" == false) ]]; then
+# use sambamba for flagstats
+${SAMBAMBA_FLAGSTATS_BINARY} flagstat "$NP_FLAGSTATS" > "$tempFlagstatsFile" & procIDFlagstat=$!
+
+if [[ $(markWithPicard) ]]; then
     # The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
     PICARD_BINARY=${PICARD_BINARY-picard-1.125.sh}
 
@@ -93,7 +97,6 @@ if [[ "$markDuplicatesVariant" == "picard" || ("$markDuplicatesVariant" == "" &&
             | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_MD5_IN} \
             > ${tempBamFile}) & procIDSamtoolsView=$!
     else
-        # Attention: There is no check, that the BAM file indeed was marked by picard tools here!
         # To prevent abundancy of ifs, reuse the process id another time.
         (cat ${FILENAME} \
             | mbuf 2g \
@@ -103,7 +106,7 @@ if [[ "$markDuplicatesVariant" == "picard" || ("$markDuplicatesVariant" == "" &&
         procIDMarkOutPipe=$procIDSamtoolsView
     fi
 
-elif [[ "$markDuplicatesVariant" == "sambamba" ]]; then
+elif [[ $(markWithSambamba) ]]; then
     ## Modified copy from /home/hutter/workspace_ngs/ngs2/trunk/pipelines/RoddyWorkflows/Plugins/QualityControlWorkflows/resources/analysisTools/qcPipeline/mergeAndMarkOrRemoveDuplicatesSlim.sh
 
     # index piped BAM (done with new merged BAM and reuse of old BAM)
@@ -132,7 +135,6 @@ elif [[ "$markDuplicatesVariant" == "sambamba" ]]; then
     	(${SAMBAMBA_BINARY} markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$tempDirectory" ${INPUT_FILES[@]} "$NP_PIC_OUT"; \
 	        echo $? > "$returnCodeMarkDuplicatesFile") & procIDMarkdup=$!
 	else
-	    # Attention: There is no check, that the BAM file indeed was marked by sambamba here!
         # To prevent abundancy of ifs, reuse the process id another time.
         (cat "$FILENAME" \
             | mbuf 2g \
@@ -142,7 +144,7 @@ elif [[ "$markDuplicatesVariant" == "sambamba" ]]; then
         procIDMarkOutPipe=$procIDSamtoolsView
    	fi
 
-elif [[ "$markDuplicatesVariant" == "biobambam" || ("$markDuplicatesVariant" == "" && "$useBioBamBamMarkDuplicates" == true) ]]; then
+elif [[ $(markWithBiobambam) ]]; then
     # The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
 
     # biobambam outputs BAM, this has to be converted to SAM for Perl script
@@ -175,7 +177,6 @@ elif [[ "$markDuplicatesVariant" == "biobambam" || ("$markDuplicatesVariant" == 
         # make a SAM pipe for the Perl tool
         ${SAMTOOLS_BINARY} view ${NP_SAM_IN} | mbuf 2g > ${NP_COMBINEDANALYSIS_IN} & procIDSamtoolsView=$!
     else
-        # Attention: There is no check, that the BAM file indeed was marked by biobambam here!
         (cat ${FILENAME} \
             | mbuf 2g \
             | tee ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} \
@@ -187,7 +188,7 @@ elif [[ "$markDuplicatesVariant" == "biobambam" || ("$markDuplicatesVariant" == 
     fi
 
 else
-    throw 1 "Unknown value for markDuplicatesVariant: '$markDuplicatesVariant'. Use biobambam, picard or sambamba or leave undefined to use useBiobambamMarkDuplicates value ($useBioBamBamMarkDuplicates)."
+    throw 1 "Unknown value for markDuplicatesVariant? '$markDuplicatesVariant'. Use biobambam, picard or sambamba or leave undefined to use useBiobambamMarkDuplicates value ($useBioBamBamMarkDuplicates)."
 fi
 
 # in all cases:
@@ -212,7 +213,7 @@ fi
 # Some waits for parallel processes. This also depends on the used merge binary.
 
 # Picard
-if [[ "$markDuplicatesVariant" == "picard" || ("$markDuplicatesVariant" == "" && "$useBioBamBamMarkDuplicates" == false) ]]; then
+if [[ $(markWithPicard) ]]; then
     # The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
     if [[ ${bamFileExists} == false ]]; then
     	wait $procIDMarkdup
@@ -227,7 +228,7 @@ if [[ "$markDuplicatesVariant" == "picard" || ("$markDuplicatesVariant" == "" &&
 	wait $procIDSamtoolsView ; [[ $? -gt 0 ]] && echo "Error from samtools view pipe" && exit 7
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
 
-elif [[ "$markDuplicatesVariant" == "sambamba" ]]; then
+elif [[ $(markWithSambamba) ]]; then
     # The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
     if [[ ${bamFileExists} == false ]]; then
     	wait $procIDMarkdup
@@ -243,7 +244,7 @@ elif [[ "$markDuplicatesVariant" == "sambamba" ]]; then
 	waitAndMaybeExit $procIDSamtoolsView "Error from samtools view pipe" 7
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
 
-elif [[ "$markDuplicatesVariant" == "biobambam" || ("$markDuplicatesVariant" == "" && "$useBioBamBamMarkDuplicates" == true) ]]; then
+elif [[ $(markWithBiobambam) ]]; then
     # The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
     # Biobambam
     wait $procIDMarkdup; [[ $? -gt 0 ]] && echo "Error from Biobambam markduplicates" && exit 10
@@ -261,7 +262,7 @@ fi
 
 wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomeCoverage read bins" && exit 10
 wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 11
-wait $procIDSamtoolsFlagstat; [[ $? -gt 0 ]] && echo "Error from samtools flagstats" && exit 12
+wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 12
 wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 13
 wait $procIDMd5; [[ $? -gt 0 ]] && echo "Error from ${CHECKSUM_BINARY}" && exit 15
 
