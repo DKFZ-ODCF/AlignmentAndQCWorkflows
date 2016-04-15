@@ -1,13 +1,17 @@
 package de.dkfz.b080.co.common;
 
-import de.dkfz.b080.co.files.*;
-import de.dkfz.roddy.StringConstants;
-import de.dkfz.roddy.core.*;
+import de.dkfz.b080.co.files.*
+import de.dkfz.roddy.Roddy;
+import de.dkfz.roddy.StringConstants
+import de.dkfz.roddy.core.ExecutionContext
+import de.dkfz.roddy.core.ExecutionContextError
+import de.dkfz.roddy.core.ExecutionContextLevel
+import de.dkfz.roddy.core.ExecutionContextSubLevel
+import de.dkfz.roddy.core.ProcessingFlag
 import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper
-import jdk.internal.util.xml.impl.Input
 
 import java.util.function.Consumer;
 
@@ -80,10 +84,10 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
 
         def configurationValues = context.getConfiguration().getConfigurationValues()
         boolean getLanesFromFastqList = configurationValues.getString("fastq_list", "");
-        boolean getLanesFromInputTable = coConfig.getExtractSamplesFromInputTable();
+        boolean getLanesFromInputTable = Roddy.isMetadataCLOptionSet()
 
         if (getLanesFromInputTable) {
-            InputTable inputTable = inputTableForDataset(context).subsetBySample(sample.name)
+            MetadataTable inputTable = getMetadataTable(context).subsetBySample(sample.name)
             if (library) inputTable = inputTable.subsetByLibrary(library)
 
             inputTable.listRunIDs().each {
