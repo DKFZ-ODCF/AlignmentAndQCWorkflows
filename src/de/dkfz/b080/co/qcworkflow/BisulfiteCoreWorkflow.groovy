@@ -39,7 +39,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
         for (Sample sample in samples) {
 
-            List<String> availableLibrariesForSample = runtimeService.getLibrariesForSample(sample);
+            List<String> availableLibrariesForSample = sample.getLibraries();
             BamFileGroup mergedBamsPerLibrary = new BamFileGroup();
 
             // Create per library merged bams
@@ -110,7 +110,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         String sampleID = sample.getName() + "_" + library;
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
-            List<LaneFileGroup> laneFileGroups = runtimeService.getLanesForSample(context, sample);
+            List<LaneFileGroup> laneFileGroups = runtimeService.getLanesForSample(context, sample, library);
             mapForDataSet.put(sampleID, laneFileGroups);
         }
 
