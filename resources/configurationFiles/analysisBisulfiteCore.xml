@@ -3,25 +3,30 @@
                class='de.dkfz.roddy.core.Analysis'
                workflowClass='de.dkfz.b080.co.qcworkflow.BisulfiteCoreWorkflow'
                runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
-               imports="commonCOWorkflowsSettings,qcAnalysis"
+               imports="commonCOWorkflowsSettings,qcAnalysis,coAppAndRef"
                canCreateTestdata='true'
                listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,qcSummary,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
-        <cvalue name='runCoveragePlotsOnly' value='true' type='boolean'/>
+        <cvalue name='useBioBamBamMarkDuplicates' value='true' type="boolean" description="Currently, we do not know how to setup biobambam to just merge and NOT mark duplicates." />
+        <cvalue name='useBioBamBamSort' value='false' type="boolean" />
+        <cvalue name='methCallingOutputDirectory' value='methylationCalling' type="path" />
+        <cvalue name='methCallingMetricsOutputDirectory' value='methylationCallingMetrics' type="path" />
+        <cvalue name='useAcceleratedHardware' value='false' type="boolean"/>
     </configurationvalues>
     <processingTools>
-        <tool name='alignAndPairSlimWithReadConversionForBisulfiteData' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='qcPipeline'>
+
+        <tool name='alignAndPairSlim' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='bisulfiteWorkflow' >
             <resourcesets>
                 <!-- ChIP-Seq -->
-                <rset size="s" memory="12" cores="8" nodes="1" walltime="2"/>
+                <rset size="s" memory="1" cores="8" nodes="1" walltime="2"/>
                 <!-- exome part lane -->
                 <rset size="m" memory="17" cores="8" nodes="1" walltime="6"/>
                 <!-- HiSeq full lane. 24 h would be OK but as soon as there are I/O problems on the node, not even 36 h are sufficient - biobambam sort might also be slower than samtools, it seems to use fewer sorting threads	 -->
-                <rset size="l" memory="20" cores="8" nodes="1" walltime="60"/>
+                <rset size="l" memory="45" cores="8" nodes="1" walltime="60"/>
                 <!-- X10 lane -->
-                <rset size="xl" memory="20" cores="8" nodes="1" walltime="120"/>
+                <rset size="xl" memory="60" cores="8" nodes="1" walltime="120"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_1"/>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_2"/>
@@ -43,8 +48,125 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
-                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" check="false" />
             </output>
         </tool>
+
+        <tool name="methylationCalling" value="methylCtools_methylation_calling.sh" basepath="bisulfiteWorkflow">
+            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_MERGED_BAM"/>
+            <input type="string" setby="callingCode" scriptparameter="PARM_CHR_INDEX"/>
+            <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_METH_CALLS_CHECKPOINT"/>
+        </tool>
+
+        <tool name="methylationCallingMeta" value="methylCtools_methylation_calling_meta.sh" basepath="bisulfiteWorkflow">
+            <resourcesets>
+                <rset size="s" memory="1" cores="2" nodes="1" walltime="1"/>
+                <rset size="m" memory="8" cores="13" nodes="1" walltime="15"/>
+                <rset size="l" memory="8" cores="13" nodes="1" walltime="40"/>
+                <rset size="xl" memory="20" cores="8" nodes="1" walltime="120"/>
+            </resourcesets>
+            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_MERGED_BAM" />
+            <output type="tuple">
+                <output type="file" typeof="MethylationMetaMetricsCheckpointFile" scriptparameter="FILENAME_METH_CALLS_META_METRICS_CHECKPOINT"/>
+                <output type="file" typeof="MethylationMetaCheckpointFile" scriptparameter="FILENAME_METH_CALLS_META_CHECKPOINT" />
+            </output>
+        </tool>
+
+        <tool name="methylCTools" value="methylCtools" basepath="bisulfiteWorkflow"></tool>
+
+        <tool name="methylationCallingScript" value="bcall_2012Nov27.py" basepath="bisulfiteWorkflow"></tool>
+
+        <tool name="methylationCallingScriptTagmentation" value="bcall_tagmentation_2012Nov25.py" basepath="bisulfiteWorkflow"></tool>
+
+        <tool name="convertMethCallsMoabs" value="convert_meth_calls_moabs.sh" basepath="bisulfiteWorkflow"></tool>
+
     </processingTools>
+
+    <filenames package='de.dkfz.b080.co.files' filestagesbase='de.dkfz.b080.co.files.COFileStage'>
+        <!-- Filenames are always stored in the pid's output folder -->
+        <!-- Different variables can be used:
+            - ${sourcefile}, use the name and the path of the file from which the new name is derived
+            - ${sourcefileAtomic}, use the atomic name of which the file is derived
+            - ${sourcefileAtomicPrefix,delimiter=".."}, use the atomic name's prefix (without file-ending like .txt/.paired.bam...
+                                                        of which the file is derived, set the delimiter option to define the delimiter default is "_"
+                                                        the delimiter has to be placed inside "" as this is used to find the delimiter!
+            - ${sourcepath}, use the path in which the source file is stored
+            - ${outputbasepath}, use the output path of the pid
+            - ${[nameofdir]OutputDirectory}
+
+            NOTICE: If you use options for a variable your are NOT allowed to use ","! It is used to recognize options.
+
+            - ${pid}
+            - ${sample}
+            - ${run}
+            - ${lane}
+            - ${laneindex}
+            - You can put in configuration values to do this use:
+              ${cvalue,name=[name of the value],default=".."} where default is optional.
+            - ${fileStageID} use the id String of the file's stage to build up the name.
+            -->
+        <!-- A filename can be derived from another file, use derivedFrom='shortClassName/longClassName'
+             A filename can also be specified for a level, use fileStage='PID/SAMPLE/RUN/LANE/INDEXEDLANE', refer to BaseFile.FileStage
+             A filename can be specified for all levels, the name is then build up with the ${fileStageID} value
+             A filename can be created using the file's called method's name
+             A filename can be created using the used tool's name
+             -->
+        <filename class='MethylationMetaCheckpointFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${methCallingOutputDirectory}/.${sourcefileAtomic}.checkpoint'/>
+        <filename class='MethylationMetaMetricsCheckpointFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${methCallingMetricsOutputDirectory}/.${sourcefileAtomic}.checkpoint'/>
+        <filename class='AlignedSequenceFile' fileStage="INDEXEDLANE" pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${fileStageID}_sequence.sai'/>
+        <filename class='FastqcFile' fileStage='INDEXEDLANE' pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${fileStageID}_sequence_fastqc.zip"/>
+        <filename class='BamMetricsAlignmentSummaryFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${metricsOutputDirectory}/${cvalue,name="COLLECT_METRICS_PREFIX"}.alignment_summary_metrics'/>
+        <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicates' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
+        <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
+        <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlimWithLibrary' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${jobParameter,name="LIBRARY"}_${cvalue,name="defaultMergedBamSuffix"}'/>
+        <!-- TODO targetextract should derive from the bamfile upon which it is based.-->
+        <filename class='BamFile' onMethod='extractTargetsCalculateCoverage' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="TARGET_BAM_EXTENSION",default="targetExtract.rmdup.bam"}'/>
+        <filename class='BamFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${fileStageID}_${cvalue,name="pairedBamSuffix"}'/>
+        <filename class='BamIndexFile' derivedFrom='BamFile' pattern='${sourcefile}.bai'/>
+        <filename class='BamMetricsFile' derivedFrom='BamFile' pattern='${sourcefile}.dupmark_metrics.txt'/>
+        <filename class='FlagstatsFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_flagstats.txt'/>
+        <filename class='ChromosomeDiffPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png'/>
+        <filename class='ChromosomeDiffTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.txt'/>
+        <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png_qcValues.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlimWithLibrary' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_${jobParameter,name="LIBRARY"}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlimWithLibrary' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.calcReadBinsCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.calcCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.rawBamCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_RawBamFile.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.targetCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}.DepthOfCoverage_Target.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="targetsWithCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_TargetsWithCov.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target.txt'/>
+        <filename class="TextFile" derivedFrom="BamFile" selectiontag="extendedFlagstats" pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
+
+        <filename class='OnTargetCoverageTextFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}_TargetsWithCov.txt'/>
+        <filename class='OnTargetCoveragePlotFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${fileStageID}_targetCovDistribution.png'/>
+        <filename class='InsertSizesPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png'/>
+        <filename class='InsertSizesTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsizes.txt'/>
+        <filename class='InsertSizesValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png_qcValues.txt'/>
+
+        <!--<filename class='TextFile' derivedFrom="BamFile" selectiontag="dipStatistics" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_HartigansDip.txt'/>-->
+        <!--<filename class='InsertSizesPlotFile' derivedFrom="BamFile" selectiontag="dipStatistics" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_HartigansDip_densityPlot.png'/>-->
+
+        <filename class='InsertSizesPlotFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png'/>
+        <filename class='InsertSizesTextFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsizes.txt'/>
+        <filename class='InsertSizesValueFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png_qcValues.txt'/>
+
+        <filename class='QCSummaryFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_${sourcefileProperty,type}_wroteQcSummary.txt'/>
+
+        <filename class='QCSummaryFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_wroteQcSummary.txt'/>
+
+        <filename class="TextFile" derivedFrom="BamFile" selectiontag="qcJson" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomic}_qualitycontrol.json'/>
+
+        <!-- TODO Throw error if value overrides other value!-->
+        <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile[2]'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample[0]}_vs_${sample[1]}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
+        <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile' selectiontag="singlePlot"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
+    </filenames>
 </configuration>

@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+import sys
+
+#######################################
+# methylCtools
+# v0.9.2
+# 30 march 2012
+#
+# volker hovestadt
+# german cancer research center
+# v.hovestadt@dkfz.de
+
+
+hm = "\n\
+    program   methylCtools\n\
+    purpose   analysis of whole-genome bisulfite sequencing data\n\
+\n\
+    version   0.9.2\n\
+    date      30 march 2012\n\
+    author    volker hovestadt\n\
+    contact   v.hovestadt@dkfz.de\n\
+\n\
+    usage     methylCtools <command> [options]\n\
+\n\
+\n\
+    command       in            out           function\n\
+    -----------------------------------------------------------------------------\n\
+    faconv        fa            fa            convert reference CtoT and GtoA\n\
+    fapos         fa            pos           generate positions index\n\
+\n\
+    fqconv        fq            fq            convert reads CtoT or GtoA\n\
+    fqsplit       fq            fq            split reads into multiple files\n\
+\n\
+    bconv         bam           bam           re-convert reads, filter alignments\n\
+    bcall         bam, pos      tab           call methylation status\n\
+    bfq           bam           fq            extract fastq from alignment\n\
+    bsnp          bam           tab           infer simple SNP genotype\n\
+    bspike        bam           tab           extract spike information\n"
+
+
+#######################################
+# run module
+
+try:
+	if len(sys.argv) >= 2:
+		if "faconv" in sys.argv:
+			from faconv import mod_faconv
+			mod_faconv(sys.argv[sys.argv.index("faconv")+1:])
+			
+		elif "fapos" in sys.argv:
+			from fapos import mod_fapos
+			mod_fapos(sys.argv[sys.argv.index("fapos")+1:])
+			
+		elif "fqconv" in sys.argv:
+			from fqconv import mod_fqconv
+			mod_fqconv(sys.argv[sys.argv.index("fqconv")+1:])
+
+		elif "fqsplit" in sys.argv:
+			from fqsplit import mod_fqsplit
+			mod_fqsplit(sys.argv[sys.argv.index("fqsplit")+1:])
+
+		elif "bconv" in sys.argv:
+			from bconv import mod_bconv
+			mod_bconv(sys.argv[sys.argv.index("bconv")+1:])
+
+		elif "bcall" in sys.argv:
+			from bcall import mod_bcall
+			mod_bcall(sys.argv[sys.argv.index("bcall")+1:])
+
+		elif "bfq" in sys.argv:
+			from bfq import mod_bfq
+			mod_bfq(sys.argv[sys.argv.index("bfq")+1:])
+
+		elif "bsnp" in sys.argv:
+			from bsnp import mod_bsnp
+			mod_bsnp(sys.argv[sys.argv.index("bsnp")+1:])
+
+		elif "bspike" in sys.argv:
+			from bspike import mod_bspike
+			mod_bspike(sys.argv[sys.argv.index("bspike")+1:])
+
+		else:
+			sys.exit(hm)
+	else:
+		sys.exit(hm)
+		
+except KeyboardInterrupt:
+	exit("keyboard interrupt")
+
+	
