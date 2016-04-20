@@ -3,6 +3,10 @@
 #        source "$TOOL_BASH_LIB"
 
 
+BASHLIB___SHELL_OPTIONS=$(set +o)
+set +o verbose
+set +o xtrace
+
 UNSPECIFIED_ERROR_MSG="Unspecified error"
 UNSPECIFIED_ERROR_CODE=1
 
@@ -112,5 +116,4 @@ stringJoin () {
 }
 
 
-
-
+eval "$BASHLIB___SHELL_OPTIONS"

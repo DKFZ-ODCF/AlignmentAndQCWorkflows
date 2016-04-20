@@ -7,19 +7,25 @@
 
 source "$TOOL_BASH_LIB"
 
+WORKFLOWLIB___SHELL_OPTIONS=$(set +o)
+set +o verbose
+set +o xtrace
 
 markWithPicard () {
-    [[ "$markDuplicatesVariant" == "picard" || ("$markDuplicatesVariant" == "" && "$useBioBamBamMarkDuplicates" == false) ]]
+    [[ "$markDuplicatesVariant" == "picard" || ("$markDuplicatesVariant" == "" && "$useBioBamBamMarkDuplicates" == "false") ]]
+    return $?
 }
 
 
 markWithSambamba () {
     [[ "$markDuplicatesVariant" == "sambamba" ]]
+    return $?
 }
 
 
 markWithBiobambam () {
-    [[ "$markDuplicatesVariant" == "biobambam" || ("$markDuplicatesVariant" == "" && "$useBioBamBamMarkDuplicates" == true) ]]
+    [[ "$markDuplicatesVariant" == "biobambam" || ("$markDuplicatesVariant" == "" && "$useBioBamBamMarkDuplicates" == "true") ]]
+    return $?
 }
 
 
@@ -88,3 +94,5 @@ toMinusIEqualsList () {
     done
     echo
 }
+
+eval "$WORKFLOWLIB___SHELL_OPTIONS"
