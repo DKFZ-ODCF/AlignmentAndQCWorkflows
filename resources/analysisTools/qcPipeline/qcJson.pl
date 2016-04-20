@@ -105,7 +105,7 @@ sub runTests () {
         "0 + 0 secondary",
         "451127 + 0 supplementary",
         "1099698 + 0 duplicates",
-        "34580448 + 0 mapped (99.99%:-nan%)",
+        "34580448 + 0 mapped (-nan%:-nan%)",
         "34132096 + 0 paired in sequencing",
         "17066048 + 0 read1",
         "17066048 + 0 read2",
@@ -122,7 +122,7 @@ sub runTests () {
 	is($stats->{-supplementary}, 451127, "supplementary");
 	is($stats->{-duplicates}, 1099698, "duplicates");
 	is($stats->{-mapped}, 34580448, "mapped");
-	is($stats->{-percentage_mapped}, 99.99, "percentage mapped");
+	is($stats->{-percentage_mapped}, "-nan", "percentage mapped");
 	is($stats->{-paired_in_sequencing}, 34132096, "paired in sequencing");
 	is($stats->{-read1}, 17066048, "read1");
 	is($stats->{-read2}, 17066048, "read2");
@@ -374,13 +374,13 @@ sub parseFlagstats (@) {
         qr/^(\d+) \+ (\d+) secondary$/                                       => ["-secondary", "-secondary_qcfailed"],
         qr/^(\d+) \+ (\d+) supplementary$/                                   => ["-supplementary", "-supplementary_qcfailed"],
         qr/^(\d+) \+ (\d+) duplicates$/                                      => ["-duplicates", "-duplicates_qcfailed"],
-        qr/^(\d+) \+ (\d+) mapped \((\d+\.\d+)%:(?:-nan%|N\/A)\)$/           => ["-mapped", "-mapped_qcfailed", "-percentage_mapped"],
+        qr/^(\d+) \+ (\d+) mapped \((\d+\.\d+|-nan|N\/A)%?:(?:\d+\.\d+%|(?:-nan%|N\/A))\)$/           => ["-mapped", "-mapped_qcfailed", "-percentage_mapped"],
     	qr/^(\d+) \+ (\d+) paired in sequencing$/                            => ["-paired_in_sequencing", "-paired_in_sequencing_qcfailed"],
         qr/^(\d+) \+ (\d+) read1$/                                           => ["-read1", "-read1_qcfailed"],
     	qr/^(\d+) \+ (\d+) read2$/                                           => ["-read2", "-read2_qcfailed"],
-        qr/^(\d+) \+ (\d+) properly paired \((\d+\.\d+)%:(?:-nan%|N\/A)\)$/  => ["-properly_paired", "-properly_paired_qcfailed", "-percentage_properly_paired"],
+        qr/^(\d+) \+ (\d+) properly paired \((\d+\.\d+|-nan|N\/A)%?:(?:\d+\.\d+%|(?:-nan%|N\/A))\)$/  => ["-properly_paired", "-properly_paired_qcfailed", "-percentage_properly_paired"],
         qr/^(\d+) \+ (\d+) with itself and mate mapped$/                     => ["-with_itself_and_mate_mapped", "-with_itself_and_mate_mapped_qcfailed"],
-        qr/^(\d+) \+ (\d+) singletons \((\d+\.\d+)%:(?:-nan%|N\/A)\)$/       => ["-singletons", "-singletons_qcfailed", "-percentage_singletons"],
+        qr/^(\d+) \+ (\d+) singletons \((\d+\.\d+|-nan|N\/A)%?:(?:\d+\.\d+%|(?:-nan%|N\/A))\)$/       => ["-singletons", "-singletons_qcfailed", "-percentage_singletons"],
         qr/^(\d+) \+ (\d+) with mate mapped to a different chr$/             => ["-with_mate_mapped_to_different_chr", "-with_mate_mapped_to_different_chr_qcfailed"],
         qr/^(\d+) \+ (\d+) with mate mapped to a different chr \(mapQ>=5\)$/ => ["-with_mate_mapped_to_different_chr_mapQge5", "-with_mate_mapped_to_different_chr_mapQge5_qcfailed"]
     );
