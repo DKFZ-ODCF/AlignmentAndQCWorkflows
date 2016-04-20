@@ -41,6 +41,8 @@ then
     singlebams=`${SAMTOOLS_BINARY} view -H ${FILENAME} | grep "^@RG"`
     [[ -z "$singlebams" ]] && throw 23 "could not detect single lane BAM files in ${FILENAME}, stopping here"
 
+    ## Note: This does not test or even complain, if the BAM (e.g. due to manual manipulation) contains lanes that are
+    ##       NOT in among the INPUT_FILES. TODO Add at least a warning upon unknown lanes in BAM.
     notyetmerged=`perl ${TOOL_CHECK_ALREADY_MERGED_LANES} $(stringJoin ":" ${INPUT_FILES[@]}) "$singlebams" ${pairedBamSuffix} $SAMPLE`
     [[ "$?" != 0 ]] && throw 24 "something went wrong with the detection of merged files in ${FILENAME}, stopping here"
 
