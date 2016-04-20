@@ -92,7 +92,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
 
             inputTable.listRunIDs().each {
                 String runID ->
-                    List<File> fastqFilesForRun = inputTable.subsetByColumn(COConstants.INPUT_TABLE_RUN_ID, runID).listFiles()
+                    List<File> fastqFilesForRun = inputTable.subsetByColumn(COConstants.INPUT_TABLE_RUNCOL_NAME, runID).listFiles()
                     List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, runID, fastqFilesForRun);
                     laneFiles += bundleFiles
             }
