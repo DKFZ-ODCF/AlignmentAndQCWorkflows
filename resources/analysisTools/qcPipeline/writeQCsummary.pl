@@ -157,7 +157,10 @@ if (defined $metrics)
 			{
 				$warnstring .= "DUPLICATION RATE ${dups}%\n";
 			}
-			$libsize = $sline[8];	# fake metrics from postmerge QC or sambamba does not have a number
+			if (scalar @sline >= 8) {
+				## Picard may not produce a library size estimate and leave the field free.
+				$libsize = $sline[8];    # fake metrics from postmerge QC or sambamba does not have a number
+			}
 			last;
 		}
 	}
