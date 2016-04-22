@@ -46,6 +46,15 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
         this.setExecutionContext(newContext);
     }
 
+    /**
+     * Hack method! Allow to decrease a file stage
+     */
+    public LaneFile getFSDecreasedCopy() {
+        LaneFile lf = new LaneFile(this, this.getExecutionContext());
+        lf.fileStageSettings = fileStageSettings.decreaseLevel();
+        return lf;
+    }
+
     @Override
     public void runDefaultOperations() {
         calcFastqc();

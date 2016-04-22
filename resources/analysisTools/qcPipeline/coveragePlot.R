@@ -118,8 +118,8 @@ for( i in names(sampleOneCon)){
 	  axis(2)#
 	  axis(1,at=pretty(c(0,nrow(sampleOneCon[[i]]))),labels=paste(pretty(c(0,nrow(sampleOneCon[[i]]))/bp_scale),"Mb",sep=""))#
 	  abline(h=0,col=2)#
-	  dev.off()#
 	  }
+	dev.off()#
 	}
 
 #plot read depth for complete genome into one plot
