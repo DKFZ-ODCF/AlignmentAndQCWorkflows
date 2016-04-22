@@ -8,6 +8,9 @@ import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValu
 import de.dkfz.roddy.core.DataSet
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
+import de.dkfz.roddy.knowledge.files.BaseFile
+import de.dkfz.roddy.knowledge.files.Tuple2
+import de.dkfz.roddy.knowledge.methods.GenericMethod
 
 import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES
 
@@ -22,6 +25,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         Configuration cfg = context.getConfiguration();
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "false", "boolean"); //Disable sample extraction from output for alignment workflows.
+        //cfgValues.put(COConstants.FLAG_USE_ACCELERATED_HARDWARE, "false", "boolean"); //Disable accelerated hardware usage for testing
 
         // Run flags
         final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false)
@@ -48,15 +52,20 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
                 List<LaneFileGroup> rawSequenceGroups = loadLaneFilesForSampleAndLibrary(context, sample, library)
                 if (rawSequenceGroups == null || rawSequenceGroups.size() > 0) {
                     for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
+
                         if (runFastQC && !runAlignmentOnly)
                             rawSequenceGroup.calcFastqcForAll();
                         if (runFastQCOnly)
                             continue;
 
+
                         BamFile bamFile = rawSequenceGroup.alignAndPairSlim();
+                        //rawSequenceGroup.alignAndPairSlim()
+
 
                         bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
                         sortedBamFiles.addFile(bamFile);
+
                     }
                 }
 
@@ -64,20 +73,42 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
                 if (runAlignmentOnly) continue;
 
-                mergedBamsPerLibrary.addFile(sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample));
+                BamFile mergedLibraryBam;
+                if (availableLibrariesForSample.size() == 1) {
+                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
+                    if (runCollectBamFileMetrics) mergedLibraryBam.collectMetrics();
+
+                    Sample.SampleType sampleType = sample.getType();
+                    if (!coverageTextFilesBySample.containsKey(sampleType))
+                        coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
+                    coverageTextFilesBySample.get(sampleType).addFile(mergedLibraryBam.calcReadBinsCoverage());
+
+                    mergedBamFiles.addFile(mergedLibraryBam);
+                }
+                else {
+                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlimWithLibrary(sample, library)
+                }
+
+                mergedBamsPerLibrary.addFile(mergedLibraryBam);
+                GenericMethod.callGenericTool("methylationCallingMeta", mergedLibraryBam);
 
             }
 
             // Merge library bams into per sample bams
-            BamFile mergedBam = mergedBamsPerLibrary.mergeAndRemoveDuplicatesSlim(sample);
-            if (runCollectBamFileMetrics) mergedBam.collectMetrics();
+            if(availableLibrariesForSample.size() > 1) {
+                BamFile mergedBam = mergedBamsPerLibrary.mergeAndRemoveDuplicatesSlim(sample, true);
+                GenericMethod.callGenericTool("methylationCallingMeta", mergedBam);
 
-            Sample.SampleType sampleType = sample.getType();
-            if (!coverageTextFilesBySample.containsKey(sampleType))
-                coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
-            coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage());
+                if (runCollectBamFileMetrics) mergedBam.collectMetrics();
 
-            mergedBamFiles.addFile(mergedBam);
+                Sample.SampleType sampleType = sample.getType();
+                if (!coverageTextFilesBySample.containsKey(sampleType))
+                    coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
+                coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage());
+
+                mergedBamFiles.addFile(mergedBam);
+            }
+
         }
 
         if (!mergedBamFiles.getFilesInGroup()) {
@@ -87,7 +118,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
         if (runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
             coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
-        } else if (coverageTextFilesBySample.keySet().size() == 1) {
+        } else if (runCoveragePlots && coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
             ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot();
         }

@@ -109,8 +109,9 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
         Configuration configuration = context.getConfiguration();
         boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ACCELERATED_HARDWARE);
 
-        LaneFile laneFile0 = filesInGroup.get(0);
-        LaneFile laneFile1 = filesInGroup.get(1);
+        // Bad hack: Decrease the file stage level by one!
+        LaneFile laneFile0 = filesInGroup.get(0).getFSDecreasedCopy();
+        LaneFile laneFile1 = filesInGroup.get(1).getFSDecreasedCopy();
 
         String libString = configuration.getConfigurationValues().getString(COConstants.PRM_CVAL_LIBRARY);
         String sampleName = laneFile0.getSample().getName();

@@ -115,12 +115,12 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         } else {
             // Default case
 
-            File sampleDirectory = getSampleDirectory(context, sample);
+            File sampleDirectory = getSampleDirectory(context, sample, library);
 
             logger.postAlwaysInfo("Searching for lane files in directory ${sampleDirectory}")
             List<File> runsForSample = FileSystemAccessProvider.getInstance().listDirectoriesInDirectory(sampleDirectory);
             for (File run : runsForSample) {
-                File sequenceDirectory = getSequenceDirectory(context, sample, run.getName());
+                File sequenceDirectory = getSequenceDirectory(context, sample, run.getName(), library);
                 logger.postSometimesInfo("\tChecking for run ${run.name} in sequence dir: ${sequenceDirectory}")
                 if (!FileSystemAccessProvider.getInstance().checkDirectory(sequenceDirectory, context, false)) // Skip directories which do not exist
                     continue;
