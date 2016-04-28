@@ -16,7 +16,7 @@
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer" description="Threads for bwa mem."/>
 
-        <cvalue name='markDuplicatesVariant' value='' type="boolean"
+        <cvalue name='markDuplicatesVariant' value='' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
 
         <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.4.6" type="string"
