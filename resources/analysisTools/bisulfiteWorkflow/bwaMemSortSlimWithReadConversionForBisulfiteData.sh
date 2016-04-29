@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 
 printInfo 
 
@@ -129,7 +129,7 @@ fi
 (set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_100M | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
 
 # use sambamba for flagstats
-(set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} flagstat /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
+(set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_FLAGSTATS_BINARY} flagstat /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
 
 if [[ ${bamFileExists} == true ]]; then
 	echo "the BAM file already exists, re-creating other output files."

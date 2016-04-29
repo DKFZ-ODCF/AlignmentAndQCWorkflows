@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 
 printInfo
 
@@ -30,7 +30,7 @@ NP_SAMTOOLS_INDEX_IN=${RODDY_SCRATCH}/np_samtools_index_in
 MBUF_100M="${MBUFFER_BINARY} -m 100m -q -l /dev/null"
 MBUF_2G="${MBUFFER_BINARY} -m 2g -q -l /dev/null"
 
-mkfifo ${NP_COMPRESSION_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS}
+mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS}
 
 bamname=`basename ${FILENAME_SORTED_BAM}`
 INDEX_FILE=${FILENAME_SORTED_BAM}.bai
@@ -70,11 +70,13 @@ LENGTH_SEQ_2=`${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} 2>/dev/null | head 
 
 # make biobambam sort default
 useBioBamBamSort=${useBioBamBamSort-true}
+# Do not use adaptor trimming by default.
+useAdaptorTrimming=${useAdaptorTrimming-false}
 
 if [[ ${bamFileExists} == false ]]	# we have to make the BAM
 then
 	mkfifo ${FNPIPE1} ${FNPIPE2}
-	if [[ $useAdaptorTrimming == true ]] # [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
+	if [[ ${useAdaptorTrimming} == true ]]
 	then
 		if [ "${qualityScore}" = "illumina" ]
 		then
@@ -130,7 +132,7 @@ fi
 (set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_100M | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
 
 # use sambamba for flagstats
-(set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} flagstat /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
+${SAMBAMBA_FLAGSTATS_BINARY} flagstat "$NP_FLAGSTATS" > "$tempFlagstatsFile" & procIDFlagstat=$!
 
 if [[ ${bamFileExists} == true ]]
 then
@@ -220,24 +222,13 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 (${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 14)
 
 # Produced qualitycontrol.json for OTP. Remove the 1 short-circuit as soon as the dip-statistic is available.
-if [[ 1 || "$ON_CONVEY" == "true" ]]; then
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
-	${FILENAME_GENOME_COVERAGE} \
+${PERL_BINARY} ${TOOL_QC_JSON} \
+    ${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
     > ${FILENAME_QCJSON}.tmp \
     || throw 25 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
-else
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
-  	${FILENAME_GENOME_COVERAGE} \
-    ${FILENAME_ISIZES_STATISTICS} \
-    ${FILENAME_FLAGSTATS} \
-    ${FILENAME_DIFFCHROM_STATISTICS} \
-    ${FILENAME_DIP_STATISTICS} \
-    > ${FILENAME_QCJSON}.tmp \
-    || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
-fi
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey

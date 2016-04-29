@@ -17,6 +17,10 @@ overrideBamFiles
 
 == Changelist
 
+* Version update to 1.0.186
+
+- Sambamba support for duplication marking.
+
 * Version update to 1.0.182
 
 - The resource requests for jobs were increased to be on the safe side when switching to the new cluster (in particular concerning OOM killer).

@@ -12,7 +12,7 @@
 # the parent BAM's coverageQC file is needed
 
 source ${CONFIG_FILE}
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 printInfo
 
 set -o pipefail

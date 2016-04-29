@@ -6,7 +6,7 @@
 #PBS -m a
 
 source ${CONFIG_FILE}
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 
 set -o pipefail
 

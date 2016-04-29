@@ -39,7 +39,9 @@
 
         <tool name='targetExtractCoverageSlim' value='targetExtractCoverageSlim.sh' basepath='exomePipeline'>
             <resourcesets>
-                <rset size="t" memory="1" cores="2" nodes="1" walltime="1"/>
+                <!-- Test -->
+                <rset size="t" memory="1" cores="2" nodes="1" queue="devel"/>
+                <!-- Production -->
                 <rset size="xs" memory="5" cores="2" nodes="1" walltime="1"/>
                 <rset size="s" memory="6" cores="2" nodes="1" walltime="2"/>
                 <rset size="m" memory="7" cores="2" nodes="1" walltime="4"/>
