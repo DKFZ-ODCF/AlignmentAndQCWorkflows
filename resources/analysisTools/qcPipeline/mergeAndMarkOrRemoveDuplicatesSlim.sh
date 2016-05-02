@@ -122,9 +122,6 @@ if markWithPicard; then
             | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_MD5_IN} \
             > ${tempBamFile}) & procIDSamtoolsView=$!
 
-        # calculate MD5 sum
-        cat ${NP_MD5_IN} | ${CHECKSUM_BINARY} | cut -d ' ' -f 1 > ${tempMd5File} & procIDMd5=$!
-
     else
         # To prevent abundancy of ifs, reuse the process id another time.
         (cat ${FILENAME} \
@@ -133,6 +130,7 @@ if markWithPicard; then
             | ${SAMTOOLS_BINARY} view - \
             > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!
         procIDMarkOutPipe=$procIDSamtoolsView
+        procIDMd5=$procIDSamtoolsView
     fi
 
 elif markWithSambamba; then
@@ -171,6 +169,7 @@ elif markWithSambamba; then
             | "$SAMTOOLS_BINARY" view - \
             > "$NP_COMBINEDANALYSIS_IN") & procIDSamtoolsView=$!
         procIDMarkOutPipe=$procIDSamtoolsView
+        procIDMd5=$procIDSamtoolsView
    	fi
 
 elif markWithBiobambam; then
@@ -208,12 +207,13 @@ elif markWithBiobambam; then
             | ${SAMTOOLS_BINARY} view - \
             > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!
         procIDMarkOutPipe=$procIDSamtoolsView
+        procIDMd5=$procIDSamtoolsView
         ## The only difference here to the picard and sambamba is that here no NP_INDEX_IN is used, because biobambam creates
         ## the index on the fly.
     fi
 
 else
-    throw 1 "Unknown value for markDuplicatesVariant? '$markDuplicatesVariant'. Use biobambam, picard or sambamba or leave undefined to use useBiobambamMarkDuplicates value ($useBioBamBamMarkDuplicates)."
+    throw 101 "Unknown value for markDuplicatesVariant? '$markDuplicatesVariant'. Use biobambam, picard or sambamba or leave undefined to use useBiobambamMarkDuplicates value ($useBioBamBamMarkDuplicates)."
 fi
 
 # in all cases:
@@ -221,7 +221,7 @@ fi
 (${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} ) & procIDCBA=$!
 
 # use sambamba for flagstats
-${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 2 "$NP_FLAGSTATS_IN" > "$tempFlagstatsFile" & procIDFlagstat=$!
+${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsFile" & procIDFlagstat=$!
 
 # genome coverage (depth of coverage and other QC measures in one file)
 (${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) & procIDGenomeCoverage=$!
@@ -250,25 +250,25 @@ if markWithPicard; then
     fi
 	# index is always made again, needs to be updated to not be older than BAM
 	# this file does not exist!!!!!!!
-	wait $procIDMarkOutPipe ; [[ $? -gt 0 ]] && echo "Error from picard SAM pipe" && exit 5
 	wait $procIDSamtoolsIndex ; [[ $? -gt 0 ]] && echo "Error from samtools index pipe" && exit 6
-	wait $procIDSamtoolsView ; [[ $? -gt 0 ]] && echo "Error from samtools view pipe" && exit 7
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
+    waitAndMaybeExit $procIDMd5 "Error from MD5" 15
+    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
 
 elif markWithSambamba; then
     if [[ ${bamFileExists} == false ]]; then
     	wait $procIDMarkdup
-    	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Picard returned an exit code and the job will die now." && exit 100
+    	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Sambamba returned an exit code and the job will die now." && exit 100
         waitAndMaybeExit $procIDFakeMetrics "Error from sambamba fake metrics" 5
         mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
         mv "$tempFilenameMetrics" "$FILENAME_METRICS" || throw 39 "Could not move file"
     fi
 	# index is always made again, needs to be updated to not be older than BAM
 	# this file does not exist!!!!!!!
-	waitAndMaybeExit $procIDMarkOutPipe "Error from sambamba mark out pipe" 5
 	waitAndMaybeExit $procIDSamtoolsIndex "Error from samtools index pipe" 6
-	waitAndMaybeExit $procIDSamtoolsView "Error from samtools view pipe" 7
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
+	waitAndMaybeExit $procIDMd5 "Error from MD5" 15
+    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
 
 elif markWithBiobambam; then
     if [[ ${bamFileExists} == false ]]; then
@@ -280,15 +280,17 @@ elif markWithBiobambam; then
         mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 42 "Could not move file"
         wait $procIDMarkOutPipe; [[ $? -gt 0 ]] && echo "Error from biobambam BAM pipe" && exit 8
     fi
-    wait $procIDSamtoolsView; [[ $? -gt 0 ]] && echo "Error from samtools SAM pipe" && exit 9
+    waitAndMaybeExit $procIDMd5 "Error from MD5" 15
+    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
 
 fi
 
+waitAndMaybeExit $procIDSamtoolsView "Error from samtools view pipe" 7
+waitAndMaybeExit $procIDMarkOutPipe "Error from mark out pipe" 5
 wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomeCoverage read bins" && exit 10
 wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 11
 wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 12
 wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 13
-wait $procIDMd5; [[ $? -gt 0 ]] && echo "Error from ${CHECKSUM_BINARY}" && exit 15
 
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
 mv ${FILENAME_ISIZES_MATRIX}.tmp ${FILENAME_ISIZES_MATRIX} || throw 29 "Could not move file"
@@ -298,7 +300,7 @@ mv ${FILENAME_DIFFCHROM_STATISTICS}.tmp ${FILENAME_DIFFCHROM_STATISTICS} || thro
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "Could not move file"
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
-mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
+
 
 # QC summary
 # if the warnings file had been created before, remove it:
@@ -306,13 +308,16 @@ mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
 
 [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]] && rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
 
-METRICS_FILENAME=${FILENAME_METRICS};
-[[ ${mergeOnly-false} == true ]] && METRICS_FILENAME="";
-${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $(analysisType) -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE -m ${METRICS_FILENAME} > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY || throw 14 "Error from writeQCsummary.pl"
+if [[ "$mergeOnly" == true ]]; then
+    METRICS_FILENAME="";
+else
+    METRICS_FILENAME=${FILENAME_METRICS};
+fi
+${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $(analysisType) -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE -m ${METRICS_FILENAME} > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY #|| throw 14 "Error from writeQCsummary.pl"
 
 [[ -d $tempDirectory ]] && rm -rf $tempDirectory
 
-# Produced qualitycontrol.json for OTP. Remove the first branch as soon as the dip-statistics is implemented.
+# Produce qualitycontrol.json for OTP.
 ${PERL_BINARY} ${TOOL_QC_JSON} \
 	${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
