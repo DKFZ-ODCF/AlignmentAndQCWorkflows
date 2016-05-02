@@ -68,7 +68,7 @@ public class BamFileGroup extends FileGroup<BamFile> {
                         throw new RuntimeException("markDuplicatesVariant=${markDuplicatesVariant} is not supported")
                 }
             }
-            String[] parameterList = ([this, "SAMPLE=${sample.getName()}"] as ArrayList<String>) + (additionalMergeParameters as ArrayList<String>) as String[]
+            Object[] parameterList = ([this, "SAMPLE=${sample.getName()}"] as ArrayList<Object>) + (additionalMergeParameters as ArrayList<Object>) as Object[]
             mergedBam = (BamFile) GenericMethod.callGenericTool(toolId, getFilesInGroup().get(0), parameterList)
         }
         return mergedBam;
