@@ -1,7 +1,7 @@
 package de.dkfz.b080.co.files
 
 import de.dkfz.roddy.core.ExecutionContext
-import de.dkfz.roddy.execution.jobs.CommandFactory
+import de.dkfz.roddy.execution.jobs.JobManager
 import de.dkfz.roddy.execution.jobs.Job
 import de.dkfz.roddy.execution.jobs.JobResult
 import de.dkfz.roddy.knowledge.files.BaseFile
@@ -71,7 +71,7 @@ public class BamFileGroup extends FileGroup<BamFile> {
         def filesToVerify = [bamFile, bamFile.flagstatsFile, bamFile.metricsFile] as List<BaseFile>
         if (bamFile.hasIndex())
             filesToVerify << bamFile.indexFile;
-        JobResult jobResult = new Job(run, CommandFactory.getInstance().createJobName(parentFiles[0], MERGEANDRMDUP, true), MERGEANDRMDUP, parameters, parentFiles, filesToVerify).run();
+        JobResult jobResult = new Job(run, JobManager.getInstance().createJobName(parentFiles[0], MERGEANDRMDUP, true), MERGEANDRMDUP, parameters, parentFiles, filesToVerify).run();
         bamFile.setCreatingJobsResult(jobResult);
         bamFile.getMetricsFile().setCreatingJobsResult(jobResult);
         bamFile.getFlagstatsFile().setCreatingJobsResult(jobResult);
