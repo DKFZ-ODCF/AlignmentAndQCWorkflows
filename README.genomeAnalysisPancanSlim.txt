@@ -17,6 +17,8 @@ overrideBamFiles
 
 == Changelist
 
+- Renamed plugin to AlignmentAndQCWorkflows.
+
 * Version update to 1.0.186
 
 - Sambamba support for duplication marking.

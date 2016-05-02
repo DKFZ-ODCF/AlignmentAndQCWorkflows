@@ -96,7 +96,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
             // Merge library bams into per sample bams
             if(availableLibrariesForSample.size() > 1) {
-                BamFile mergedBam = mergedBamsPerLibrary.mergeAndRemoveDuplicatesSlim(sample, true);
+                BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample);
                 GenericMethod.callGenericTool("methylationCallingMeta", mergedBam);
 
                 if (runCollectBamFileMetrics) mergedBam.collectMetrics();

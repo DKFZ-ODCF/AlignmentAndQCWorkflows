@@ -1,5 +1,7 @@
 package de.dkfz.b080.co.files
 
+import de.dkfz.b080.co.common.COProjectsRuntimeService
+import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.execution.jobs.CommandFactory
 import de.dkfz.roddy.execution.jobs.Job
@@ -7,6 +9,7 @@ import de.dkfz.roddy.execution.jobs.JobResult
 import de.dkfz.roddy.knowledge.files.BaseFile
 import de.dkfz.roddy.knowledge.files.FileGroup
 import de.dkfz.roddy.knowledge.methods.GenericMethod
+import de.dkfz.roddy.tools.LoggerWrapper
 
 /**
  * @author michael
@@ -17,8 +20,11 @@ public class BamFileGroup extends FileGroup<BamFile> {
     public static final String MERGEANDRMDUP = "mergeAndRemoveDuplicates";
     public static final String MERGEANDMORMDUP_SLIM_BIOBAMBAM = "mergeAndRemoveDuplicatesSlimBioBambam";
     public static final String MERGEANDMORMDUP_SLIM_PICARD = "mergeAndRemoveDuplicatesSlimPicard";
+    public static final String MERGEANDMORMDUP_SLIM_SAMBAMBA = "mergeAndRemoveDuplicatesSlimSambamba";
     public static final String COVERAGEPLOT = "coveragePlots";
     public static final String SNPCOMP = "snpComparison";
+
+    private static LoggerWrapper logger = LoggerWrapper.getLogger(COProjectsRuntimeService.class.getName());
 
     private BamFile mergedBam = null;
 
@@ -30,19 +36,40 @@ public class BamFileGroup extends FileGroup<BamFile> {
         super(files);
     }
 
-    public BamFile mergeAndRemoveDuplicatesSlim(Sample sample, boolean forceMergeOnly = false) {
-        boolean useBioBamBamMarkDuplicates = executionContext.getConfiguration().getConfigurationValues().getBoolean("useBioBamBamMarkDuplicates", true);
-        if (mergedBam == null) {
-            String mergeParameter = "MERGE_BAM_ONLY=$forceMergeOnly"
-            mergedBam = (BamFile) GenericMethod.callGenericTool(useBioBamBamMarkDuplicates ? MERGEANDMORMDUP_SLIM_BIOBAMBAM : MERGEANDMORMDUP_SLIM_PICARD, getFilesInGroup().get(0), this, "SAMPLE=${sample.getName()}", mergeParameter);
-        }
-        return mergedBam;
+    public BamFile mergeSlim(Sample sample) {
+        return mergeAndRemoveDuplicatesSlim(sample, "MERGE_BAM_ONLY=true")
     }
 
     public BamFile mergeAndRemoveDuplicatesSlimWithLibrary(Sample sample, String library) {
-        boolean useBioBamBamMarkDuplicates = executionContext.getConfiguration().getConfigurationValues().getBoolean("useBioBamBamMarkDuplicates", true);
+        return mergeAndRemoveDuplicatesSlim(sample, "LIBRARY=${library}")
+    }
+
+    public BamFile mergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {
         if (mergedBam == null) {
-            mergedBam = (BamFile) GenericMethod.callGenericTool(useBioBamBamMarkDuplicates ? MERGEANDMORMDUP_SLIM_BIOBAMBAM : MERGEANDMORMDUP_SLIM_PICARD, getFilesInGroup().get(0), this, "SAMPLE=${sample.getName()}", "LIBRARY=${library}");
+            RecursiveOverridableMapContainerForConfigurationValues cvalues = executionContext.getConfiguration().getConfigurationValues()
+            boolean useBioBamBamMarkDuplicates = cvalues.getBoolean(COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES, true);
+            String markDuplicatesVariant = cvalues.getString(COConstants.CVALUE_MARK_DUPLICATES_VARIANT, null);
+            String toolId
+            if (markDuplicatesVariant == null || markDuplicatesVariant == "") {
+                logger.postSometimesInfo("${COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES} is deprecated. Use ${COConstants.CVALUE_MARK_DUPLICATES_VARIANT}.")
+                toolId = useBioBamBamMarkDuplicates ? MERGEANDMORMDUP_SLIM_BIOBAMBAM : MERGEANDMORMDUP_SLIM_PICARD
+            } else {
+                switch (markDuplicatesVariant.toLowerCase()) {
+                    case "biobambam":
+                        toolId = MERGEANDMORMDUP_SLIM_BIOBAMBAM
+                        break
+                    case "picard":
+                        toolId = MERGEANDMORMDUP_SLIM_PICARD
+                        break
+                    case "sambamba":
+                        toolId = MERGEANDMORMDUP_SLIM_SAMBAMBA
+                        break
+                    default:
+                        throw new RuntimeException("markDuplicatesVariant=${markDuplicatesVariant} is not supported")
+                }
+            }
+            String[] parameterList = ([this, "SAMPLE=${sample.getName()}"] as ArrayList<String>) + (additionalMergeParameters as ArrayList<String>) as String[]
+            mergedBam = (BamFile) GenericMethod.callGenericTool(toolId, getFilesInGroup().get(0), parameterList)
         }
         return mergedBam;
     }
