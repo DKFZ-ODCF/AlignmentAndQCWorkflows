@@ -221,7 +221,7 @@ fi
 (${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} ) & procIDCBA=$!
 
 # use sambamba for flagstats
-${SAMBAMBA_FLAGSTATS_BINARY} flagstat "$NP_FLAGSTATS_IN" > "$tempFlagstatsFile" & procIDFlagstat=$!
+${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 2 "$NP_FLAGSTATS_IN" > "$tempFlagstatsFile" & procIDFlagstat=$!
 
 # genome coverage (depth of coverage and other QC measures in one file)
 (${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) & procIDGenomeCoverage=$!
