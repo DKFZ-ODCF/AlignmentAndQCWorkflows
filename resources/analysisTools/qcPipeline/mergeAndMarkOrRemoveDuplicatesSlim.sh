@@ -67,7 +67,7 @@ useBioBamBamMarkDuplicates=${useBioBamBamMarkDuplicates-true}
 bamFileExists=${bamFileExists-false}
 mergeOnly=${MERGE_BAM_ONLY-false}
 
-if markWithPicard; then
+if markWithPicard || [[ "$mergeOnly" == true ]]; then
     # Complicate error catching because:
     # In some cases picard exits before cat starts to work on the named pipes. If so, the cat processes block and wait for input data forever.
     # TODO Think hard if it helps to just move picard two steps back and to start the cat processes earlier.
