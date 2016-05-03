@@ -83,7 +83,7 @@ if markWithPicard; then
         # The filehandles are used for some picard optimization.
         FILEHANDLES=$((`ulimit -n` - 16))
 
-	    if [[ "$mergeOnly" == true ]]; then
+	    if [[ "$mergeOnly" == false ]]; then
     	    PICARD_MODE="MarkDuplicates"
 	        DUPLICATION_METRICS_FILE="METRICS_FILE=${tempFilenameMetrics}"
 	        MERGEANDREMOVEDUPLICATES_ARGUMENTSLIST="${mergeAndRemoveDuplicates_argumentList}"
@@ -95,7 +95,6 @@ if markWithPicard; then
 	        MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=""
 	    fi
 
-	    # TODO: Create dummy FILENAME_METRICS if merge_only == true and PICARD exited correctly!
         (JAVA_OPTIONS="-Xms64G -Xmx64G" \
             $PICARD_BINARY ${PICARD_MODE} \
             $(toMinusIEqualsList ${INPUT_FILES[@]}) \
