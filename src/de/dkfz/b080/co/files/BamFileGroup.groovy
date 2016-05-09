@@ -37,14 +37,18 @@ public class BamFileGroup extends FileGroup<BamFile> {
     }
 
     public BamFile mergeSlim(Sample sample) {
-        return mergeAndRemoveDuplicatesSlim(sample, "MERGE_BAM_ONLY=true")
+        return baseMergeAndRemoveDuplicatesSlim(sample, "MERGE_BAM_ONLY=true")
     }
 
     public BamFile mergeAndRemoveDuplicatesSlimWithLibrary(Sample sample, String library) {
-        return mergeAndRemoveDuplicatesSlim(sample, "LIBRARY=${library}")
+        return baseMergeAndRemoveDuplicatesSlim(sample, "LIBRARY=${library}")
     }
 
     public BamFile mergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {
+        return baseMergeAndRemoveDuplicatesSlim(sample, additionalMergeParameters);
+    }
+
+    public BamFile baseMergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {
         if (mergedBam == null) {
             RecursiveOverridableMapContainerForConfigurationValues cvalues = executionContext.getConfiguration().getConfigurationValues()
             boolean useBioBamBamMarkDuplicates = cvalues.getBoolean(COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES, true);

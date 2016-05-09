@@ -108,7 +108,7 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
             ASSUME_SORTED=TRUE \
             CREATE_INDEX=FALSE \
             MAX_RECORDS_IN_RAM=12500000; \
-            echo $? > ${returnCodeMarkDuplicatesFile}) & procIDPicard=$!
+            echo $? > ${returnCodeMarkDuplicatesFile}) & procIDMarkdup=$!
 
         # provide named pipes of SAM type
         (cat ${NP_PIC_OUT} | mbuf 2g | tee ${NP_SAM_IN} ${NP_COMBINEDANALYSIS_IN} > /dev/null) & procIDMarkOutPipe=$!
@@ -235,7 +235,7 @@ ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsF
 
 # Some waits for parallel processes. This also depends on the used merge binary.
 # Picard
-if markWithPicard; then
+if markWithPicard || [[ "$mergeOnly" == true ]]; then
     if [[ ${bamFileExists} == false ]]; then
     	wait $procIDMarkdup
     	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Picard returned an exit code and the job will die now." && exit 100
@@ -246,13 +246,13 @@ if markWithPicard; then
     		# Create Dummy FILENAME_MATRICS if mergeOnly was true
     		touch ${FILENAME_METRICS}
     	fi
+        waitAndMaybeExit $procIDMd5 "Error from MD5" 15
+        mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
     fi
 	# index is always made again, needs to be updated to not be older than BAM
 	# this file does not exist!!!!!!!
 	wait $procIDSamtoolsIndex ; [[ $? -gt 0 ]] && echo "Error from samtools index pipe" && exit 6
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
-    waitAndMaybeExit $procIDMd5 "Error from MD5" 15
-    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
 
 elif markWithSambamba; then
     if [[ ${bamFileExists} == false ]]; then
@@ -261,13 +261,13 @@ elif markWithSambamba; then
         waitAndMaybeExit $procIDFakeMetrics "Error from sambamba fake metrics" 5
         mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
         mv "$tempFilenameMetrics" "$FILENAME_METRICS" || throw 39 "Could not move file"
+      	waitAndMaybeExit $procIDMd5 "Error from MD5" 15
+        mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
     fi
 	# index is always made again, needs to be updated to not be older than BAM
 	# this file does not exist!!!!!!!
 	waitAndMaybeExit $procIDSamtoolsIndex "Error from samtools index pipe" 6
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
-	waitAndMaybeExit $procIDMd5 "Error from MD5" 15
-    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
 
 elif markWithBiobambam; then
     if [[ ${bamFileExists} == false ]]; then
@@ -278,10 +278,9 @@ elif markWithBiobambam; then
 	    mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
         mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 42 "Could not move file"
         wait $procIDMarkOutPipe; [[ $? -gt 0 ]] && echo "Error from biobambam BAM pipe" && exit 8
+        waitAndMaybeExit $procIDMd5 "Error from MD5" 15
+        mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
     fi
-    waitAndMaybeExit $procIDMd5 "Error from MD5" 15
-    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
-
 fi
 
 waitAndMaybeExit $procIDSamtoolsView "Error from samtools view pipe" 7
