@@ -8,8 +8,6 @@ import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValu
 import de.dkfz.roddy.core.DataSet
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
-import de.dkfz.roddy.knowledge.files.BaseFile
-import de.dkfz.roddy.knowledge.files.Tuple2
 import de.dkfz.roddy.knowledge.methods.GenericMethod
 
 import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES
@@ -158,26 +156,51 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         return copyOfLaneFileGroups;
     }
 
-    @Override
-    public boolean checkExecutability(ExecutionContext context) {
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
-        if (samples.size() == 0)
-            return false;
+    private boolean checkSamples(ExecutionContext context) {
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
+        if (samples.size() == 0) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.getDataSet()}!"))
+            return false
+        } else {
+            return true
+        }
+    }
 
-        //Check if at least one file is available. Maybe for two if paired is used...?
+    private boolean checkLaneFiles(ExecutionContext context) {
+        boolean returnValue = true
         int cnt = 0;
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
         for (Sample sample : samples) {
-            List<LaneFileGroup> laneFileGroups = [];
+            LinkedHashMap<String,LaneFileGroup> laneFileGroups = [:]
             for (String lib : sample.getLibraries()) {
-                laneFileGroups += loadLaneFilesForSampleAndLibrary(context, sample, lib);
-            }
-
-            for (LaneFileGroup lfg : laneFileGroups) {
-                cnt += lfg.getFilesInGroup().size();
+                for (LaneFileGroup group : loadLaneFilesForSampleAndLibrary(context, sample, lib)) {
+                    String key = group.getRun() + " " + group.getId()
+                    if (laneFileGroups.containsKey(key)) {
+                        context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                                    expand("Duplicate lane identifiers for ${group.getRun()}_${group.getId()} among libraries " +
+                                            "(pid=${context.getDataSet()}, sample=${sample.getName()})! Check run and FASTQ names."))
+                        returnValue = false
+                    } else {
+                        laneFileGroups[key] = group
+                    }
+                    cnt += group.getFilesInGroup().size()
+                }
             }
         }
-        return cnt > 0;
+        if (cnt <= 0) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                        expand("No lane files found for PID ${context.getDataSet()}!"))
+            returnValue = false
+        }
+        return returnValue
+    }
+
+    @Override
+    public boolean checkExecutability(ExecutionContext context) {
+        // Use context.addErrorEntry to add errors or warnings.
+        return checkSamples(context) && checkLaneFiles(context)
     }
 
 }
