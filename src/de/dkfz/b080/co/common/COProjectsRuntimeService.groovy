@@ -76,7 +76,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         return getLanesForSample(context, sample, library);
     }
 
-    public List getLanesForSample(ExecutionContext context, Sample sample, String library = null) {
+    public List getLanesForSample(ExecutionContext context, Sample sample, String libraryID = null) {
         COConfig coConfig = new COConfig(context);
 
         ProcessingFlag flag = context.setProcessingFlag(ProcessingFlag.STORE_FILES);
@@ -88,12 +88,12 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
 
         if (getLanesFromInputTable) {
             MetadataTable inputTable = getMetadataTable(context).subsetBySample(sample.name)
-            if (library) inputTable = inputTable.subsetByLibrary(library)
+            if (libraryID) inputTable = inputTable.subsetByLibrary(libraryID)
 
             inputTable.listRunIDs().each {
                 String runID ->
                     List<File> fastqFilesForRun = inputTable.subsetByColumn(COConstants.INPUT_TABLE_RUNCOL_NAME, runID).listFiles()
-                    List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, runID, fastqFilesForRun);
+                    List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
                     laneFiles += bundleFiles
             }
 
@@ -108,19 +108,19 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
             List<String> listOfRunIDs = listOfFastqFilesForSample.collect { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] }.unique() as List<String>
             listOfRunIDs.each { String runID ->
                 List<File> fastqFilesForRun = listOfFastqFilesForSample.findAll { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] == runID } as List<File>
-                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, runID, fastqFilesForRun);
+                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
                 laneFiles.addAll(bundleFiles);
             }
 
         } else {
             // Default case
 
-            File sampleDirectory = getSampleDirectory(context, sample, library);
+            File sampleDirectory = getSampleDirectory(context, sample, libraryID);
 
             logger.postAlwaysInfo("Searching for lane files in directory ${sampleDirectory}")
             List<File> runsForSample = FileSystemAccessProvider.getInstance().listDirectoriesInDirectory(sampleDirectory);
             for (File run : runsForSample) {
-                File sequenceDirectory = getSequenceDirectory(context, sample, run.getName(), library);
+                File sequenceDirectory = getSequenceDirectory(context, sample, run.getName(), libraryID);
                 logger.postSometimesInfo("\tChecking for run ${run.name} in sequence dir: ${sequenceDirectory}")
                 if (!FileSystemAccessProvider.getInstance().checkDirectory(sequenceDirectory, context, false)) // Skip directories which do not exist
                     continue;
@@ -128,7 +128,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
                 if (files.size() == 0)
                     logger.postAlwaysInfo("\t There were no lane files in directory ${sequenceDirectory}")
                 //Find file bundles
-                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, run.getName(), files);
+                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, run.getName(), files);
                 logger.postSometimesInfo("\tFound ${bundleFiles.size()} lane file groups in sequence directory.")
                 laneFiles.addAll(bundleFiles);
             }
