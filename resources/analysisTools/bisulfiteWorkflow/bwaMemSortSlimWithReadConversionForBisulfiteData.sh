@@ -39,6 +39,7 @@ tempSortedBamFile=${FILENAME_SORTED_BAM}.tmp
 tempFileForSort=${WORKDIR}/${bamname}_forsorting
 tempBamIndexFile=${FILENAME_SORTED_BAM}.tmp.bai
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
+tempMetricsFile=${FILENAME_BCONV_METRICS}.tmp
 
 # samtools sort may complain about truncated temp files and for each line outputs
 # the error message. This happens when the same files are written at the same time,
@@ -149,13 +150,13 @@ else
 			-t ${BWA_MEM_THREADS} \
 			-R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
 			$BWA_MEM_OPTIONS ${INDEX_PREFIX}.conv.fa ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | \
-		$MBUF_2G > ${NP_BWA_OUT} & procID_BWA=$!
+		    $MBUF_2G > ${NP_BWA_OUT} & procID_BWA=$!
 
 		# Convert aligned reads back to original state
 		${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
-		${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv \
-			--metrics ${tempSortedBamFile}.metrics - - | \
-		$MBUF_2G > ${NP_BCONV_OUT} & procID_BCONV=$!
+		    ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv \
+			--metrics ${tempMetricsFile} - - | \
+		    $MBUF_2G > ${NP_BCONV_OUT} & procID_BCONV=$!
 
 		# Sort bam file
 		(set -o pipefail; \
@@ -170,7 +171,7 @@ else
 			${NP_READBINS_IN} \
 			${NP_FLAGSTATS} \
 			${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
-		echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+		    echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
 
 		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
@@ -182,7 +183,7 @@ else
 		wait $procID_MEMSORT || throw 24 "Error in samtools sort"
 		wait $procID_IDX; [[ ! $? -eq 0 ]] && echo "Error from samtools index" && exit 10
 	else
-		throw 11 "biabambam sort not implemented yet";
+		throw 11 "biobambam sort not implemented yet";
 	fi;
 fi
 
@@ -196,6 +197,7 @@ else	# make sure to rename BAM file when it has been produced correctly
 	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
 	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
+	mv ${tempMetricsFile} ${FILENAME_BCONV_METRICS} || throw 38 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
 	if [[ -f ${tempBamIndexFile} ]]; then
 	 	mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"

@@ -57,8 +57,12 @@ exitIfNonInteractive () {
 ## throw [code [msg]]
 ## Write message (Unspecified error) to STDERR and exit with code (default 1)
 throw () {
+  local lastCommandsExitCode=$?
   local exitCode="${1-$UNSPECIFIED_ERROR_CODE}"
   local msg="${2-$UNSPECIFIED_ERROR_MSG}"
+  if [[ $lastCommandsExitCode -ne 0 ]]; then
+    msg="$msg (last exit code: $lastCommandsExitCode)"
+  fi
   errout "$exitCode" "$msg"
   printStackTrace
   exitIfNonInteractive "$exitCode" || return $?
