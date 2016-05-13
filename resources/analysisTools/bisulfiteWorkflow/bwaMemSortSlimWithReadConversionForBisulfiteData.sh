@@ -39,7 +39,6 @@ tempSortedBamFile=${FILENAME_SORTED_BAM}.tmp
 tempFileForSort=${WORKDIR}/${bamname}_forsorting
 tempBamIndexFile=${FILENAME_SORTED_BAM}.tmp.bai
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
-tempMetricsFile=${FILENAME_BCONV_METRICS}.tmp
 
 # samtools sort may complain about truncated temp files and for each line outputs
 # the error message. This happens when the same files are written at the same time,
@@ -154,8 +153,7 @@ else
 
 		# Convert aligned reads back to original state
 		${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
-		    ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv \
-			--metrics ${tempMetricsFile} - - | \
+		    ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - | \
 		    $MBUF_2G > ${NP_BCONV_OUT} & procID_BCONV=$!
 
 		# Sort bam file
@@ -197,7 +195,6 @@ else	# make sure to rename BAM file when it has been produced correctly
 	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
 	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
-	mv ${tempMetricsFile} ${FILENAME_BCONV_METRICS} || throw 38 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
 	if [[ -f ${tempBamIndexFile} ]]; then
 	 	mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
@@ -230,15 +227,14 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 (${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 12)
 
 # Produced qualitycontrol.json for OTP.
-#${PERL_BINARY} ${TOOL_QC_JSON} \
-#	{FILENAME_GENOME_COVERAGE} \
-#${FILENAME_ISIZES_STATISTICS} \
-#${FILENAME_FLAGSTATS} \
-#${FILENAME_DIFFCHROM_STATISTICS} \
-#${FILENAME_DIP_STATISTICS} \
-#> ${FILENAME_QCJSON}.tmp \
-#|| throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
-#mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
+${PERL_BINARY} ${TOOL_QC_JSON} \
+	${FILENAME_GENOME_COVERAGE} \
+    ${FILENAME_ISIZES_STATISTICS} \
+    ${FILENAME_FLAGSTATS} \
+    ${FILENAME_DIFFCHROM_STATISTICS} \
+    > ${FILENAME_QCJSON}.tmp \
+    || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
+mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey
 [[ ${useSingleEndProcessing-false} == true ]] && exit 0

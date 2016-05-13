@@ -51,18 +51,10 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" check="false" />
-                <output type="file" fnpatternselectiontag="bconvMetrics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_BCONV_METRICS" />
             </output>
         </tool>
 
         <tool name="methylationCalling" value="methylCtools_methylation_calling.sh" basepath="bisulfiteWorkflow">
-            <resourcesets>
-                <rset size="t" memory="1" cores="1" nodes="1" queue="devel"/>
-                <rset size="s" memory="1" cores="2" nodes="1" walltime="1"/>
-                <rset size="m" memory="8" cores="13" nodes="1" walltime="15"/>
-                <rset size="l" memory="8" cores="13" nodes="1" walltime="40"/>
-                <rset size="xl" memory="20" cores="8" nodes="1" walltime="120"/>
-            </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_MERGED_BAM"/>
             <input type="string" setby="callingCode" scriptparameter="PARM_CHR_INDEX"/>
             <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_METH_CALLS_CHECKPOINT"/>
@@ -71,10 +63,10 @@
         <tool name="methylationCallingMeta" value="methylCtools_methylation_calling_meta.sh" basepath="bisulfiteWorkflow">
             <resourcesets>
                 <rset size="t" memory="1" cores="1" nodes="1" queue="devel"/>
-                <rset size="s" memory="1" cores="2" nodes="1" walltime="1"/>
+                <rset size="s" memory="1" cores="13" nodes="1" walltime="1"/>
                 <rset size="m" memory="8" cores="13" nodes="1" walltime="15"/>
                 <rset size="l" memory="8" cores="13" nodes="1" walltime="40"/>
-                <rset size="xl" memory="20" cores="8" nodes="1" walltime="120"/>
+                <rset size="xl" memory="20" cores="13" nodes="1" walltime="120"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_MERGED_BAM" />
             <output type="tuple">
@@ -139,7 +131,6 @@
         <filename class='BamFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${fileStageID}_${cvalue,name="pairedBamSuffix"}'/>
         <filename class='BamIndexFile' derivedFrom='BamFile' pattern='${sourcefile}.bai'/>
         <filename class='BamMetricsFile' derivedFrom='BamFile' pattern='${sourcefile}.dupmark_metrics.txt'/>
-        <filename class="TextFile" onMethod='LaneFileGroup.alignAndPairSlim' fnpatternselectiontag="bconvMetrics" pattern="${sourcefile}.bconv_metrics"/>
         <filename class='FlagstatsFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_flagstats.txt'/>
         <filename class='ChromosomeDiffPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png'/>
         <filename class='ChromosomeDiffTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.txt'/>

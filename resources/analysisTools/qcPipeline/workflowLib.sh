@@ -46,9 +46,7 @@ runningOnConvey () {
 
 
 analysisType () {
-    runExomeAnalyse="${runExomeAnalyses-false}"
-    if [ "$runExomeAnalysis" = "true" ]
-    then
+    if [[  -v runExomeAnalysis && "${runExomeAnalysis-false}" = "true" ]]; then
         echo "exome"
     else
         echo "genome"
