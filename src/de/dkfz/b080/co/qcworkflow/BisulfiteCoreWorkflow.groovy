@@ -156,17 +156,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         return copyOfLaneFileGroups;
     }
 
-    private boolean checkSamples(ExecutionContext context) {
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
-        List<Sample> samples = runtimeService.getSamplesForContext(context)
-        if (samples.size() == 0) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.getDataSet()}!"))
-            return false
-        } else {
-            return true
-        }
-    }
-
+    @Override
     private boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
         int cnt = 0;
@@ -195,12 +185,6 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
             returnValue = false
         }
         return returnValue
-    }
-
-    @Override
-    public boolean checkExecutability(ExecutionContext context) {
-        // Use context.addErrorEntry to add errors or warnings.
-        return checkSamples(context) && checkLaneFiles(context)
     }
 
 }

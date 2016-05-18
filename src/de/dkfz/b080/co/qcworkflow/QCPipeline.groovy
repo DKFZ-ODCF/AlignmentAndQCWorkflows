@@ -1,7 +1,8 @@
 package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*;
-import de.dkfz.b080.co.common.*;
+import de.dkfz.b080.co.common.*
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
@@ -214,18 +215,52 @@ public class QCPipeline extends Workflow {
         return mergedBam;
     }
 
-    @Override
-    public boolean checkExecutability(ExecutionContext context) {
+
+    private boolean checkConfiguration(ExecutionContext context) {
+        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance()
+        AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
+        boolean returnValue = true
+        if (fsap.checkDirectory(new File(config.getIndexPrefix()).getParentFile(), context, false)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${config.getIndexPrefix()}"))
+            returnValue = false
+        }
+        if (fsap.checkFile(config.getChromosomeSizesFile())) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE}: ${config.getChromosomeSizesFile()}"))
+            returnValue = false
+        }
+        if (config.getRunExomeAnalysis()) {
+            if (fsap.checkFile(config.getTargetRegionsFile())) {
+                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE}: ${config.getChromosomeSizesFile()}"))
+                returnValue = false
+            }
+            if (config.getTargetSize() == null) {
+                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_TARGET_SIZE} not set to a valid value: ${config.getTargetSize()}"))
+                returnValue = false
+            }
+        }
+        return returnValue
+    }
+
+
+    private boolean checkSamples(ExecutionContext context) {
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
+        if (samples.size() == 0) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.getDataSet()}!"))
+            return false
+        } else {
+            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId());
+            return true
+        }
+    }
+
+
+    private boolean checkLaneFiles(ExecutionContext context) {
+        boolean returnValue = true
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);
-        if (samples.size() == 0)
-            return false;
-
         final boolean useExistingPairedBams = context.getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
-
         if (!useExistingPairedBams) {
-            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId());
-            //Check if at least one file is available. Maybe for two if paired is used...?
             int cnt = 0;
             for (Sample sample : samples) {
                 List<LaneFileGroup> laneFileGroups = loadLaneFilesForSample(context, sample);
@@ -234,11 +269,22 @@ public class QCPipeline extends Workflow {
                 }
                 logger.postAlwaysInfo("Processed sample " + sample.getName() + " and found " + laneFileGroups.size() + " groups of lane files.");
             }
-            return cnt > 0;
-        } else {
-            return true;
+            if (cnt <= 0) {
+                context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                        expand("No lane files found for PID ${context.getDataSet()}!"))
+                returnValue = false
+            }
         }
+        return returnValue;
     }
+
+
+    @Override
+    public boolean checkExecutability(ExecutionContext context) {
+        // Use context.addErrorEntry to add errors or warnings.
+        return checkSamples(context) && checkLaneFiles(context)
+    }
+
 
     @Override
     public boolean createTestdata(ExecutionContext context) {
