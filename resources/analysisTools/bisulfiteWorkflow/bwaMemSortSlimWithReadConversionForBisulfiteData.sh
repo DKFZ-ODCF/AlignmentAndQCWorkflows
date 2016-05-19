@@ -148,7 +148,7 @@ else
 		${BWA_BINARY} mem \
 			-t ${BWA_MEM_THREADS} \
 			-R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
-			$BWA_MEM_OPTIONS ${INDEX_PREFIX}.conv.fa ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | \
+			$BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | \
 		    $MBUF_2G > ${NP_BWA_OUT} & procID_BWA=$!
 
 		# Convert aligned reads back to original state

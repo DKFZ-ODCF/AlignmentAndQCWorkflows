@@ -97,7 +97,8 @@ grep -w "NA" $FILENAME_DIFFCHROM_STATISTICS && useSingleEndProcessing=true
 
 if [[ ${useSingleEndProcessing-false} == false ]]; then
     # plot the insert size distribution
-    ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${FILEINFO} (rmdup)" && mv  ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || throw 16 "Error from insert sizes plotter"
+    SHORT_FILENAME_PARENTBAM=$(basename "$FILENAME_PARENTBAM")
+    ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${SHORT_FILENAME_PARENTBAM} (rmdup)" && mv  ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || throw 16 "Error from insert sizes plotter"
 
     # plot the paired end aberrations (reads on different chromosomes)
     ${RSCRIPT_BINARY} ${TOOL_PLOT_DIFFCHROM} -i "$FILENAME_DIFFCHROM_MATRIX" -s "$FILENAME_DIFFCHROM_STATISTICS" -o "${FILENAME_DIFFCHROM_PLOT}.tmp" && mv ${FILENAME_DIFFCHROM_PLOT}.tmp ${FILENAME_DIFFCHROM_PLOT} || throw 17 "Error from chromdiff plotter"
