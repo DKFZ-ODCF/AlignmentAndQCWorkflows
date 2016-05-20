@@ -208,8 +208,10 @@ wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
 wait $procIDReadbinsCoverage || throw 15 "Error from genomceCoverage read bins"
 wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
 wait $procIDCBA || throw 17 "Error from combined QC perl script"
-wait $procID_fqconv_r1 || throw 18 "Error in FQCONV (read 1)"
-wait $procID_fqconv_r2 || throw 19 "Error in FQCONV (read 2)"
+if [[ ${bamFileExists} == false ]]; then
+    wait $procID_fqconv_r1 || throw 18 "Error in FQCONV (read 1)"
+    wait $procID_fqconv_r2 || throw 19 "Error in FQCONV (read 2)"
+fi
 
 # rename QC files
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
