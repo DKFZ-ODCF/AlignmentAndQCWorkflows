@@ -255,7 +255,7 @@ public class QCPipeline extends Workflow {
     }
 
 
-    private boolean checkLaneFiles(ExecutionContext context) {
+    protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);

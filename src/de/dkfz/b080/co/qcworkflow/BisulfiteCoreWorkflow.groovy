@@ -157,7 +157,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
     }
 
     @Override
-    private boolean checkLaneFiles(ExecutionContext context) {
+    protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
         int cnt = 0;
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
