@@ -220,16 +220,17 @@ public class QCPipeline extends Workflow {
         FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance()
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
         boolean returnValue = true
-        if (fsap.checkDirectory(new File(config.getIndexPrefix()).getParentFile(), context, false)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${config.getIndexPrefix()}"))
+        File pathToIndex = new File(config.getIndexPrefix()).getParentFile()
+        if (!fsap.checkDirectory(pathToIndex, context, false)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToIndex}"))
             returnValue = false
         }
-        if (fsap.checkFile(config.getChromosomeSizesFile())) {
+        if (!fsap.checkFile(config.getChromosomeSizesFile())) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE}: ${config.getChromosomeSizesFile()}"))
             returnValue = false
         }
         if (config.getRunExomeAnalysis()) {
-            if (fsap.checkFile(config.getTargetRegionsFile())) {
+            if (!fsap.checkFile(config.getTargetRegionsFile())) {
                 context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE}: ${config.getChromosomeSizesFile()}"))
                 returnValue = false
             }
@@ -282,7 +283,7 @@ public class QCPipeline extends Workflow {
     @Override
     public boolean checkExecutability(ExecutionContext context) {
         // Use context.addErrorEntry to add errors or warnings.
-        return checkSamples(context) && checkLaneFiles(context)
+        return checkSamples(context) && checkLaneFiles(context) && checkConfiguration(context)
     }
 
 
