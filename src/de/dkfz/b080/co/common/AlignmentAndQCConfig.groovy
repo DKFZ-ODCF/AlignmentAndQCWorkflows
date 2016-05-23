@@ -36,7 +36,7 @@ class AlignmentAndQCConfig extends COConfig {
     public Integer getTargetSize() {
         Integer returnValue = configValues.getString(CVALUE_TARGET_SIZE, null) as Integer
         if (null == returnValue) {
-            returnValue = configValues.get(CVALUE_TARGETSIZE, null) as Integer
+            returnValue = configValues.getString(CVALUE_TARGETSIZE, null) as Integer
         }
         return returnValue
     }
