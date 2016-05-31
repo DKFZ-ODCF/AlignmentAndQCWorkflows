@@ -8,6 +8,8 @@ import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValu
 import de.dkfz.roddy.core.DataSet
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
+import de.dkfz.roddy.knowledge.files.FileObject
+import de.dkfz.roddy.knowledge.files.Tuple2
 import de.dkfz.roddy.knowledge.methods.GenericMethod
 
 import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES
@@ -88,14 +90,19 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
                 }
 
                 mergedBamsPerLibrary.addFile(mergedLibraryBam);
-                GenericMethod.callGenericTool("methylationCallingMeta", mergedLibraryBam);
-
+                // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
+                // a method, in order to put library and merged methylation results into different directories.
+                // This allows for selection via onMethod="BisulfiteCoreWorkflow.libraryMethylationCallingMeta".
+                mergedLibraryBam.libraryMethylationCallingMeta()
             }
 
             // Merge library bams into per sample bams
             if(availableLibrariesForSample.size() > 1) {
                 BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample);
-                GenericMethod.callGenericTool("methylationCallingMeta", mergedBam);
+                // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
+                // a method, in order to put library and merged methylation results into different directories.
+                // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
+                mergedBam.mergedMethylationCallingMeta()
 
                 if (runCollectBamFileMetrics) mergedBam.collectMetrics();
 

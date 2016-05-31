@@ -45,6 +45,8 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     private TextFile qcJsonFile;
     private TextFile dipStatisticsFile;
     private InsertSizesPlotFile dipStatisticsPlotFile;
+    private MethylationMetaCheckpointFile methylationMetaCheckpointFile;
+    private MethylationMetaMetricsCheckpointFile methylationMetaMetricsCheckpointFile;
 
     public BamFile(ConstructionHelperForBaseFiles helper) {
         super(helper);
@@ -205,6 +207,12 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return rawBamCoverageTextFile;
     }
 
+    public MethylationMetaCheckpointFile getMethylationMetaCheckpointFile() {
+        return methylationMetaCheckpointFile;
+    }
+
+    public MethylationMetaMetricsCheckpointFile getMethylationMetaMetricsCheckpointFile() { return methylationMetaMetricsCheckpointFile; }
+
     public QCSummaryFile getQcSummaryFile() {
         return qcSummaryFile;
     }
@@ -354,6 +362,27 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
             flagstatsFile = GenericMethod.callGenericTool(COConstants.TOOL_SAMTOOLS_FLAGSTAT, this);
         return flagstatsFile;
     }
+
+    @ScriptCallingMethod
+    public Tuple2<MethylationMetaMetricsCheckpointFile,MethylationMetaCheckpointFile> methylationCallingMeta() {
+        if (methylationMetaCheckpointFile == null || methylationMetaMetricsCheckpointFile == null) {
+            Tuple2<MethylationMetaMetricsCheckpointFile, MethylationMetaCheckpointFile> res = GenericMethod.callGenericTool("methylationCallingMeta", this);
+            methylationMetaCheckpointFile = res.value1;
+            methylationMetaMetricsCheckpointFile = res.value0;
+        }
+        return new Tuple2(methylationMetaCheckpointFile, methylationMetaMetricsCheckpointFile);
+    }
+
+    @ScriptCallingMethod
+    public Tuple2<MethylationMetaMetricsCheckpointFile,MethylationMetaCheckpointFile> libraryMethylationCallingMeta() {
+        return methylationCallingMeta();
+    }
+
+    @ScriptCallingMethod
+    public Tuple2<MethylationMetaMetricsCheckpointFile,MethylationMetaCheckpointFile>  mergedMethylationCallingMeta() {
+        return methylationCallingMeta();
+    }
+
 
     @ScriptCallingMethod
     public TextFile performPurityAnalysis(BamFile bamControlMerged) {
