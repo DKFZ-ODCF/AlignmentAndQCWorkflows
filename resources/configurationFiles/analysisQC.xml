@@ -23,17 +23,16 @@
         <cvalue name='gccorCnvSnpOutputDirectory' value='${gccorOutputDirectory}/cnv_snp' type="path"/>
         <cvalue name='gccorPlotOutputDirectory' value='${gccorOutputDirectory}/plots' type="path"/>
 
-        <!-- TODO @Kortine: Do any of the following files also exist for other assemblies? -->
-        <cvalue name="MAPPABILITY_FILE" value="${hg19DatabaseUCSCDirectory}/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz" type="path"
-                description="Window size is not important here."/>
-        <cvalue name="REPLICATION_TIME_FILE" value="${hg19DatabasesDirectory}/ENCODE/ReplicationTime_10cellines_mean_10KB.Rda" type="path"
-                description="Window size must match WINDOW_SIZE parameter."/>
-        <cvalue name="GC_CONTENT_FILE" value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_10kb.txt" type="path"
-                description="Window size must match WINDOW_SIZE parameter."/>
-
+        <!-- Genome-specific files. -->
+        <cvalue name="MAPPABILITY_FILE" value="" type="path"
+                description="For instance UCSC/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz."/>
+        <cvalue name="REPLICATION_TIME_FILE" value="" type="path"
+                description="Window size must match WINDOW_SIZE parameter. For instance ENCODE/ReplicationTime_10cellines_mean_10KB.Rda"/>
+        <cvalue name="GC_CONTENT_FILE" value="" type="path"
+                description="Window size must match WINDOW_SIZE parameter. For instance stats/hg19_GRch37_100genomes_gc_content_10kb.txt"/>
         <!-- TODO Substitute this file by the CHROM_SIZES_FILE. Code needs to be adapted! -->
-        <cvalue name="CHROMOSOME_LENGTH_FILE" value="${assembliesHG191000GenomesDirectory}/stats/chrlengths.txt" type="path"
-                description="Window size must match WINDOW_SIZE parameter."/>
+        <cvalue name="CHROMOSOME_LENGTH_FILE" value="" type="path"
+                description="Window size must match WINDOW_SIZE parameter. For instance stats/chrlengths.txt"/>
 
         <!--annotateCnvFiles Opts-->
         <cvalue name='min_X_ratio' value='0.8' type="float"/>
@@ -591,6 +590,24 @@
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedGcPlot"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${pid}_gc_corrected.png'/>
+
+        <!--<filename class="TextFile" onScriptParameter="annotateCovWindows:FILENAME_COV_WINDOWS_1KB_ANNO"-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.anno.txt.gz'/>-->
+        <!--<filename class="TextFile" onScriptParameter="annotateCovWindows:FILENAME_SEX"-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_sex.txt'/>-->
+
+        <!--<filename class="TextFile" onScriptParameter="mergeAndFilterCovWindows:FILENAME_SEX"-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.txt.gz'/>-->
+
+        <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_GC_CORRECTED_WINDOWS"-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt.gz'/>-->
+        <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_QC_GC_CORRECTION_JSON"-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.json'/>-->
+        <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_GC_CORRECTED_QUALITY"-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>-->
+        <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_GC_CORRECT_PLOT"-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${pid}_gc_corrected.png'/>-->
+
 
     </filenames>
 </configuration>

@@ -21,7 +21,7 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean execute(ExecutionContext context) {
-        AlignmentConfig cfg = new AlignmentConfig(context)
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
         cfg.sampleExtractionFromOutputFiles = false
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
@@ -140,7 +140,7 @@ public class QCPipeline extends Workflow {
         return copyOfLaneFileGroups;
     }
 
-    private BamFileGroup createSortedBams(AlignmentConfig cfg, COProjectsRuntimeService runtimeService, Sample sample) {
+    private BamFileGroup createSortedBams(AlignmentAndQCConfig cfg, COProjectsRuntimeService runtimeService, Sample sample) {
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
         if (cfg.useExistingPairedBams) {
@@ -185,7 +185,7 @@ public class QCPipeline extends Workflow {
         return sortedBamFiles;
     }
 
-    private BamFile mergeAndRemoveDuplicatesFat(AlignmentConfig cfg, Sample sample, BamFileGroup sortedBamFiles) {
+    private BamFile mergeAndRemoveDuplicatesFat(AlignmentAndQCConfig cfg, Sample sample, BamFileGroup sortedBamFiles) {
 
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
@@ -206,26 +206,48 @@ public class QCPipeline extends Workflow {
     }
 
 
+    private static ExecutionContextError getInvalidError (String message) {
+        return ExecutionContextError.EXECUTION_SETUP_INVALID.expand(message)
+    }
+
     private boolean checkConfiguration(ExecutionContext context) {
         FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance()
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
         boolean returnValue = true
         File pathToIndex = new File(config.getIndexPrefix()).getParentFile()
         if (!fsap.checkDirectory(pathToIndex, context, false)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToIndex}"))
+            context.addErrorEntry(getInvalidError("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToIndex}"))
             returnValue = false
         }
         if (!fsap.checkFile(config.getChromosomeSizesFile())) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE}: ${config.getChromosomeSizesFile()}"))
+            context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE}: ${config.getChromosomeSizesFile()}"))
             returnValue = false
         }
         if (config.getRunExomeAnalysis()) {
             if (!fsap.checkFile(config.getTargetRegionsFile())) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE}: ${config.getChromosomeSizesFile()}"))
+                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE}: ${config.getChromosomeSizesFile()}"))
                 returnValue = false
             }
             if (config.getTargetSize() == null) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_TARGET_SIZE} not set to a valid value: ${config.getTargetSize()}"))
+                context.addErrorEntry(getInvalidError("${AlignmentAndQCConfig.CVALUE_TARGET_SIZE} not set to a valid value: ${config.getTargetSize()}"))
+                returnValue = false
+            }
+        }
+        if (config.runACEseqQC) {
+            if (!fsap.checkFile(config.getMappabilityFile())) {
+                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE}: ${config.getMappabilityFile()}"))
+                returnValue = false
+            }
+            if (!fsap.checkFile(config.getReplicationTimeFile())) {
+                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE}: ${config.getReplicationTimeFile()}"))
+                returnValue = false
+            }
+            if (!fsap.checkFile(config.getGcContentFile())) {
+                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE}: ${config.getGcContentFile()}"))
+                returnValue = false
+            }
+            if (!fsap.checkFile(config.getChromosomeLengthFile())) {
+                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_LENGTH_FILE}: ${config.getChromosomeLengthFile()}"))
                 returnValue = false
             }
         }
@@ -237,7 +259,7 @@ public class QCPipeline extends Workflow {
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() == 0) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.getDataSet()}!"))
+            context.addErrorEntry(getInvalidError("No samples found for PID ${context.getDataSet()}!"))
             return false
         } else {
             logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId());

@@ -1,5 +1,6 @@
-package de.dkfz.b080.co.qcworkflow;
+package de.dkfz.b080.co.qcworkflow
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig;
 import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService;
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.core.ExecutionContext;
@@ -12,7 +13,7 @@ public class QCPipelinePancancerSlim extends QCPipeline {
 
     @Override
     public boolean execute(ExecutionContext context) {
-        AlignmentConfig cfg = new AlignmentConfig(context)
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
         cfg.sampleExtractionFromOutputFiles = false
 
         String controlBamName = overrideMergedBamFiles[0];
@@ -69,7 +70,7 @@ public class QCPipelinePancancerSlim extends QCPipeline {
     }
 
     private BamFileGroup createSortedBams(ExecutionContext context, BasicCOProjectsRuntimeService runtimeService, Sample sample) {
-        AlignmentConfig cfg = new AlignmentConfig(context)
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
         //Create bam files out of the lane files
