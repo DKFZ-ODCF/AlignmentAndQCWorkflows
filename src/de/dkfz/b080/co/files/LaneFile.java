@@ -1,20 +1,15 @@
 package de.dkfz.b080.co.files;
 
-import de.dkfz.roddy.Roddy;
 import de.dkfz.roddy.config.Configuration;
-import de.dkfz.roddy.config.ConfigurationValue;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
-import de.dkfz.roddy.execution.jobs.CommandFactory;
 import de.dkfz.roddy.execution.jobs.Job;
 import de.dkfz.roddy.execution.jobs.JobResult;
-import de.dkfz.roddy.execution.jobs.cluster.pbs.ChangedProcessDependencyProcessingCommand;
 import de.dkfz.roddy.knowledge.files.*;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
 import de.dkfz.roddy.tools.LoggerWrapper;
-import examples.Exec;
 
 import java.io.File;
 import java.util.Arrays;
@@ -22,7 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author michael
@@ -50,6 +44,15 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
         this.fastqcFile = parent.fastqcFile;
         this.alignedSequenceFile = parent.alignedSequenceFile;
         this.setExecutionContext(newContext);
+    }
+
+    /**
+     * Hack method! Allow to decrease a file stage
+     */
+    public LaneFile getFSDecreasedCopy() {
+        LaneFile lf = new LaneFile(this, this.getExecutionContext());
+        lf.fileStageSettings = fileStageSettings.decreaseLevel();
+        return lf;
     }
 
     @Override

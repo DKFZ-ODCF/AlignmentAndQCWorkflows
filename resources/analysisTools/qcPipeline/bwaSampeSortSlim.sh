@@ -72,7 +72,7 @@ fi
 (set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=2 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_100M | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
 
 # use sambamba for flagstats
-(set -o pipefail; cat ${NP_FLAGSTATS_IN} | ${SAMBAMBA_BINARY} flagstat /dev/stdin > ${FILENAME_FLAGSTATS}.tmp) & procIDFlagstat=$!
+(set -o pipefail; cat ${NP_FLAGSTATS_IN} | ${SAMBAMBA_BINARY} flagstat -t 2 /dev/stdin > ${FILENAME_FLAGSTATS}.tmp) & procIDFlagstat=$!
 
 # samtools for index
 ${SAMTOOLS_BINARY} index $NP_INDEX_IN $tempBamIndexFile & procIDindexing=$!

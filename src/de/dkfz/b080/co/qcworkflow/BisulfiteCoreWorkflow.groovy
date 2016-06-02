@@ -1,7 +1,7 @@
 package de.dkfz.b080.co.qcworkflow
 
 import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService
-import de.dkfz.b080.co.common.AlignmentRuntimeService
+import de.dkfz.b080.co.common.COProjectsRuntimeService
 import de.dkfz.b080.co.files.*
 import de.dkfz.roddy.config.Configuration
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
@@ -22,6 +22,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         Configuration cfg = context.getConfiguration();
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "false", "boolean"); //Disable sample extraction from output for alignment workflows.
+        //cfgValues.put(COConstants.FLAG_USE_ACCELERATED_HARDWARE, "false", "boolean"); //Disable accelerated hardware usage for testing
 
         // Run flags
         final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false)
@@ -30,7 +31,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
 
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
 
@@ -38,23 +39,29 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample in samples) {
+            List<String> availableLibrariesForSample = sample.getLibraries();
             BamFileGroup mergedBamsPerLibrary = new BamFileGroup();
 
             // Create per library merged bams
-            for (String library in sample.libraries) {
+            for (String library in availableLibrariesForSample) {
                 BamFileGroup sortedBamFiles = []
                 List<LaneFileGroup> rawSequenceGroups = loadLaneFilesForSampleAndLibrary(context, sample, library)
                 if (rawSequenceGroups == null || rawSequenceGroups.size() > 0) {
                     for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
+
                         if (runFastQC && !runAlignmentOnly)
                             rawSequenceGroup.calcFastqcForAll();
                         if (runFastQCOnly)
                             continue;
 
+
                         BamFile bamFile = rawSequenceGroup.alignAndPairSlim();
+                        //rawSequenceGroup.alignAndPairSlim()
+
 
                         bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
                         sortedBamFiles.addFile(bamFile);
+
                     }
                 }
 
@@ -62,20 +69,47 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
                 if (runAlignmentOnly) continue;
 
-                mergedBamsPerLibrary.addFile(sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample));
+                BamFile mergedLibraryBam;
+                if (availableLibrariesForSample.size() == 1) {
+                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
+                    if (runCollectBamFileMetrics) mergedLibraryBam.collectMetrics();
 
+                    Sample.SampleType sampleType = sample.getType();
+                    if (!coverageTextFilesBySample.containsKey(sampleType))
+                        coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
+                    coverageTextFilesBySample.get(sampleType).addFile(mergedLibraryBam.calcReadBinsCoverage());
+
+                    mergedBamFiles.addFile(mergedLibraryBam);
+                }
+                else {
+                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlimWithLibrary(sample, library)
+                }
+
+                mergedBamsPerLibrary.addFile(mergedLibraryBam);
+                // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
+                // a method, in order to put library and merged methylation results into different directories.
+                // This allows for selection via onMethod="BisulfiteCoreWorkflow.libraryMethylationCallingMeta".
+                mergedLibraryBam.libraryMethylationCallingMeta()
             }
 
             // Merge library bams into per sample bams
-            BamFile mergedBam = mergedBamsPerLibrary.mergeAndRemoveDuplicatesSlim(sample);
-            if (runCollectBamFileMetrics) mergedBam.collectMetrics();
+            if(availableLibrariesForSample.size() > 1) {
+                BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample);
+                // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
+                // a method, in order to put library and merged methylation results into different directories.
+                // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
+                mergedBam.mergedMethylationCallingMeta()
 
-            Sample.SampleType sampleType = sample.getType();
-            if (!coverageTextFilesBySample.containsKey(sampleType))
-                coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
-            coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage());
+                if (runCollectBamFileMetrics) mergedBam.collectMetrics();
 
-            mergedBamFiles.addFile(mergedBam);
+                Sample.SampleType sampleType = sample.getType();
+                if (!coverageTextFilesBySample.containsKey(sampleType))
+                    coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
+                coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage());
+
+                mergedBamFiles.addFile(mergedBam);
+            }
+
         }
 
         if (!mergedBamFiles.getFilesInGroup()) {
@@ -85,7 +119,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
         if (runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
             coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
-        } else if (coverageTextFilesBySample.keySet().size() == 1) {
+        } else if (runCoveragePlots && coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
             ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot();
         }
@@ -104,11 +138,11 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
             foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
         }
-        def runtimeService = context.getRuntimeService() as AlignmentRuntimeService
+        def runtimeService = context.getRuntimeService() as COProjectsRuntimeService
         String sampleID = sample.getName() + "_" + library;
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
-            List<LaneFileGroup> laneFileGroups = runtimeService.getLanesForSample(context, sample);
+            List<LaneFileGroup> laneFileGroups = runtimeService.getLanesForSample(context, sample, library);
             mapForDataSet.put(sampleID, laneFileGroups);
         }
 
@@ -126,25 +160,34 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
     }
 
     @Override
-    public boolean checkExecutability(ExecutionContext context) {
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
-        if (samples.size() == 0)
-            return false;
-
-        //Check if at least one file is available. Maybe for two if paired is used...?
+    protected boolean checkLaneFiles(ExecutionContext context) {
+        boolean returnValue = true
         int cnt = 0;
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
         for (Sample sample : samples) {
-            List<LaneFileGroup> laneFileGroups = [];
+            LinkedHashMap<String,LaneFileGroup> laneFileGroups = [:]
             for (String lib : sample.getLibraries()) {
-                laneFileGroups += loadLaneFilesForSampleAndLibrary(context, sample, lib);
-            }
-
-            for (LaneFileGroup lfg : laneFileGroups) {
-                cnt += lfg.getFilesInGroup().size();
+                for (LaneFileGroup group : loadLaneFilesForSampleAndLibrary(context, sample, lib)) {
+                    String key = group.getRun() + " " + group.getId()
+                    if (laneFileGroups.containsKey(key)) {
+                        context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                                    expand("Duplicate lane identifiers for ${group.getRun()}_${group.getId()} among libraries " +
+                                            "(pid=${context.getDataSet()}, sample=${sample.getName()})! Check run and FASTQ names."))
+                        returnValue = false
+                    } else {
+                        laneFileGroups[key] = group
+                    }
+                    cnt += group.getFilesInGroup().size()
+                }
             }
         }
-        return cnt > 0;
+        if (cnt <= 0) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                        expand("No lane files found for PID ${context.getDataSet()}!"))
+            returnValue = false
+        }
+        return returnValue
     }
 
 }

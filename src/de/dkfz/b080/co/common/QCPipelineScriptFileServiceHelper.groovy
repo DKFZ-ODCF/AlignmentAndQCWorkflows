@@ -21,7 +21,7 @@ class QCPipelineScriptFileServiceHelper {
      * @param files
      * @return
      */
-    static List<LaneFileGroup>  sortAndPairLaneFilesToGroupsForSampleAndRun(ExecutionContext context, Sample sample, String runName, List<File> files) {
+    static List<LaneFileGroup>  sortAndPairLaneFilesToGroupsForSampleAndRun(ExecutionContext context, Sample sample, String libraryID, String runName, List<File> files) {
         List<File> sortedFiles = [];
         LinkedHashMap<String, LinkedList<File>> sortedFileGroups = new LinkedHashMap<String, LinkedList<File>>();
         List<LaneFileGroup> fileGroups = new LinkedList<LaneFileGroup>();
@@ -45,13 +45,13 @@ class QCPipelineScriptFileServiceHelper {
                 String index = "R1";
                 String index2 = "R2";
                 String lane = String.format("L%03d", i);
-                String id = String.format("%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), runName, lane, index);
+                String id = String.format("%s_%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), libraryID, runName, lane, index);
 
 
                 JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
                 LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>(Arrays.asList(
-                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index, 0, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result),
-                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index2, 1, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result)
+                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index,  0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result),
+                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index2, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result)
                 ));
                 filesInGroup[1].setFileIsValid();
                 fileGroups << new LaneFileGroup(context, id, runName, sample, filesInGroup)
@@ -95,8 +95,8 @@ class QCPipelineScriptFileServiceHelper {
 
                     JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
 
-                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index0, 0, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
-                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index1, 1, runName, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
+                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index0, 0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
+                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index1, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
 
                     fileGroups << new LaneFileGroup(context, id, runName, sample, filesInGroup)
                 }

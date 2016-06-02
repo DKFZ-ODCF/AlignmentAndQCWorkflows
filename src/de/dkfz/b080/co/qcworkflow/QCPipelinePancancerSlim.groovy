@@ -14,10 +14,11 @@ public class QCPipelinePancancerSlim extends QCPipeline {
     public boolean execute(ExecutionContext context) {
         AlignmentConfig cfg = new AlignmentConfig(context)
         cfg.sampleExtractionFromOutputFiles = false
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
 
         String controlBamName = overrideMergedBamFiles[0];
         String[] tumorBamNames = overrideMergedBamFiles[1 .. -1];
+
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples
         if(cfg.overrideSampleNames) {

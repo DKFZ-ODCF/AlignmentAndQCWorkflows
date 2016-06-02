@@ -1,18 +1,11 @@
 #!/bin/bash
 
 source ${CONFIG_FILE}
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 
-printInfo
+printInfo 
 
-set -o pipefail
-
-if [[ ${PBS_QUEUE} == convey* ]]; then
-	ON_CONVEY=true
-else
-	ON_CONVEY=false
-fi
-
+set -o pipefail 
 
 ID=${RUN}_${LANE}
 SM=sample_${SAMPLE}_${PID}
@@ -32,11 +25,13 @@ NP_COVERAGEQC_IN=${RODDY_SCRATCH}/np_coverageqc_in
 NP_COMBINEDANALYSIS_IN=${RODDY_SCRATCH}/np_combinedanalysis_in
 NP_FLAGSTATS=${RODDY_SCRATCH}/np_flagstats_in
 NP_SAMTOOLS_INDEX_IN=${RODDY_SCRATCH}/np_samtools_index_in
+NP_BWA_OUT=${RODDY_SCRATCH}/np_bwa_out
+NP_BCONV_OUT=${RODDY_SCRATCH}/np_bconv_out
 
 MBUF_100M="${MBUFFER_BINARY} -m 100m -q -l /dev/null"
 MBUF_2G="${MBUFFER_BINARY} -m 2g -q -l /dev/null"
 
-mkfifo ${NP_COMPRESSION_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS}
+mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS} ${NP_BWA_OUT} ${NP_BCONV_OUT}
 
 bamname=`basename ${FILENAME_SORTED_BAM}`
 INDEX_FILE=${FILENAME_SORTED_BAM}.bai
@@ -48,7 +43,7 @@ tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 # samtools sort may complain about truncated temp files and for each line outputs
 # the error message. This happens when the same files are written at the same time,
 # see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
-NP_SORT_ERRLOG=$RODDY_SCRATCH/NP_SORT_ERRLOG
+NP_SORT_ERRLOG=${RODDY_SCRATCH}/NP_SORT_ERRLOG
 FILENAME_SORT_LOG=${DIR_TEMP}/${bamname}_errlog_sort
 
 RAW_SEQ=${RAW_SEQ_1}
@@ -77,13 +72,10 @@ LENGTH_SEQ_2=`${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} 2>/dev/null | head 
 # make biobambam sort default
 useBioBamBamSort=${useBioBamBamSort-true}
 
-if [[ ${bamFileExists} == false ]]	# we have to make the BAM
-then
+if [[ ${bamFileExists} == false ]]; then	# we have to make the BAM 
 	mkfifo ${FNPIPE1} ${FNPIPE2}
-	if [[ $useAdaptorTrimming == true ]] # [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
-	then
-		if [ "${qualityScore}" = "illumina" ]
-		then
+	if [[ $useAdaptorTrimming == true ]]; then # [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
+		if [ "${qualityScore}" = "illumina" ]; then
 			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | $MBUF_2G > $i1" &
 			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | $MBUF_2G > $i2" &
 		else
@@ -98,23 +90,24 @@ then
 		#     u1=/dev/null
 		#     u2=/dev/null
 		#     mkfifo $i1 $i2 $o1
+
 		# But o2 now has to contain read2 here:
 		o2=${RODDY_SCRATCH}/at_o2
 		mkfifo $o2
 		eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+
 		# trimming with fastx does not work in combination with Trimmomatic!
 		# besides, bwa mem automagically reverts mate pair data
-		#cat $o1 ${TRIM_STEP} ${REVERSE_STEP} | $MBUF_2G > $FNPIPE1 &
-		#cat $o2 ${TRIM_STEP} ${REVERSE_STEP} | $MBUF_2G > $FNPIPE2 &
-		cat $o1 | $MBUF_2G > $FNPIPE1 &
-		cat $o2 | $MBUF_2G > $FNPIPE2 &
-	elif [ "${qualityScore}" = "illumina" ]	# bwa mem has no possibility to convert Illumina 1.3 scores
-	then
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | $MBUF_2G > $FNPIPE1" &
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | $MBUF_2G > $FNPIPE2" &
+		cat $o1 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - | $MBUF_2G > $FNPIPE1 & procID_fqconv_r1=$!
+		cat $o2 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - | $MBUF_2G > $FNPIPE2 & procID_fqconv_r2=$!
+	elif [ "${qualityScore}" = "illumina" ]; then	# bwa mem has no possibility to convert Illumina 1.3 scores
+		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | \
+		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - | $MBUF_2G > $FNPIPE1" & procID_fqconv_r1=$!
+		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | \
+		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconf -2 - - | $MBUF_2G > $FNPIPE2" & procID_fqconv_r2=$!
 	else
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | $MBUF_2G > $FNPIPE1" &
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | $MBUF_2G > $FNPIPE2" &
+		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - | $MBUF_2G > $FNPIPE1" & procID_fqconv_r1=$!
+		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - | $MBUF_2G > $FNPIPE2" & procID_fqconv_r2=$!
 	fi
 
 	INPUT_PIPES=""
@@ -136,57 +129,64 @@ fi
 (set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_100M | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
 
 # use sambamba for flagstats
-(set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} flagstat /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
+(set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
 
-if [[ ${bamFileExists} == true ]]
-then
+if [[ ${bamFileExists} == true ]]; then
 	echo "the BAM file already exists, re-creating other output files."
 	# make all the pipes
 	(cat ${FILENAME_SORTED_BAM} | ${MBUF_2G} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_2G} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 else
-	if [[ "$ON_CONVEY" == "true" ]]
-	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
-		# here, we use the local scratch (${RODDY_SCRATCH}) for sorting!
-		useBioBamBamSort=false;
-		(set -o pipefail; ${BWA_ACCELERATED_BINARY} mem ${BWA_MEM_CONVEY_ADDITIONAL_OPTIONS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_2G | tee $NP_COMBINEDANALYSIS_IN | \
-		${SAMBAMBA_BINARY} view -f bam -S -l 0 -t 8 /dev/stdin | $MBUF_2G | \
-		tee ${NP_FLAGSTATS} | \
-		${SAMBAMBA_BINARY} sort --tmpdir=${RODDY_SCRATCH} -l 9 -t 8 -m ${SAMPESORT_MEMSIZE} /dev/stdin -o /dev/stdout 2>$NP_SORT_ERRLOG | \
-		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} > $tempSortedBamFile; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
-
-		wait $procID_MEMSORT; [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem - sambamba pipe returned a non-zero exit code and the job will die now." && exit 100
-
-	elif [[ ${useBioBamBamSort} == false ]]
-	then	# we use samtools for making the index
+	if [[ ${useBioBamBamSort} == false ]]; then
+		# we use samtools for making the index
+		# filter secondary and supplementary alignments (flag 2304) after alignment
 		mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
+
+		# Index bam file
 		${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
-		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_2G | tee $NP_COMBINEDANALYSIS_IN | \
-		${SAMTOOLS_BINARY} view -uSbh - | $MBUF_2G | \
-		${SAMTOOLS_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
-		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} ${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+
+		# Align converted fastq files
+		${BWA_BINARY} mem \
+			-t ${BWA_MEM_THREADS} \
+			-R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
+			$BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | \
+		    $MBUF_2G > ${NP_BWA_OUT} & procID_BWA=$!
+
+		# Convert aligned reads back to original state
+		${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
+		    ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - | \
+		    $MBUF_2G > ${NP_BCONV_OUT} & procID_BCONV=$!
+
+		# Sort bam file
+		(set -o pipefail; \
+		${SAMTOOLS_BINARY} view -h ${NP_BCONV_OUT} | \
+		tee ${NP_COMBINEDANALYSIS_IN} | \
+		${SAMTOOLS_BINARY} view -uSbh -F 2304 - | \
+		$MBUF_2G | \
+		${SAMTOOLS_BINARY} sort -@ 8 \
+			-m ${SAMPESORT_MEMSIZE} \
+			-o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
+		tee ${NP_COVERAGEQC_IN} \
+			${NP_READBINS_IN} \
+			${NP_FLAGSTATS} \
+			${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
+		    echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+
 		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
-		wait $procID_logwrite	# do we need a check for it?
-		wait $procID_MEMSORT; [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem - samtools pipe returned a non-zero exit code and the job will die now." && exit 100
-		wait $procID_IDX; [[ ! $? -eq 0 ]] && echo "Error from samtools index" && exit 10
 
-	else	# biobambam makes the index
-		(cat ${NP_BAMSORT} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} > ${tempSortedBamFile}) & procIDview=$!
-		# Output sam to separate named pipe
-		# Rewrite to a bamfile
-		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_2G | tee $NP_COMBINEDANALYSIS_IN | \
-		${SAMTOOLS_BINARY} view -uSbh - | $MBUF_2G | \
-		${BAMSORT_BINARY} O=${NP_BAMSORT} level=1 inputthreads=2 outputthreads=2 \
-		index=1 indexfilename=${tempBamIndexFile} calmdnm=1 calmdnmrecompindetonly=1 calmdnmreference=${INDEX_PREFIX} \
-		tmpfile=${tempFileForSort} 2>$NP_SORT_ERRLOG; echo $? > ${DIR_TEMP}/ec_bbam) & procIDBamsort=$!
-		wait $procIDBamsort; [[ $? -gt 0 ]] && echo "Error from bamsort binary" && exit 11
-		wait $procIDview; [[ $? -gt 0 ]] && echo "Error from cat from bamsort output for pipes" && exit 12
-	fi
+		# Check for errors
+		wait $procID_logwrite	# do we need a check for it?
+		wait $procID_BWA || throw 20 "Error in BWA alignment"
+		wait $procID_BCONV || throw 21 "Error in BCONV"
+		wait $procID_MEMSORT || throw 24 "Error in samtools sort"
+		wait $procID_IDX; [[ ! $? -eq 0 ]] && echo "Error from samtools index" && exit 10
+	else
+		throw 11 "biobambam sort not implemented yet";
+	fi;
 fi
 
-if [[ ${bamFileExists} == true ]]
-then
-	wait $procIDOutPipe; [[ $? -gt 0 ]] && echo "Error from sambamba view pipe" && exit 13
+if [[ ${bamFileExists} == true ]]; then
+	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
 else	# make sure to rename BAM file when it has been produced correctly
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	rm -rf ${WORKDIR} 2> /dev/null # Remove temporary files sorting
@@ -204,10 +204,14 @@ else	# make sure to rename BAM file when it has been produced correctly
 	
 fi
 
-wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 14
-wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomceCoverage read bins" && exit 15
-wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 16
-wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 17
+wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
+wait $procIDReadbinsCoverage || throw 15 "Error from genomceCoverage read bins"
+wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
+wait $procIDCBA || throw 17 "Error from combined QC perl script"
+if [[ ${bamFileExists} == false ]]; then
+    wait $procID_fqconv_r1 || throw 18 "Error in FQCONV (read 1)"
+    wait $procID_fqconv_r2 || throw 19 "Error in FQCONV (read 2)"
+fi
 
 # rename QC files
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
@@ -219,35 +223,23 @@ mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 
-
 # QC summary
 # remove old warnings file if it exists (due to errors in run such as wrong chromsizes file)
 [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]] && rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
-(${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 14)
+(${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 12)
 
-# Produced qualitycontrol.json for OTP. Remove the 1 short-circuit as soon as the dip-statistic is available.
-if [[ 1 || "$ON_CONVEY" == "true" ]]; then
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
+# Produced qualitycontrol.json for OTP.
+${PERL_BINARY} ${TOOL_QC_JSON} \
 	${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
     > ${FILENAME_QCJSON}.tmp \
-    || throw 25 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
-else
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
-  	${FILENAME_GENOME_COVERAGE} \
-    ${FILENAME_ISIZES_STATISTICS} \
-    ${FILENAME_FLAGSTATS} \
-    ${FILENAME_DIFFCHROM_STATISTICS} \
-    ${FILENAME_DIP_STATISTICS} \
-    > ${FILENAME_QCJSON}.tmp \
     || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
-fi
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey
-[[ ${useSingleEndProcessing-false} == true ]] || [[ "$ON_CONVEY" == "true" ]] && exit 0
+[[ ${useSingleEndProcessing-false} == true ]] && exit 0
 
 ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${bamname}" && mv ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || ( echo "Error from insert sizes plotter" && exit 22)
 

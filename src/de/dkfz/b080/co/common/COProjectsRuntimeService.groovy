@@ -1,8 +1,13 @@
 package de.dkfz.b080.co.common;
 
-import de.dkfz.b080.co.files.*;
-import de.dkfz.roddy.StringConstants;
-import de.dkfz.roddy.core.*;
+import de.dkfz.b080.co.files.*
+import de.dkfz.roddy.Roddy;
+import de.dkfz.roddy.StringConstants
+import de.dkfz.roddy.core.ExecutionContext
+import de.dkfz.roddy.core.ExecutionContextError
+import de.dkfz.roddy.core.ExecutionContextLevel
+import de.dkfz.roddy.core.ExecutionContextSubLevel
+import de.dkfz.roddy.core.ProcessingFlag
 import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
@@ -14,7 +19,7 @@ import java.util.function.Consumer;
  * Created by heinold on 15.01.16.
  */
 @groovy.transform.CompileStatic
-public class AlignmentRuntimeService extends BasicCOProjectsRuntimeService {
+public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
     private static LoggerWrapper logger = LoggerWrapper.getLogger(BasicCOProjectsRuntimeService.class.getName());
 
     protected static void getFileCompression(ExecutionContext run, List<LaneFile> allLaneFiles) {
@@ -71,13 +76,28 @@ public class AlignmentRuntimeService extends BasicCOProjectsRuntimeService {
         return getLanesForSample(context, sample, library);
     }
 
-    public List getLanesForSample(ExecutionContext context, Sample sample, String library = null) {
+    public List getLanesForSample(ExecutionContext context, Sample sample, String libraryID = null) {
+        COConfig coConfig = new COConfig(context);
+
         ProcessingFlag flag = context.setProcessingFlag(ProcessingFlag.STORE_FILES);
         List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>();
 
         def configurationValues = context.getConfiguration().getConfigurationValues()
         boolean getLanesFromFastqList = configurationValues.getString("fastq_list", "");
-        if (getLanesFromFastqList) {
+        boolean getLanesFromInputTable = Roddy.isMetadataCLOptionSet()
+
+        if (getLanesFromInputTable) {
+            MetadataTable inputTable = getMetadataTable(context).subsetBySample(sample.name)
+            if (libraryID) inputTable = inputTable.subsetByLibrary(libraryID)
+
+            inputTable.listRunIDs().each {
+                String runID ->
+                    List<File> fastqFilesForRun = inputTable.subsetByColumn(COConstants.INPUT_TABLE_RUNCOL_NAME, runID).listFiles()
+                    List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
+                    laneFiles += bundleFiles
+            }
+
+        } else if (getLanesFromFastqList) {
             // If fastq_list was set via command line or via config file.
             List<File> fastqFiles = configurationValues.getString("fastq_list").split(StringConstants.SPLIT_SEMICOLON).collect { String it -> new File(it); };
             def sequenceDirectory = configurationValues.get(COConstants.CVALUE_SEQUENCE_DIRECTORY).toFile(context).getAbsolutePath();
@@ -88,26 +108,28 @@ public class AlignmentRuntimeService extends BasicCOProjectsRuntimeService {
             List<String> listOfRunIDs = listOfFastqFilesForSample.collect { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] }.unique() as List<String>
             listOfRunIDs.each { String runID ->
                 List<File> fastqFilesForRun = listOfFastqFilesForSample.findAll { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] == runID } as List<File>
-                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, runID, fastqFilesForRun);
+                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
                 laneFiles.addAll(bundleFiles);
             }
 
         } else {
             // Default case
 
-            File sampleDirectory = getSampleDirectory(context, sample);
+            File sampleDirectory = getSampleDirectory(context, sample, libraryID);
 
             logger.postAlwaysInfo("Searching for lane files in directory ${sampleDirectory}")
             List<File> runsForSample = FileSystemAccessProvider.getInstance().listDirectoriesInDirectory(sampleDirectory);
             for (File run : runsForSample) {
-                File sequenceDirectory = getSequenceDirectory(context, sample, run.getName());
+                File sequenceDirectory = getSequenceDirectory(context, sample, run.getName(), libraryID);
+                logger.postSometimesInfo("\tChecking for run ${run.name} in sequence dir: ${sequenceDirectory}")
                 if (!FileSystemAccessProvider.getInstance().checkDirectory(sequenceDirectory, context, false)) // Skip directories which do not exist
                     continue;
                 List<File> files = FileSystemAccessProvider.getInstance().listFilesInDirectory(sequenceDirectory);
                 if (files.size() == 0)
                     logger.postAlwaysInfo("\t There were no lane files in directory ${sequenceDirectory}")
                 //Find file bundles
-                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, run.getName(), files);
+                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, run.getName(), files);
+                logger.postSometimesInfo("\tFound ${bundleFiles.size()} lane file groups in sequence directory.")
                 laneFiles.addAll(bundleFiles);
             }
         }

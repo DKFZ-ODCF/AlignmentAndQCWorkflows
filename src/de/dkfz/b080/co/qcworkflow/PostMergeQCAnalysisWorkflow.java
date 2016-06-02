@@ -1,6 +1,6 @@
 package de.dkfz.b080.co.qcworkflow;
 
-import de.dkfz.b080.co.common.AlignmentRuntimeService;
+import de.dkfz.b080.co.common.COProjectsRuntimeService;
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
@@ -31,7 +31,7 @@ public class PostMergeQCAnalysisWorkflow extends Workflow {
         final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
         final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
 
-        AlignmentRuntimeService runtimeService = (AlignmentRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)

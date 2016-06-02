@@ -2,7 +2,7 @@
                configurationType='analysis'
                class='de.dkfz.roddy.core.Analysis'
                workflowClass='de.dkfz.b080.co.qcworkflow.QCPipeline'
-               runtimeServiceClass='de.dkfz.b080.co.common.AlignmentRuntimeService'
+               runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
                imports='qcAnalysis'
                canCreateTestdata='true'
                listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,readBinsCoverage,qcSummary,onTargetCoverage,onTargetCoveragePlotter,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff,targetExtractCoverageSlim"
@@ -39,7 +39,9 @@
 
         <tool name='targetExtractCoverageSlim' value='targetExtractCoverageSlim.sh' basepath='exomePipeline'>
             <resourcesets>
-                <rset size="t" memory="1" cores="2" nodes="1" walltime="1"/>
+                <!-- Test -->
+                <rset size="t" memory="1" cores="2" nodes="1" queue="devel"/>
+                <!-- Production -->
                 <rset size="xs" memory="5" cores="2" nodes="1" walltime="1"/>
                 <rset size="s" memory="6" cores="2" nodes="1" walltime="2"/>
                 <rset size="m" memory="7" cores="2" nodes="1" walltime="4"/>

@@ -1,10 +1,13 @@
 package de.dkfz.b080.co.qcworkflow;
 
-import de.dkfz.b080.co.files.*
-import de.dkfz.b080.co.common.*
 import de.dkfz.b080.co.methods.ACEseq
-import de.dkfz.roddy.core.*
-
+import de.dkfz.b080.co.files.*;
+import de.dkfz.b080.co.common.*
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
+import de.dkfz.roddy.tools.LoggerWrapper;
+import de.dkfz.roddy.config.Configuration;
+import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
+import de.dkfz.roddy.core.*;
 import java.util.*
 
 /**
@@ -12,13 +15,15 @@ import java.util.*
  */
 public class QCPipeline extends Workflow {
 
+    private static LoggerWrapper logger = LoggerWrapper.getLogger(QCPipeline.class.getName());
+
     public QCPipeline() {}
 
     @Override
     public boolean execute(ExecutionContext context) {
         AlignmentConfig cfg = new AlignmentConfig(context)
         cfg.sampleExtractionFromOutputFiles = false
-        AlignmentRuntimeService runtimeService = (AlignmentRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
@@ -114,7 +119,7 @@ public class QCPipeline extends Workflow {
         if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
             foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
         }
-        AlignmentRuntimeService runtimeService = (AlignmentRuntimeService) context.getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
         String sampleID = sample.getName();
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
@@ -135,7 +140,7 @@ public class QCPipeline extends Workflow {
         return copyOfLaneFileGroups;
     }
 
-    private BamFileGroup createSortedBams(AlignmentConfig cfg, AlignmentRuntimeService runtimeService, Sample sample) {
+    private BamFileGroup createSortedBams(AlignmentConfig cfg, COProjectsRuntimeService runtimeService, Sample sample) {
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
         if (cfg.useExistingPairedBams) {
@@ -200,34 +205,82 @@ public class QCPipeline extends Workflow {
         return mergedBam;
     }
 
-    @Override
-    public boolean checkExecutability(ExecutionContext context) {
-        AlignmentConfig cfg = new AlignmentConfig(context)
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getProject().getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
-        if (samples.size() == 0)
-            return false;
 
-        if (!cfg.useExistingPairedBams) {
-            //Check if at least one file is available. Maybe for two if paired is used...?
+    private boolean checkConfiguration(ExecutionContext context) {
+        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance()
+        AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
+        boolean returnValue = true
+        File pathToIndex = new File(config.getIndexPrefix()).getParentFile()
+        if (!fsap.checkDirectory(pathToIndex, context, false)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToIndex}"))
+            returnValue = false
+        }
+        if (!fsap.checkFile(config.getChromosomeSizesFile())) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE}: ${config.getChromosomeSizesFile()}"))
+            returnValue = false
+        }
+        if (config.getRunExomeAnalysis()) {
+            if (!fsap.checkFile(config.getTargetRegionsFile())) {
+                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE}: ${config.getChromosomeSizesFile()}"))
+                returnValue = false
+            }
+            if (config.getTargetSize() == null) {
+                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_TARGET_SIZE} not set to a valid value: ${config.getTargetSize()}"))
+                returnValue = false
+            }
+        }
+        return returnValue
+    }
+
+
+    private boolean checkSamples(ExecutionContext context) {
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
+        if (samples.size() == 0) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.getDataSet()}!"))
+            return false
+        } else {
+            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId());
+            return true
+        }
+    }
+
+
+    protected boolean checkLaneFiles(ExecutionContext context) {
+        boolean returnValue = true
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
+        final boolean useExistingPairedBams = context.getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
+        if (!useExistingPairedBams) {
             int cnt = 0;
             for (Sample sample : samples) {
-
                 List<LaneFileGroup> laneFileGroups = loadLaneFilesForSample(context, sample);
                 for (LaneFileGroup lfg : laneFileGroups) {
                     cnt += lfg.getFilesInGroup().size();
                 }
+                logger.postAlwaysInfo("Processed sample " + sample.getName() + " and found " + laneFileGroups.size() + " groups of lane files.");
             }
-            return cnt > 0;
-        } else {
-            return true;
+            if (cnt <= 0) {
+                context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                        expand("No lane files found for PID ${context.getDataSet()}!"))
+                returnValue = false
+            }
         }
+        return returnValue;
     }
+
+
+    @Override
+    public boolean checkExecutability(ExecutionContext context) {
+        // Use context.addErrorEntry to add errors or warnings.
+        return checkSamples(context) && checkLaneFiles(context) && checkConfiguration(context)
+    }
+
 
     @Override
     public boolean createTestdata(ExecutionContext context) {
         boolean allOk = true;
-        AlignmentRuntimeService runtimeService = (AlignmentRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         for (Sample sample : samples) {

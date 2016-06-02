@@ -5,6 +5,10 @@ The workflows are the same.
 
 == Changelist
 
+- Renamed plugin to AlignmentAndQCWorkflows.
+
+* Version update to 1.0.186
+
 * Version update to 1.0.182
 
 * Version update to 1.0.180
