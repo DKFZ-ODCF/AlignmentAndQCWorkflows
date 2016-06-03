@@ -2,7 +2,7 @@
 
 set -o pipefail
 source "$CONFIG_FILE"
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 set -x
 
 # Estimate gender of patient from X and Y coverage

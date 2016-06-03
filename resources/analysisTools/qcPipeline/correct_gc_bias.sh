@@ -2,7 +2,7 @@
 
 set -o pipefail
 source "$CONFIG_FILE"
-source "$TOOL_BASH_LIB"
+source "$TOOL_WORKFLOW_LIB"
 set -x
 
 tmp_corrected_windowfile="${FILENAME_GC_CORRECTED_WINDOWS}.tmp"
