@@ -76,62 +76,18 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         return getLanesForSample(context, sample, library);
     }
 
-    public List getLanesForSample(ExecutionContext context, Sample sample, String libraryID = null) {
+    public List<LaneFileGroup> getLanesForSample(ExecutionContext context, Sample sample, String libraryID = null) {
         COConfig coConfig = new COConfig(context);
 
         ProcessingFlag flag = context.setProcessingFlag(ProcessingFlag.STORE_FILES);
-        List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>();
 
-        def configurationValues = context.getConfiguration().getConfigurationValues()
-        boolean getLanesFromFastqList = configurationValues.getString("fastq_list", "");
-        boolean getLanesFromInputTable = Roddy.isMetadataCLOptionSet()
-
-        if (getLanesFromInputTable) {
-            MetadataTable inputTable = getMetadataTable(context).subsetBySample(sample.name)
-            if (libraryID) inputTable = inputTable.subsetByLibrary(libraryID)
-
-            inputTable.listRunIDs().each {
-                String runID ->
-                    List<File> fastqFilesForRun = inputTable.subsetByColumn(COConstants.INPUT_TABLE_RUNCOL_NAME, runID).listFiles()
-                    List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
-                    laneFiles += bundleFiles
-            }
-
-        } else if (getLanesFromFastqList) {
-            // If fastq_list was set via command line or via config file.
-            List<File> fastqFiles = configurationValues.getString("fastq_list").split(StringConstants.SPLIT_SEMICOLON).collect { String it -> new File(it); };
-            def sequenceDirectory = configurationValues.get(COConstants.CVALUE_SEQUENCE_DIRECTORY).toFile(context).getAbsolutePath();
-            int indexOfSampleID = sequenceDirectory.split(StringConstants.SPLIT_SLASH).findIndexOf { it -> it == '${sample}' }
-            int indexOfRunID = sequenceDirectory.split(StringConstants.SPLIT_SLASH).findIndexOf { it -> it == '${run}' }
-
-            List<File> listOfFastqFilesForSample = fastqFiles.findAll { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfSampleID] == sample.getName() } as List<File>
-            List<String> listOfRunIDs = listOfFastqFilesForSample.collect { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] }.unique() as List<String>
-            listOfRunIDs.each { String runID ->
-                List<File> fastqFilesForRun = listOfFastqFilesForSample.findAll { it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] == runID } as List<File>
-                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
-                laneFiles.addAll(bundleFiles);
-            }
-
+        List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
+        if (coConfig.getExtractSamplesFromMetadataTable()) {
+            laneFiles = getLaneFileGroupsFromInputTable(context, sample, libraryID)
+        } else if (coConfig.getExtractSamplesFromFastqFileList()) {
+            laneFiles = getLaneFileGroupsFromFastqList(context, sample, libraryID)
         } else {
-            // Default case
-
-            File sampleDirectory = getSampleDirectory(context, sample, libraryID);
-
-            logger.postAlwaysInfo("Searching for lane files in directory ${sampleDirectory}")
-            List<File> runsForSample = FileSystemAccessProvider.getInstance().listDirectoriesInDirectory(sampleDirectory);
-            for (File run : runsForSample) {
-                File sequenceDirectory = getSequenceDirectory(context, sample, run.getName(), libraryID);
-                logger.postSometimesInfo("\tChecking for run ${run.name} in sequence dir: ${sequenceDirectory}")
-                if (!FileSystemAccessProvider.getInstance().checkDirectory(sequenceDirectory, context, false)) // Skip directories which do not exist
-                    continue;
-                List<File> files = FileSystemAccessProvider.getInstance().listFilesInDirectory(sequenceDirectory);
-                if (files.size() == 0)
-                    logger.postAlwaysInfo("\t There were no lane files in directory ${sequenceDirectory}")
-                //Find file bundles
-                List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, run.getName(), files);
-                logger.postSometimesInfo("\tFound ${bundleFiles.size()} lane file groups in sequence directory.")
-                laneFiles.addAll(bundleFiles);
-            }
+            laneFiles = getLaneFileGroupsFromFilesystem(context, sample, libraryID)
         }
         if (laneFiles.size() == 0) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no lane files available for sample ${sample.getName()}"));
@@ -140,6 +96,63 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         }
         context.setProcessingFlag(flag);
         return laneFiles;
+    }
+
+    public List<LaneFileGroup> getLaneFileGroupsFromInputTable(ExecutionContext context, Sample sample, String libraryID) {
+        MetadataTable inputTable = getMetadataTable(context).subsetBySample(sample.name)
+        if (libraryID) inputTable = inputTable.subsetByLibrary(libraryID)
+        List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
+        for(String runID : inputTable.listRunIDs()) {
+            List<File> fastqFilesForRun = inputTable.subsetByColumn(COConstants.INPUT_TABLE_RUNCOL_NAME, runID).listFiles()
+            List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
+            laneFiles.addAll(bundleFiles)
+        }
+        return laneFiles
+    }
+
+    public List<LaneFileGroup> getLaneFileGroupsFromFastqList(ExecutionContext context, Sample sample, String libraryID) {
+        COConfig coConfig = new COConfig(context)
+        List<File> fastqFiles = coConfig.getFastqList().collect { String it -> new File(it); }
+        def sequenceDirectory = coConfig.getSequenceDirectory()
+        int indexOfSampleID = indexOfPathElement(sequenceDirectory, '${sample}')
+        int indexOfRunID = indexOfPathElement(sequenceDirectory, '${run}')
+        List<File> listOfFastqFilesForSample = fastqFiles.findAll {
+            it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfSampleID] == sample.getName()
+        } as List<File>
+        List<String> listOfRunIDs = listOfFastqFilesForSample.collect {
+            it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID]
+        }.unique() as List<String>
+        List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
+        for(String runID : listOfRunIDs) {
+            List<File> fastqFilesForRun = listOfFastqFilesForSample.findAll {
+                it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] == runID
+            } as List<File>
+            List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
+            laneFiles.addAll(bundleFiles)
+        }
+        return laneFiles
+    }
+
+    public List<LaneFileGroup> getLaneFileGroupsFromFilesystem(ExecutionContext context, Sample sample, String libraryID) {
+        File sampleDirectory = getSampleDirectory(context, sample, libraryID);
+
+        logger.postAlwaysInfo("Searching for lane files in directory ${sampleDirectory}")
+        List<File> runsForSample = FileSystemAccessProvider.getInstance().listDirectoriesInDirectory(sampleDirectory);
+        LinkedList<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
+        for(File run : runsForSample) {
+            File sequenceDirectory = getSequenceDirectory(context, sample, run.getName(), libraryID);
+            logger.postSometimesInfo("\tChecking for run ${run.name} in sequence dir: ${sequenceDirectory}")
+            if (!FileSystemAccessProvider.getInstance().checkDirectory(sequenceDirectory, context, false)) // Skip directories which do not exist
+                continue;
+            List<File> files = FileSystemAccessProvider.getInstance().listFilesInDirectory(sequenceDirectory);
+            if (files.size() == 0)
+                logger.postAlwaysInfo("\t There were no lane files in directory ${sequenceDirectory}")
+            //Find file bundles
+            List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, run.getName(), files);
+            logger.postSometimesInfo("\tFound ${bundleFiles.size()} lane file groups in sequence directory.")
+            laneFiles.addAll(bundleFiles)
+        }
+        return laneFiles
     }
 
     public BamFileGroup getPairedBamFilesForDataSet(ExecutionContext context, Sample sample) {
