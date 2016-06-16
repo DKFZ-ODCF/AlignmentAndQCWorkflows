@@ -76,11 +76,11 @@ if [[ ${bamFileExists} == false ]]; then	# we have to make the BAM
 	mkfifo ${FNPIPE1} ${FNPIPE2}
 	if [[ $useAdaptorTrimming == true ]]; then # [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
 		if [ "${qualityScore}" = "illumina" ]; then
-			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | $MBUF_2G > $i1" &
-			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | $MBUF_2G > $i2" &
+			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - > $i1" &
+			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - > $i2" &
 		else
-			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | $MBUF_2G > $i1" &
-			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | $MBUF_2G > $i2" &
+			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} > $i1" &
+			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} > $i2" &
 		fi
 		# done in the sourced script designed for bwa aln:
 		#     i1=$DIR_SCRATCH/at_i1
@@ -98,16 +98,16 @@ if [[ ${bamFileExists} == false ]]; then	# we have to make the BAM
 
 		# trimming with fastx does not work in combination with Trimmomatic!
 		# besides, bwa mem automagically reverts mate pair data
-		cat $o1 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - | $MBUF_2G > $FNPIPE1 & procID_fqconv_r1=$!
-		cat $o2 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - | $MBUF_2G > $FNPIPE2 & procID_fqconv_r2=$!
+		cat $o1 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1 & procID_fqconv_r1=$!
+		cat $o2 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - > $FNPIPE2 & procID_fqconv_r2=$!
 	elif [ "${qualityScore}" = "illumina" ]; then	# bwa mem has no possibility to convert Illumina 1.3 scores
 		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | \
-		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - | $MBUF_2G > $FNPIPE1" & procID_fqconv_r1=$!
+		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1" & procID_fqconv_r1=$!
 		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | \
-		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconf -2 - - | $MBUF_2G > $FNPIPE2" & procID_fqconv_r2=$!
+		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconf -2 - - > $FNPIPE2" & procID_fqconv_r2=$!
 	else
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - | $MBUF_2G > $FNPIPE1" & procID_fqconv_r1=$!
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - | $MBUF_2G > $FNPIPE2" & procID_fqconv_r2=$!
+		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1" & procID_fqconv_r1=$!
+		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - > $FNPIPE2" & procID_fqconv_r2=$!
 	fi
 
 	INPUT_PIPES=""
@@ -148,13 +148,13 @@ else
 		${BWA_BINARY} mem \
 			-t ${BWA_MEM_THREADS} \
 			-R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
-			$BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | \
-		    $MBUF_2G > ${NP_BWA_OUT} & procID_BWA=$!
+			$BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG \
+		> ${NP_BWA_OUT} & procID_BWA=$!
 
 		# Convert aligned reads back to original state
 		${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
-		    ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - | \
-		    $MBUF_2G > ${NP_BCONV_OUT} & procID_BCONV=$!
+		${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv \
+		> ${NP_BCONV_OUT} & procID_BCONV=$!
 
 		# Sort bam file
 		(set -o pipefail; \
@@ -231,11 +231,11 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 # Produced qualitycontrol.json for OTP.
 ${PERL_BINARY} ${TOOL_QC_JSON} \
 	${FILENAME_GENOME_COVERAGE} \
-    ${FILENAME_ISIZES_STATISTICS} \
-    ${FILENAME_FLAGSTATS} \
-    ${FILENAME_DIFFCHROM_STATISTICS} \
-    > ${FILENAME_QCJSON}.tmp \
-    || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
+	${FILENAME_ISIZES_STATISTICS} \
+	${FILENAME_FLAGSTATS} \
+	${FILENAME_DIFFCHROM_STATISTICS} \
+	> ${FILENAME_QCJSON}.tmp \
+	|| throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey
