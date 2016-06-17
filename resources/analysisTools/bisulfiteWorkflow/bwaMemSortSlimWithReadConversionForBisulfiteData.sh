@@ -153,7 +153,7 @@ else
 
 		# Convert aligned reads back to original state
 		${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
-		${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv \
+		${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - \
 		> ${NP_BCONV_OUT} & procID_BCONV=$!
 
 		# Sort bam file
