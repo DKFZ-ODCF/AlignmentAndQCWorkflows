@@ -15,23 +15,49 @@
                 description="Allowed values: biobambam, picard, sambamba. Default: sambamba. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
         <cvalue name='useBioBamBamSort' value='false' type="boolean" />
         <cvalue name='useAcceleratedHardware' value='false' type="boolean"/>
-        <cvalue name="METH_CALLS_CONVERTER" value="none" type="string"
-                description="none: Keep methylCtools output format. moabs: Convert to moabs format."/>
+ 		<cvalue name='useAdaptorTrimming' value="true" type="boolean"
+				description="true: Trim Adaptor sequences before alignment. If true, then CLIP_INDEX has to be set; false: Don't trim"/>
         <cvalue name='IS_TAGMENTATION' value="false" type="boolean"
                 description="true: tagmentation; false: standard WGBS."/>
+		<cvalue name='runFastQC' value='true' type="boolean"
+				description="true: FASTQC analysis is performed; false: FASTQC analysis is not performed" />
+		<cvalue name="runCoveragePlots" value="false" type="boolean"
+				description="true: Plot genome-wide, binned read coverages; false: Don't plot" />
+		<cvalue name="METH_CALLS_CONVERTER" value="none" type="string"
+                description="none: Keep methylCtools output format. moabs: Convert to moabs format."/>
         <cvalue name='METH_CALL_PARAMETERS' value="-t -e 5 -x -z" type="string"
                 description="Parameter to methylationCallingScript (see tools below)."/>
+		<cvalue name="BWA_BINARY" value="${bwaBinary_bwa078_bisulfit}"
+				description="Path to the bisulfite compatible bwa binary" />
+		<cvalue name="INDEX_PREFIX" value="${indexPrefix_bwa06_methylCtools_mm10_GRC}" type="path" 
+				description="Absolute path to the in-silico bisulfite converted reference sequenced used for alignment." />
+		<cvalue name='CLIP_INDEX' value='$DIR_EXECUTION/analysisTools/qcPipeline/trimmomatic/adapters/tagmentationPlassGroup.fa' type="path"
+				description="Absolute path to the sequences to be trimmed before alignment." />
+		<cvalue name='CHROM_SIZES_FILE' value='${chromosomeSizesFile_mm10_GRC_bisulfite}' type="path"
+				description="Absolute path to the chromosome sizes file. This file is related to the INDEX_PREFIX." />
+		<cvalue name='CYTOSINE_POSITIONS_INDEX' value='${ch_pos_index_methylCtools_mm10GRC}' type="path"
+				description="Absolute path to the tabixed bed file containing all cytosine positions. This file is based on the INDEX_PREFIX file." />
+        <cvalue name='CHROMOSOME_INDICES' value='( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT )' type='bashArray'
+                description="Bash array (enclosed in parens) of chromosome identifiers as found in the BAM header. Mind 'chr' prefixes! See also CHROM_SIZES_FILE."/>
 
         <cvalue name='methCallingOutputDirectory' value='methylationCalling' type="path" />
         <cvalue name='methCallingMetricsOutputDirectory' value='methylationCallingMetrics' type="path" />
+
+		<!-- The following parameters set up the folder structure of the project
+				inputBaseDirectory (type="path")
+				outputBaseDirectory (type="path")
+				outputAnalysisBaseDirectory (type="path")
+		-->
+
+		<!-- Don't forget to set the possible sample names
+				possibleControlSampleNamePrefixes (type="bashArray")
+		-->
 
         <!-- The following parameters depend on the assembly:
              INDEX_PREFIX
              CHROM_SIZES_FILE
              CYTOSINE_POSITIONS_INDEX
              -->
-        <cvalue name='CHROMOSOME_INDICES' value='( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT )' type='bashArray'
-                description="Bash array (enclosed in parens) of chromosome identifiers as found in the BAM header. Mind 'chr' prefixes! See also CHROM_SIZES_FILE."/>
 
         <!-- Other relevant options:
             CLIP_INDEX
