@@ -5,6 +5,8 @@ The workflows are the same.
 
 == Changelist
 
+* Version update to 1.0.178
+
 * Version update to 1.0.177
 
 * Version update to 1.0.175

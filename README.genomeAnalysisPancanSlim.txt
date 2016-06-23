@@ -17,6 +17,10 @@ overrideBamFiles
 
 == Changelist
 
+* Version update to 1.0.178
+
+- Bugfix Convey-branch: Moving of .bai file and error check are not done for Convey.
+
 * Version update to 1.0.177
 
 - Calculate MD5 sums for both, Picard and biobambam-based

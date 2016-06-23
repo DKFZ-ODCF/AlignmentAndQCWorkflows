@@ -141,6 +141,8 @@ else
             ${mergeINPUT} \
             O=${NP_PIC_OUT}; echo $? > ${returnCodeMarkDuplicatesFile}) & procIDBBB=$!
 
+        # TODO: The NP readers need to be *before* the pipe-writing process. ^^ Move up!
+
         # create BAM pipes for flagstat and the two D tools, write to BAM
         # REUSE! NP_SAM_IN for bam to sam conversion
         # was: MBUF_4G, why?
@@ -148,6 +150,7 @@ else
             > ${tempBamFile} & procIDBBBOutPipe=$!
 
         # calculate MD5 sum
+        # TODO Clarify: Add NP_MD5_IN to the alternative branch, so that the MD5 sum gets recalculated?
         cat ${NP_MD5_IN} | ${CHECKSUM_BINARY} | cut -d ' ' -f 1 > ${tempMd5File} & procIDMd5=$!
 
         # make a SAM pipe for the Perl tool

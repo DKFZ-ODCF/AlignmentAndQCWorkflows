@@ -18,6 +18,8 @@ runSlimWorkflow             false   Use a full workflow with a lot of separate s
 
 == Changelist
 
+* Version update to 1.0.178
+
 * Version update to 1.0.177
 
 * Version update to 1.0.175
