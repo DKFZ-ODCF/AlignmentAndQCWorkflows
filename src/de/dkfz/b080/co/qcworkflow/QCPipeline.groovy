@@ -2,7 +2,11 @@ package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*
-import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
+import de.dkfz.roddy.config.OnMethodFilenamePattern
+import de.dkfz.roddy.config.OnScriptParameterFilenamePattern
+import de.dkfz.roddy.execution.io.ExecutionService
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
+import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
@@ -15,6 +19,7 @@ import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT
 /**
  * @author michael
  */
+@groovy.transform.CompileStatic
 public class QCPipeline extends Workflow {
 
     private static LoggerWrapper logger = LoggerWrapper.getLogger(QCPipeline.class.getName());
@@ -24,6 +29,8 @@ public class QCPipeline extends Workflow {
     @Override
     public boolean execute(ExecutionContext context) {
         Configuration cfg = context.getConfiguration();
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context);
+
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "false", "boolean"); //Disable sample extraction from output for alignment workflows.
 
@@ -44,6 +51,10 @@ public class QCPipeline extends Workflow {
         BamFileGroup mergedBamFiles = new BamFileGroup();
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
 
+        if (aqcfg.getSingleBamParameter() && samples.size() == 1) {
+            cfg.getFilenamePatterns().add(new OnMethodFilenamePattern(BamFile.class as Class<BaseFile>, BamFileGroup.class, BamFileGroup.getMethod("baseMergeAndRemoveDuplicatesSlim"), aqcfg.getSingleBamParameter(), "default"));
+        }
+
         for (Sample sample : samples) {
             BamFileGroup sortedBamFiles = createSortedBams(context, runtimeService, sample);
 
@@ -60,7 +71,7 @@ public class QCPipeline extends Workflow {
             }
 
             if (runExomeAnalysis) {
-                if(!runSlimWorkflow) mergedBam.rawBamCoverage();
+                if (!runSlimWorkflow) mergedBam.rawBamCoverage();
                 BamFile targetOnlyBamFile = mergedBam.extractTargetsCalculateCoverage();
             }
 
@@ -88,14 +99,6 @@ public class QCPipeline extends Workflow {
         }
 
         return true;
-    }
-
-    private boolean runSlim(ExecutionContext context) {
-        return false;
-    }
-
-    private boolean runFat(ExecutionContext context) {
-        return false;
     }
 
     /**
@@ -137,6 +140,7 @@ public class QCPipeline extends Workflow {
 
     private BamFileGroup createSortedBams(ExecutionContext context, COProjectsRuntimeService runtimeService, Sample sample) {
         Configuration cfg = context.getConfiguration();
+
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         // Run flags
         final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false);
@@ -176,7 +180,7 @@ public class QCPipeline extends Workflow {
                     }
                 } else { //I.e. bwa align
                     rawSequenceGroup.alignAll();
-                    if(runSlimWorkflow) {
+                    if (runSlimWorkflow) {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
                     } else {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSort();
@@ -195,7 +199,6 @@ public class QCPipeline extends Workflow {
         Configuration cfg = context.getConfiguration();
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
-        final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
 
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
@@ -207,33 +210,20 @@ public class QCPipeline extends Workflow {
         if (runCollectBamFileMetrics) mergedBam.collectMetrics();
         mergedBam.runDefaultOperations();
         mergedBam.calcCoverage();
-
-        Sample.SampleType sampleType = sample.getType();
-
-
         mergedBam.createQCSummaryFile();
+
         return mergedBam;
     }
 
-
     private boolean checkConfiguration(ExecutionContext context) {
-        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance()
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
-        boolean returnValue = true
-        File pathToIndex = new File(config.getIndexPrefix()).getParentFile()
-        if (!fsap.checkDirectory(pathToIndex, context, false)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToIndex}"))
-            returnValue = false
-        }
-        if (!fsap.checkFile(config.getChromosomeSizesFile())) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE}: ${config.getChromosomeSizesFile()}"))
-            returnValue = false
-        }
+
+        boolean returnValue = ensureConfiguredDirectoryExists(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX);
+        returnValue &= ensureConfiguredFileExists(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
+
         if (config.getRunExomeAnalysis()) {
-            if (!fsap.checkFile(config.getTargetRegionsFile())) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE}: ${config.getChromosomeSizesFile()}"))
-                returnValue = false
-            }
+
+            returnValue &= ensureConfiguredFileExists(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE)
             if (config.getTargetSize() == null) {
                 context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_TARGET_SIZE} not set to a valid value: ${config.getTargetSize()}"))
                 returnValue = false
@@ -242,6 +232,31 @@ public class QCPipeline extends Workflow {
         return returnValue
     }
 
+    private boolean ensureConfiguredDirectoryExists(ExecutionContext context, File pathToCheck, String fileConfigurationID) {
+        boolean returnValue = true;
+        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance();
+        if (!pathToCheck) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_FILECREATION_PATH_NOTSET.expand("The value ${fileConfigurationID} is empty and needs to be set."))
+            returnValue = false
+        } else if (!fsap.checkDirectory(pathToCheck, context, false)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToCheck}"))
+            returnValue = false
+        }
+        return returnValue;
+    }
+
+    private boolean ensureConfiguredFileExists(ExecutionContext context, File fileToCheck, String fileConfigurationID) {
+        boolean returnValue = true;
+        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance();
+        if (!fileToCheck) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_FILECREATION_PATH_NOTSET.expand("The value ${fileConfigurationID} is empty and needs to be set."))
+            returnValue = false
+        } else if (!fsap.checkFile(fileToCheck)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${fileConfigurationID}: ${fileToCheck}"))
+            returnValue = false
+        }
+        return returnValue;
+    }
 
     private boolean checkSamples(ExecutionContext context) {
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
@@ -254,7 +269,6 @@ public class QCPipeline extends Workflow {
             return true
         }
     }
-
 
     protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
@@ -279,11 +293,29 @@ public class QCPipeline extends Workflow {
         return returnValue;
     }
 
+    protected boolean checkSingleBam(ExecutionContext context) {
+
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context);
+        if (!aqcfg.getSingleBamParameter()) return true;
+
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
+        if (samples.size() > 1) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
+            return false;
+        }
+
+        def accessProvider = FileSystemAccessProvider.getInstance()
+        def bamFile = new File(aqcfg.getSingleBamParameter())
+        if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
+            return false;
+        }
+    }
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        // Use context.addErrorEntry to add errors or warnings.
-        return checkSamples(context) && checkLaneFiles(context) && checkConfiguration(context)
+        return checkSamples(context) && checkLaneFiles(context) && checkConfiguration(context) && checkSingleBam(context);
     }
 
 
