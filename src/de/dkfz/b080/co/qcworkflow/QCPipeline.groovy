@@ -10,7 +10,8 @@ import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
-import de.dkfz.roddy.core.*;
+import de.dkfz.roddy.core.*
+import groovy.transform.CompileStatic;
 
 import java.util.*;
 
@@ -215,47 +216,45 @@ public class QCPipeline extends Workflow {
         return mergedBam;
     }
 
+    private boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
+        if (value == null || value.toString() == "") {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Expected value to be set: ${variableName}"))
+            return true
+        }
+        return false
+    }
+
+    private boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
+        if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
+            return false
+        }
+        return true
+    }
+
+    private boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
+        if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
+            return false
+        }
+        return true
+    }
+
     private boolean checkConfiguration(ExecutionContext context) {
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
 
-        boolean returnValue = ensureConfiguredDirectoryExists(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX);
-        returnValue &= ensureConfiguredFileExists(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
-
+        boolean returnValue
+        returnValue =
+                !valueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
+                directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
+        returnValue =
+                fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
         if (config.getRunExomeAnalysis()) {
-
-            returnValue &= ensureConfiguredFileExists(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE)
-            if (config.getTargetSize() == null) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_TARGET_SIZE} not set to a valid value: ${config.getTargetSize()}"))
-                returnValue = false
-            }
+            returnValue =
+                    fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
+                    !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
         return returnValue
-    }
-
-    private boolean ensureConfiguredDirectoryExists(ExecutionContext context, File pathToCheck, String fileConfigurationID) {
-        boolean returnValue = true;
-        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance();
-        if (!pathToCheck) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_FILECREATION_PATH_NOTSET.expand("The value ${fileConfigurationID} is empty and needs to be set."))
-            returnValue = false
-        } else if (!fsap.checkDirectory(pathToCheck, context, false)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToCheck}"))
-            returnValue = false
-        }
-        return returnValue;
-    }
-
-    private boolean ensureConfiguredFileExists(ExecutionContext context, File fileToCheck, String fileConfigurationID) {
-        boolean returnValue = true;
-        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance();
-        if (!fileToCheck) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_FILECREATION_PATH_NOTSET.expand("The value ${fileConfigurationID} is empty and needs to be set."))
-            returnValue = false
-        } else if (!fsap.checkFile(fileToCheck)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${fileConfigurationID}: ${fileToCheck}"))
-            returnValue = false
-        }
-        return returnValue;
     }
 
     private boolean checkSamples(ExecutionContext context) {
@@ -315,7 +314,7 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        return checkSamples(context) && checkLaneFiles(context) && checkConfiguration(context) && checkSingleBam(context);
+        return checkConfiguration(context) && checkSamples(context) && checkLaneFiles(context) && checkSingleBam(context);
     }
 
 
