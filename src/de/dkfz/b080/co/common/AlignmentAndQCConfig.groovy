@@ -20,6 +20,9 @@ class AlignmentAndQCConfig extends COConfig {
         super(context)
     }
 
+    public String getSingleBamParameter() {
+        return configValues.get("bam", "");
+    }
 
     public String getIndexPrefix() {
         return configValues.getString(CVALUE_INDEX_PREFIX, "")
