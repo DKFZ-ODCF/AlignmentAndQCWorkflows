@@ -77,14 +77,14 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
     }
 
     public List<LaneFileGroup> getLanesForSample(ExecutionContext context, Sample sample, String libraryID = null) {
-        COConfig coConfig = new COConfig(context);
+        AlignmentAndQCConfig config = new AlignmentAndQCConfig(context);
 
         ProcessingFlag flag = context.setProcessingFlag(ProcessingFlag.STORE_FILES);
 
         List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
-        if (coConfig.getExtractSamplesFromMetadataTable()) {
+        if (config.getExtractSamplesFromMetadataTable()) {
             laneFiles = getLaneFileGroupsFromInputTable(context, sample, libraryID)
-        } else if (coConfig.getExtractSamplesFromFastqFileList()) {
+        } else if (config.getExtractSamplesFromFastqFileList()) {
             laneFiles = getLaneFileGroupsFromFastqList(context, sample, libraryID)
         } else {
             laneFiles = getLaneFileGroupsFromFilesystem(context, sample, libraryID)
