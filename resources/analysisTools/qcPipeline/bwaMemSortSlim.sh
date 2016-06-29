@@ -143,7 +143,7 @@ then
 	# make all the pipes
 	(cat ${FILENAME_SORTED_BAM} | ${MBUF_2G} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_2G} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 else
-	if [[ ${PBS_QUEUE} == "convey" ]]
+	if [[ ${PBS_QUEUE} == convey* ]]
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
 		# here, we use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
@@ -195,7 +195,9 @@ else	# make sure to rename BAM file when it has been produced correctly
 	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
-	[[ -f ${tempBamIndexFile} ]] && mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
+	if [[ -f ${tempBamIndexFile} ]]; then
+        mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
+    fi
 	# clean up adapter trimming pipes if they exist
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	
@@ -223,7 +225,7 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 (${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 14)
 
 # Produced qualitycontrol.json for OTP.
-if [[ 1 || ${PBS_QUEUE} == "convey" ]]; then
+if [[ 1 || ${PBS_QUEUE} == convey* ]]; then
   ${PERL_BINARY} ${TOOL_QC_JSON} \
 	${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
@@ -244,7 +246,7 @@ fi
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey
-[[ ${useSingleEndProcessing-false} == true ]] || [[ ${PBS_QUEUE} == "convey" ]] && exit 0
+[[ ${useSingleEndProcessing-false} == true ]] || [[ ${PBS_QUEUE} == convey* ]] && exit 0
 
 ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${bamname}" && mv ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || ( echo "Error from insert sizes plotter" && exit 22)
 

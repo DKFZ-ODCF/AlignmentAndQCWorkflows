@@ -121,6 +121,7 @@ if [[ ${useBioBamBamMarkDuplicates} == false ]]; then
     else
         # To prevent abundancy of ifs, reuse the process id another time.
         (cat ${FILENAME} | ${MBUF_2G} | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} | ${SAMTOOLS_BINARY} view - > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!; procIDPicardOutPipe=$procIDSamtoolsView
+        procIDMd5=$procIDSamtoolsView
     fi
 
 else
@@ -153,7 +154,8 @@ else
         # make a SAM pipe for the Perl tool
         ${SAMTOOLS_BINARY} view ${NP_SAM_IN} | ${MBUF_2G} > ${NP_COMBINEDANALYSIS_IN} & procIDSAMpipe=$!
     else
-        (cat ${FILENAME} | ${MBUF_2G} | tee ${NP_FLAGSTATS_IN} rm${NP_COVERAGEQC_IN} ${NP_READBINS_IN} | ${SAMTOOLS_BINARY} view - > ${NP_COMBINEDANALYSIS_IN}) & procIDSAMpipe=$!; procIDBBB=$procIDSAMpipe
+        (cat ${FILENAME} | ${MBUF_2G} | tee ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} | ${SAMTOOLS_BINARY} view - > ${NP_COMBINEDANALYSIS_IN}) & procIDSAMpipe=$!; procIDBBB=$procIDSAMpipe
+        procIDMd5=$procIDSAMpipe
     fi
 fi
 
@@ -220,7 +222,9 @@ mv ${FILENAME_DIFFCHROM_STATISTICS}.tmp ${FILENAME_DIFFCHROM_STATISTICS} || thro
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "Could not move file"
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
-mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
+if [[ ${bamFileExists} == false ]]; then
+    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
+fi
 
 # QC summary
 runExomeAnalysis=${runExomeAnalysis-false}
@@ -241,7 +245,7 @@ ${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $analy
 [[ -d $tempDirectory ]] && rm -rf $tempDirectory
 
 # Produced qualitycontrol.json for OTP.
-if [[ 1 || ${PBS_QUEUE} == "convey" ]]; then
+if [[ 1 || ${PBS_QUEUE} == convey* ]]; then
   ${PERL_BINARY} ${TOOL_QC_JSON} \
 	${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
