@@ -2,16 +2,11 @@ package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*
-import de.dkfz.roddy.config.OnMethodFilenamePattern
-import de.dkfz.roddy.config.OnScriptParameterFilenamePattern
-import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
-import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
 import de.dkfz.roddy.core.*
-import groovy.transform.CompileStatic;
 
 import java.util.*;
 
@@ -51,10 +46,6 @@ public class QCPipeline extends Workflow {
 
         BamFileGroup mergedBamFiles = new BamFileGroup();
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
-
-        if (aqcfg.getSingleBamParameter() && samples.size() == 1) {
-            cfg.getFilenamePatterns().add(new OnMethodFilenamePattern(BamFile.class as Class<BaseFile>, BamFileGroup.class, BamFileGroup.getMethod("baseMergeAndRemoveDuplicatesSlim"), aqcfg.getSingleBamParameter(), "default"));
-        }
 
         for (Sample sample : samples) {
             BamFileGroup sortedBamFiles = createSortedBams(context, runtimeService, sample);

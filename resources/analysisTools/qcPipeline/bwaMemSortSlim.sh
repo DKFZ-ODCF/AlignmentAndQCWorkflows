@@ -193,7 +193,7 @@ else	# make sure to rename BAM file when it has been produced correctly
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
 	if [[ -f ${tempBamIndexFile} ]]; then
-	 	mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
+        mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
 	fi
 	# clean up adapter trimming pipes if they exist
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
