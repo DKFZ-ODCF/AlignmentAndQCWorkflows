@@ -35,27 +35,47 @@ bamname=`basename ${FILENAME}`
 ## INPUT_FILES is provided via the parameter file in quoted form: "'(a b c)'". This gets rid of the quotes.
 declare -a INPUT_FILES="$INPUT_FILES"
 
+# Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
+if [[ -v bam && ! -z "$bam" ]]; then
+    EXISTING_BAM="$bam"
+fi
+# Handle existing merged BAM at target location.
+if [[ -f ${FILENAME} && -s ${FILENAME} ]]; then
+    if [[ -v EXISTING_BAM ]]; then
+        echo "Input BAM provided via 'bam' option takes precendence over existing merged BAM. Rescuing merged BAM."
+        mv "$FILENAME" "${FILENAME}_before_${today}" || throw 50 "Could not move $FILENAME"
+    else
+        # If the merged file already exists, only merge new lanes to it.
+        EXISTING_BAM="$FILENAME"
+    fi
+fi
+
 # if the merged file already exists, only merge new lanes to it
-if [[ -f ${FILENAME} ]] && [[ -s ${FILENAME} ]]
-then
-    singlebams=`${SAMTOOLS_BINARY} view -H ${FILENAME} | grep "^@RG"`
-    [[ -z "$singlebams" ]] && throw 23 "could not detect single lane BAM files in ${FILENAME}, stopping here"
+if [[ -v EXISTING_BAM ]]; then
+    singlebams=`${SAMTOOLS_BINARY} view -H ${EXISTING_BAM} | grep "^@RG"`
+            [[ -z "$singlebams" ]] && throw 23 "could not detect single lane BAM files in ${EXISTING_BAM}, stopping here"
 
     ## Note: This does not test or even complain, if the BAM (e.g. due to manual manipulation) contains lanes that are
     ##       NOT in among the INPUT_FILES. TODO Add at least a warning upon unknown lanes in BAM.
     notyetmerged=`perl ${TOOL_CHECK_ALREADY_MERGED_LANES} $(stringJoin ":" ${INPUT_FILES[@]}) "$singlebams" ${pairedBamSuffix} $SAMPLE`
-    [[ "$?" != 0 ]] && throw 24 "something went wrong with the detection of merged files in ${FILENAME}, stopping here"
+    [[ "$?" != 0 ]] && throw 24 "something went wrong with the detection of merged files in ${EXISTING_BAM}, stopping here"
 
     # the Perl script returns BAM names separated by :, ending with :
     if [ -z $notyetmerged ]; then
         bamFileExists=true
-        echo "All listed BAM files (lanes) are already in ${FILENAME}, re-creating other output files."
+        echo "All listed BAM files (lanes) are already in ${EXISTING_BAM}, re-creating other output files."
     else    # new lane(s) need to be merged to the BAM
+		mkdir -p $tempDirectory
         # input files is now the merged file and the new file(s)
-        declare -a INPUT_FILES=("$FILENAME" $(echo $notyetmerged | sed -re 's/:/ /g'))
+        declare -a INPUT_FILES=("$EXISTING_BAM" $(echo $notyetmerged | sed -re 's/:/ /g'))
         # keep the old metrics file for comparison
-        mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
+        # that file may not exist in the target directory.
+        if [[ -f $FILENAME_METRICS ]]; then
+            mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
+        fi
     fi
+else	# BAM needs to be created de novo
+	mkdir -p $tempDirectory
 fi
 
 mkdir -p $tempDirectory
