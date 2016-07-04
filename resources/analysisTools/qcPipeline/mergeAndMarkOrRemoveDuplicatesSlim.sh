@@ -256,12 +256,12 @@ fi
 
 [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]] && rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
 
-if [[ -v mergeOnly && "$mergeOnly" == true ]]; then
-    METRICS_FILENAME="";
+if [[ "$bamFileExists" == true || (-v mergeOnly && "$mergeOnly" == true) ]]; then
+    METRICS_OPTION="";
 else
-    METRICS_FILENAME=${FILENAME_METRICS};
+    METRICS_OPTION="-m ${FILENAME_METRICS}"
 fi
-${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $analysis_type -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE -m ${FILENAME_METRICS} > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY || { echo "Error from writeQCsummary.pl" && exit 14; }
+${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $analysis_type -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE ${METRICS_OPTION} > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY || { echo "Error from writeQCsummary.pl" && exit 14; }
 
 [[ -d $tempDirectory ]] && rm -rf $tempDirectory
 
