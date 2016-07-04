@@ -110,6 +110,7 @@ if [[ ${useBioBamBamMarkDuplicates} == false ]]; then
     else
         # To prevent abundancy of ifs, reuse the process id another time.
         (cat ${FILENAME} | ${MBUF_2G} | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} | ${SAMTOOLS_BINARY} view - > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!; procIDPicardOutPipe=$procIDSamtoolsView
+        procIDMd5=$procIDSamtoolsView
     fi
 
 else
@@ -145,6 +146,7 @@ else
         ${SAMTOOLS_BINARY} view ${NP_SAM_IN} | ${MBUF_2G} > ${NP_COMBINEDANALYSIS_IN} & procIDSAMpipe=$!
     else
         (cat ${FILENAME} | ${MBUF_2G} | tee ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} | ${SAMTOOLS_BINARY} view - > ${NP_COMBINEDANALYSIS_IN}) & procIDSAMpipe=$!; procIDBBB=$procIDSAMpipe
+        procIDMd5=$procIDSAMpipe
     fi
 fi
 
@@ -211,7 +213,9 @@ mv ${FILENAME_DIFFCHROM_STATISTICS}.tmp ${FILENAME_DIFFCHROM_STATISTICS} || thro
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "Could not move file"
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
-mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
+if [[ ${bamFileExists} == false ]]; then
+    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
+fi
 
 # QC summary
 runExomeAnalysis=${runExomeAnalysis-false}

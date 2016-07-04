@@ -4,8 +4,10 @@ import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
-import de.dkfz.roddy.core.*;
-
+import de.dkfz.roddy.core.*
+import de.dkfz.roddy.execution.io.fs.FileSystemInfoProvider;
+import de.dkfz.roddy.tools.LoggerWrapper;
+import groovy.transform.CompileStatic;
 import java.util.*;
 
 import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES;
@@ -13,7 +15,10 @@ import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT
 /**
  * @author michael
  */
+@CompileStatic
 public class QCPipeline extends Workflow {
+
+    private static LoggerWrapper logger = LoggerWrapper.getLogger(QCPipeline.class.getName());
 
     public QCPipeline() {}
 
@@ -33,7 +38,7 @@ public class QCPipeline extends Workflow {
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
+        List<Sample> samples = runtimeService.getSamplesForRun(context);
         if (samples.size() == 0)
             return false;
 
@@ -210,29 +215,63 @@ public class QCPipeline extends Workflow {
         return mergedBam;
     }
 
-    @Override
-    public boolean checkExecutability(ExecutionContext context) {
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
-        if (samples.size() == 0)
+    protected boolean checkSingleBam(ExecutionContext context) {
+        String singleBamParameter = context.getConfiguration().getConfigurationValues().getString("bam", "");
+        if ("" == singleBamParameter) return true;
+
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
+        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        if (samples.size() > 1) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
             return false;
+        }
 
+        FileSystemInfoProvider accessProvider = FileSystemInfoProvider.getInstance();
+        File bamFile = new File(singleBamParameter);
+        if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
+            return false;
+        }
+    }
+
+    private boolean checkSamples(ExecutionContext context) {
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
+        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        if (samples.size() == 0) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.getDataSet()}!"));
+            return false;
+        } else {
+            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId());
+            return true;
+        }
+    }
+
+    protected boolean checkLaneFiles(ExecutionContext context) {
+        boolean returnValue = true;
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
+        List<Sample> samples = runtimeService.getSamplesForRun(context);
         final boolean useExistingPairedBams = context.getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
-
         if (!useExistingPairedBams) {
-            //Check if at least one file is available. Maybe for two if paired is used...?
             int cnt = 0;
             for (Sample sample : samples) {
-
                 List<LaneFileGroup> laneFileGroups = loadLaneFilesForSample(context, sample);
                 for (LaneFileGroup lfg : laneFileGroups) {
                     cnt += lfg.getFilesInGroup().size();
                 }
+                logger.postAlwaysInfo("Processed sample " + sample.getName() + " and found " + laneFileGroups.size() + " groups of lane files.");
             }
-            return cnt > 0;
-        } else {
-            return true;
+            if (cnt <= 0) {
+                context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                        expand("No lane files found for PID ${context.getDataSet()}!"));
+                returnValue = false;
+            }
         }
+        return returnValue;
+    }
+
+    @Override
+    public boolean checkExecutability(ExecutionContext context) {
+        return checkSingleBam(context) && checkSamples(context) && checkLaneFiles(context);
     }
 
     @Override
@@ -240,7 +279,7 @@ public class QCPipeline extends Workflow {
         boolean allOk = true;
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
+        List<Sample> samples = runtimeService.getSamplesForRun(context);
         for (Sample sample : samples) {
             List<LaneFile> files = new LinkedList<LaneFile>();
             LaneFileGroup allLaneFiles = new LaneFileGroup(context, "allLaneFiles", "noSpecificRun", sample, files);
