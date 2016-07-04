@@ -35,7 +35,7 @@ NP_SAMTOOLS_INDEX_IN=${RODDY_SCRATCH}/np_samtools_index_in
 MBUF_100M="${MBUFFER_BINARY} -m 100m -q -l /dev/null"
 MBUF_2G="${MBUFFER_BINARY} -m 2g -q -l /dev/null"
 
-mkfifo ${NP_COMPRESSION_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS}
+mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS}
 
 bamname=`basename ${FILENAME_SORTED_BAM}`
 INDEX_FILE=${FILENAME_SORTED_BAM}.bai
@@ -143,7 +143,7 @@ then
 	# make all the pipes
 	(cat ${FILENAME_SORTED_BAM} | ${MBUF_2G} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_2G} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 else
-	if [[ ${PBS_QUEUE} == "convey" ]]
+	if [[ ${PBS_QUEUE} == convey* ]]
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
 		# here, we use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
@@ -188,7 +188,6 @@ then
 	wait $procIDOutPipe; [[ $? -gt 0 ]] && echo "Error from sambamba view pipe" && exit 13
 else	# make sure to rename BAM file when it has been produced correctly
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
-	rm -rf ${WORKDIR} 2> /dev/null # Remove temporary files sorting
 	rm $FNPIPE1
 	rm $FNPIPE2
 	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
@@ -196,12 +195,14 @@ else	# make sure to rename BAM file when it has been produced correctly
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
 	if [[ -f ${tempBamIndexFile} ]]; then
-	 	mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
-	fi
+        mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
+    fi
 	# clean up adapter trimming pipes if they exist
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	
 fi
+
+rm -rf ${WORKDIR} 2> /dev/null # Remove temporary files sorting
 
 wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 14
 wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomceCoverage read bins" && exit 15
@@ -225,7 +226,7 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 (${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 14)
 
 # Produced qualitycontrol.json for OTP.
-if [[ 1 || ${PBS_QUEUE} == "convey" ]]; then
+if [[ 1 || ${PBS_QUEUE} == convey* ]]; then
   ${PERL_BINARY} ${TOOL_QC_JSON} \
 	${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
@@ -246,7 +247,7 @@ fi
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey
-[[ ${useSingleEndProcessing-false} == true ]] || [[ ${PBS_QUEUE} == "convey" ]] && exit 0
+[[ ${useSingleEndProcessing-false} == true ]] || [[ ${PBS_QUEUE} == convey* ]] && exit 0
 
 ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${bamname}" && mv ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || ( echo "Error from insert sizes plotter" && exit 22)
 
