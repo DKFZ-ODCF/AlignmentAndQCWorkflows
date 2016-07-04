@@ -40,7 +40,6 @@ public class QCPipeline extends Workflow {
         final boolean runSlimWorkflow = cfgValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false);
         final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
-        final String singleBamParameter = cfgValues.getString("bam", "");
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
@@ -50,15 +49,6 @@ public class QCPipeline extends Workflow {
 
         BamFileGroup mergedBamFiles = new BamFileGroup();
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
-
-        if ("" != singleBamParameter && samples.size() == 1) {
-            cfg.getFilenamePatterns().add(new FilenamePattern(
-                    (Class<BaseFile>) BamFile.class,
-                    BamFileGroup.class,
-                    BamFileGroup.class.getMethod("mergeAndRemoveDuplicatesSlim", new Class[]{ Sample.class }),
-                    singleBamParameter,
-                    "default"));
-        }
 
         for (Sample sample : samples) {
             BamFileGroup sortedBamFiles = createSortedBams(context, runtimeService, sample);
@@ -234,19 +224,22 @@ public class QCPipeline extends Workflow {
         String singleBamParameter = context.getConfiguration().getConfigurationValues().getString("bam", "");
         if ("" == singleBamParameter) return true;
 
+        boolean returnValue = true
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForRun(context);
         if (samples.size() > 1) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
-            return false;
+            returnValue &= false
         }
 
         FileSystemInfoProvider accessProvider = FileSystemInfoProvider.getInstance();
         File bamFile = new File(singleBamParameter);
         if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
-            return false;
+            returnValue &= false
         }
+
+        return returnValue
     }
 
     private boolean checkSamples(ExecutionContext context) {

@@ -35,7 +35,7 @@ NP_SAMTOOLS_INDEX_IN=${RODDY_SCRATCH}/np_samtools_index_in
 MBUF_100M="${MBUFFER_BINARY} -m 100m -q -l /dev/null"
 MBUF_2G="${MBUFFER_BINARY} -m 2g -q -l /dev/null"
 
-mkfifo ${NP_COMPRESSION_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS}
+mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS}
 
 bamname=`basename ${FILENAME_SORTED_BAM}`
 INDEX_FILE=${FILENAME_SORTED_BAM}.bai
@@ -188,7 +188,6 @@ then
 	wait $procIDOutPipe; [[ $? -gt 0 ]] && echo "Error from sambamba view pipe" && exit 13
 else	# make sure to rename BAM file when it has been produced correctly
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
-	rm -rf ${WORKDIR} 2> /dev/null # Remove temporary files sorting
 	rm $FNPIPE1
 	rm $FNPIPE2
 	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
@@ -202,6 +201,8 @@ else	# make sure to rename BAM file when it has been produced correctly
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	
 fi
+
+rm -rf ${WORKDIR} 2> /dev/null # Remove temporary files sorting
 
 wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 14
 wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomceCoverage read bins" && exit 15
