@@ -219,19 +219,22 @@ public class QCPipeline extends Workflow {
         String singleBamParameter = context.getConfiguration().getConfigurationValues().getString("bam", "");
         if ("" == singleBamParameter) return true;
 
+        boolean returnValue = true
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForRun(context);
         if (samples.size() > 1) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
-            return false;
+            returnValue &= false
         }
 
         FileSystemInfoProvider accessProvider = FileSystemInfoProvider.getInstance();
         File bamFile = new File(singleBamParameter);
         if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
-            return false;
+            returnValue &= false
         }
+
+        return returnValue
     }
 
     private boolean checkSamples(ExecutionContext context) {

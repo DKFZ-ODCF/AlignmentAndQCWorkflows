@@ -30,32 +30,49 @@ NP_MD5_IN=${localScratchDirectory}/np_md5_in
 returnCodeMarkDuplicatesFile=${tempDirectory}/rcMarkDup.txt
 bamname=`basename ${FILENAME}`
 
+# Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
+if [[ -v bam && ! -z "$bam" ]]; then
+    EXISTING_BAM="$bam"
+fi
+# Handle existing merged BAM at target location.
+if [[ -f ${FILENAME} && -s ${FILENAME} ]]; then
+    if [[ -v EXISTING_BAM ]]; then
+        echo "Input BAM provided via 'bam' option takes precendence over existing merged BAM. Rescuing merged BAM."
+        mv "$FILENAME" "${FILENAME}_before_${today}" || throw 50 "Could not move $FILENAME"
+    else
+        # If the merged file already exists, only merge new lanes to it.
+        EXISTING_BAM="$FILENAME"
+    fi
+fi
+
 # Convert Roddy input array to colon separated array.
 strlen=`expr ${#INPUT_FILES} - 2`
 tempInputFiles=""
 for inFile in ${INPUT_FILES:1:$strlen}; do tempInputFiles=${tempInputFiles}":"${inFile}; done
 INPUT_FILES=${tempInputFiles:1}
 
-# if the merged file already exists, only merge new lanes to it
-if [[ -f ${FILENAME} ]] && [[ -s ${FILENAME} ]]
-then
-        singlebams=`${SAMTOOLS_BINARY} view -H ${FILENAME} | grep "^@RG"`
-        [[ -z "$singlebams" ]] && echo "could not detect single lane BAM files in ${FILENAME}, stopping here" && exit 23
+if [[ -v EXISTING_BAM ]]; then
+        singlebams=`${SAMTOOLS_BINARY} view -H ${EXISTING_BAM} | grep "^@RG"`
+        [[ -z "$singlebams" ]] && echo "could not detect single lane BAM files in ${EXISTING_BAM}, stopping here" && exit 23
 
         notyetmerged=`perl ${TOOL_CHECK_ALREADY_MERGED_LANES} ${INPUT_FILES} "$singlebams" ${pairedBamSuffix} $SAMPLE`
-        [[ "$?" != 0 ]] && echo "something went wrong with the detection of merged files in ${FILENAME}, stopping here" && exit 24
+        [[ "$?" != 0 ]] && echo "something went wrong with the detection of merged files in ${EXISTING_BAM}, stopping here" && exit 24
 
         # the Perl script returns BAM names separated by :, ending with :
         if [ -z $notyetmerged ]
         then
                 bamFileExists=true
-                echo "All listed BAM files are already in ${FILENAME}, re-creating other output files."
+                echo "All listed BAM files are already in ${EXISTING_BAM}, re-creating other output files."
         else	# new lane(s) need to be merged to the BAM
-		mkdir -p $tempDirectory
-                # input files is now the merged file and the new file(s)
-                INPUT_FILES=${FILENAME}":"$notyetmerged
-                # keep the old metrics file for comparison
+		    mkdir -p $tempDirectory
+            # input files is now the merged file and the new file(s)
+            INPUT_FILES=${EXISTING_BAM}":"$notyetmerged
+            # keep the old metrics file for comparison. For an externally provided BAM (via cvalue 'bam')
+            # that file may not exist in the target directory.
+            if [[ -f $FILENAME_METRICS ]]; then
                 mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
+            fi
+            echo "Note: Incremental merging seems to produce different dupmark_metrics.txt files with biobambam."
         fi
 else	# BAM needs to be created de novo
 	mkdir -p $tempDirectory
@@ -174,10 +191,11 @@ fi
 # Picard
 if [[ ${useBioBamBamMarkDuplicates} == false ]]; then
     if [[ ${bamFileExists} == false ]]; then
-	wait $procIDPicard
-	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Picard returned an exit code and the job will die now." && exit 100
+	    wait $procIDPicard
+	    [[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Picard returned an exit code and the job will die now." && exit 100
         mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
         mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 39 "Could not move file"
+        mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
     fi
 	# index is always made again, needs to be updated to not be older than BAM
 	# this file does not exist!!!!!!!
@@ -189,11 +207,12 @@ else
   # Biobambam
     wait $procIDBBB; [[ $? -gt 0 ]] && echo "Error from Biobambam markduplicates" && exit 10
     if [[ ${bamFileExists} == false ]]; then
-	    [[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Biobambam returned an exit code and the job will die now." && exit 100
-	    # always rename BAM, even if other jobs might have failed
-	    mv ${tempBamFile} ${FILENAME} || throw 40 "Could not move file"
-	    mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
+    	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Biobambam returned an exit code and the job will die now." && exit 100
+    	# always rename BAM, even if other jobs might have failed
+    	mv ${tempBamFile} ${FILENAME} || throw 40 "Could not move file"
+    	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
         mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 42 "Could not move file"
+        mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
         wait $procIDBBBOutPipe; [[ $? -gt 0 ]] && echo "Error from biobambam BAM pipe" && exit 8
     fi
     wait $procIDSAMpipe; [[ $? -gt 0 ]] && echo "Error from samtools SAM pipe" && exit 9
@@ -213,9 +232,6 @@ mv ${FILENAME_DIFFCHROM_STATISTICS}.tmp ${FILENAME_DIFFCHROM_STATISTICS} || thro
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "Could not move file"
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
-if [[ ${bamFileExists} == false ]]; then
-    mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
-fi
 
 # QC summary
 runExomeAnalysis=${runExomeAnalysis-false}
