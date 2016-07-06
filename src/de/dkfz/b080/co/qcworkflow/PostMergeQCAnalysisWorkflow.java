@@ -34,7 +34,7 @@ public class PostMergeQCAnalysisWorkflow extends Workflow {
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
 

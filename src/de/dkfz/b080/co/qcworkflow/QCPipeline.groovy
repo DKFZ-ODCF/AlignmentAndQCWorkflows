@@ -215,24 +215,14 @@ public class QCPipeline extends Workflow {
         return false
     }
 
-<<<<<<< HEAD
     private boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
         if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
             return false
-=======
-        boolean returnValue = true
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
-        if (samples.size() > 1) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
-            returnValue &= false
->>>>>>> 0c72813... `bam` configuration value to provide an externally located BAM file as initial merged BAM into which to merge additional lane-BAMs. Bugfixes.
         }
         return true
     }
 
-<<<<<<< HEAD
     private boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
         if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
@@ -255,15 +245,6 @@ public class QCPipeline extends Workflow {
                     fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
                     !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
-=======
-        FileSystemInfoProvider accessProvider = FileSystemInfoProvider.getInstance();
-        File bamFile = new File(singleBamParameter);
-        if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
-            returnValue &= false
-        }
-
->>>>>>> 0c72813... `bam` configuration value to provide an externally located BAM file as initial merged BAM into which to merge additional lane-BAMs. Bugfixes.
         return returnValue
     }
 
