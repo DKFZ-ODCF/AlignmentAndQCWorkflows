@@ -8,13 +8,8 @@ import de.dkfz.roddy.plugins.BasePlugin;
  */
 public class QualityControlWorkflowPlugin extends BasePlugin {
 
-<<<<<<< HEAD
     public static final String CURRENT_VERSION_STRING = "1.0.182";
-    public static final String CURRENT_VERSION_BUILD_DATE = "Mon Dec 14 16:55:53 CET 2015";
-=======
-    public static final String CURRENT_VERSION_STRING = "1.0.177";
-    public static final String CURRENT_VERSION_BUILD_DATE = "Fri Jul 01 16:46:08 CEST 2016";
->>>>>>> cbd96af... `bam` configuration value to provide an externally located BAM file as initial merged BAM into which to merge additional lane-BAMs. Bugfixes.
+    public static final String CURRENT_VERSION_BUILD_DATE = "Mon Jul 04 15:01:30 CEST 2016";
 
     @Override
     public String getVersionInfo() {

@@ -195,7 +195,6 @@ public class QCPipeline extends Workflow {
         Configuration cfg = context.getConfiguration();
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
-        final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
 
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();

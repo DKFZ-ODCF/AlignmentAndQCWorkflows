@@ -37,7 +37,7 @@ fi
 # Handle existing merged BAM at target location.
 if [[ -f ${FILENAME} && -s ${FILENAME} ]]; then
     if [[ -v EXISTING_BAM ]]; then
-        echo "Input BAM provided via 'bam' option takes precendence over existing merged BAM. Rescuing merged BAM."
+        echo "Input BAM provided via 'bam' option has precedence over existing merged BAM. Rescuing merged BAM."
         mv "$FILENAME" "${FILENAME}_before_${today}" || throw 50 "Could not move $FILENAME"
     else
         # If the merged file already exists, only merge new lanes to it.
@@ -72,7 +72,6 @@ if [[ -v EXISTING_BAM ]]; then
             if [[ -f $FILENAME_METRICS ]]; then
                 mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
             fi
-            echo "Note: Incremental merging seems to produce different dupmark_metrics.txt files with biobambam."
         fi
 else	# BAM needs to be created de novo
 	mkdir -p $tempDirectory
