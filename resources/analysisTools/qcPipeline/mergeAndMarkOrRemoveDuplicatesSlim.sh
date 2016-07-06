@@ -36,7 +36,7 @@ bamname=`basename ${FILENAME}`
 declare -a INPUT_FILES="$INPUT_FILES"
 
 # if the merged file already exists, only merge new lanes to it
-if [[ -f ${FILENAME} ]] && [[ -s ${FILENAME} ]]
+if [[ -f ${FILENAME} && -s ${FILENAME} ]]
 then
     singlebams=`${SAMTOOLS_BINARY} view -H ${FILENAME} | grep "^@RG"`
     [[ -z "$singlebams" ]] && throw 23 "could not detect single lane BAM files in ${FILENAME}, stopping here"
@@ -54,7 +54,10 @@ then
         # input files is now the merged file and the new file(s)
         declare -a INPUT_FILES=("$FILENAME" $(echo $notyetmerged | sed -re 's/:/ /g'))
         # keep the old metrics file for comparison
-        mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
+        if [[ -f $FILENAME_METRICS ]]; then
+            mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
+        fi
+        echo "Note: Incremental merging seems to produce different dupmark_metrics.txt files with biobambam."
     fi
 fi
 

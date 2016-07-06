@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
-  <component name="FacetManager">
-    <facet type="Python" name="Python">
-      <configuration sdkName="" />
-    </facet>
-  </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/resources/analysisTools" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/resources/configurationFiles" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/test/resources" type="java-test-resource" />
@@ -18,9 +12,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="COWorkflows" />
-    <orderEntry type="library" name="roddyBundledLibraries" level="project" />
-    <orderEntry type="library" name="roddy" level="project" />
+    <orderEntry type="module" module-name="DefaultPlugin" />
     <orderEntry type="module" module-name="PluginBase" />
+    <orderEntry type="module" module-name="COWorkflows" />
+    <orderEntry type="library" name="roddy" level="project" />
+    <orderEntry type="library" name="roddyBundledLibraries" level="project" />
   </component>
 </module>

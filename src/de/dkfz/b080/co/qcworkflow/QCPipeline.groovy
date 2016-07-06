@@ -294,22 +294,25 @@ public class QCPipeline extends Workflow {
 
     protected boolean checkSingleBam(ExecutionContext context) {
 
-        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context);
-        if (!aqcfg.getSingleBamParameter()) return true;
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
+        if (!aqcfg.getSingleBamParameter()) return true
 
+        boolean returnValue = true
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() > 1) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
-            return false;
+            returnValue &= false;
         }
 
         def accessProvider = FileSystemAccessProvider.getInstance()
         def bamFile = new File(aqcfg.getSingleBamParameter())
         if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
-            return false;
+            returnValue &= false;
         }
+
+        return returnValue
     }
 
     @Override
