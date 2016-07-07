@@ -7,7 +7,6 @@ import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValu
 import de.dkfz.roddy.core.DataSet
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
-import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES
 
@@ -32,15 +31,14 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
 
         BamFileGroup mergedBamFiles = new BamFileGroup();
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample in samples) {
 
-            throw new NotImplementedException()
-            List<String> availableLibrariesForSample = null /* Not implemented: runtimeService.getLibrariesForRun(sample) */
+            List<String> availableLibrariesForSample = runtimeService.getLibrariesForSample(sample)
             BamFileGroup mergedBamsPerLibrary = new BamFileGroup();
 
             // Create per library merged bams
@@ -110,8 +108,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         String sampleID = sample.getName() + "_" + library;
         Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
         if (!mapForDataSet.containsKey(sampleID)) {
-            throw new NotImplementedException()
-            List<LaneFileGroup> laneFileGroups = null /* Not Implemented: sample.getLanes(library) */
+            List<LaneFileGroup> laneFileGroups = sample.getLanes(library)
             mapForDataSet.put(sampleID, laneFileGroups);
         }
 
@@ -131,7 +128,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
     @Override
     public boolean checkExecutability(ExecutionContext context) {
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
 
@@ -139,12 +136,9 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         int cnt = 0;
         for (Sample sample : samples) {
             List<LaneFileGroup> laneFileGroups = [];
-            throw new NotImplementedException()
-            /* Not implemented Sample.getLibraries()
             for (String lib : sample.getLibraries()) {
                 laneFileGroups += loadLaneFilesForSampleAndLibrary(context, sample, lib);
             }
-            */
             for (LaneFileGroup lfg : laneFileGroups) {
                 cnt += lfg.getFilesInGroup().size();
             }

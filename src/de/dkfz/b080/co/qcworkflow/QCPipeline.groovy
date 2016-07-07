@@ -38,7 +38,7 @@ public class QCPipeline extends Workflow {
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;
 
@@ -220,7 +220,7 @@ public class QCPipeline extends Workflow {
 
         boolean returnValue = true
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() > 1) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
             returnValue &= false
@@ -238,7 +238,7 @@ public class QCPipeline extends Workflow {
 
     private boolean checkSamples(ExecutionContext context) {
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.getDataSet()}!"));
             return false;
@@ -251,7 +251,7 @@ public class QCPipeline extends Workflow {
     protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true;
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         final boolean useExistingPairedBams = context.getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
         if (!useExistingPairedBams) {
             int cnt = 0;
@@ -281,7 +281,7 @@ public class QCPipeline extends Workflow {
         boolean allOk = true;
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
 
-        List<Sample> samples = runtimeService.getSamplesForRun(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context);
         for (Sample sample : samples) {
             List<LaneFile> files = new LinkedList<LaneFile>();
             LaneFileGroup allLaneFiles = new LaneFileGroup(context, "allLaneFiles", "noSpecificRun", sample, files);
