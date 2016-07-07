@@ -155,10 +155,10 @@
                 <!-- Test -->
                 <rset size="t" memory="126" cores="12" nodes="1" queue="convey_fast"/>
                 <!-- Production -->
-                <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
-                <rset size="m" memory="26" cores="12" nodes="1" walltime="5" queue="convey"/>
-                <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey"/>
-                <rset size="xl" memory="26" cores="12" nodes="1" walltime="30" queue="convey"/>
+                <rset size="s" memory="126" cores="12" nodes="1" walltime="1" queue="convey"/>
+                <rset size="m" memory="126" cores="12" nodes="1" walltime="5" queue="convey"/>
+                <rset size="l" memory="126" cores="12" nodes="1" walltime="15" queue="convey"/>
+                <rset size="xl" memory="126" cores="12" nodes="1" walltime="30" queue="convey"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_1"/>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_2"/>
@@ -331,11 +331,11 @@
                 <!-- Test -->
                 <rset size="t" memory="5" cores="3" nodes="1" queue="devel"/>
                 <!-- Production -->
-                <rset size="xs" memory="5" cores="1" nodes="1" walltime="1"/>
-                <rset size="s" memory="5" cores="1" nodes="1" walltime="2"/>
-                <rset size="m" memory="5" cores="1" nodes="1" walltime="12"/>
-                <rset size="l" memory="5" cores="1" nodes="1" walltime="120"/>
-                <rset size="xl" memory="7" cores="1" nodes="1" walltime="120"/>
+                <rset size="xs" memory="5" cores="3" nodes="1" walltime="1"/>
+                <rset size="s" memory="5" cores="3" nodes="1" walltime="2"/>
+                <rset size="m" memory="5" cores="3" nodes="1" walltime="12"/>
+                <rset size="l" memory="5" cores="3" nodes="1" walltime="120"/>
+                <rset size="xl" memory="7" cores="3" nodes="1" walltime="120"/>
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>
