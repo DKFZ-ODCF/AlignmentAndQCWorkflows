@@ -73,6 +73,9 @@
         </tool>
         <tool name='sampesort' value='bwaSampeSort.sh' basepath='qcPipeline'>
             <resourcesets>
+                <!-- Test -->
+                <rset size="t" memory="25" cores="6" nodes="1" queue="devel"/>
+                <!-- Production -->
                 <rset size="s" memory="38" cores="6" nodes="1" walltime="2"/>
                 <rset size="m" memory="42" cores="6" nodes="1" walltime="4"/>
                 <rset size="l" memory="52" cores="6" nodes="1" walltime="10"/>
@@ -320,7 +323,7 @@
                 <rset size="s" memory="55" cores="8" nodes="1" walltime="2"/>
                 <rset size="m" memory="62" cores="8" nodes="1" walltime="5"/>
                 <rset size="l" memory="60" cores="8" nodes="1" walltime="15"/>
-                <rset size="xl" memory="80" cores="8" nodes="1" walltime="120"/>
+                <rset size="xl" memory="100" cores="8" nodes="1" walltime="240"/>
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>
