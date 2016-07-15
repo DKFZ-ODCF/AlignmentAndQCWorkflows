@@ -15,6 +15,8 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_TARGET_REGIONS_FILE = "TARGET_REGIONS_FILE"
     public static final String CVALUE_TARGETSIZE = "TARGETSIZE"
     public static final String CVALUE_TARGET_SIZE = "TARGET_SIZE"
+    public static final String CVALUE_CLIP_INDEX = "CLIP_INDEX"
+    public static final String CVALUE_CYTOSINE_POSITION_INDEX = "CYTOSINE_POSITION_INDEX"
 
     public AlignmentAndQCConfig(ExecutionContext context) {
         super(context)
@@ -46,6 +48,14 @@ class AlignmentAndQCConfig extends COConfig {
 
     public boolean getRunExomeAnalysis() {
         return configValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS)
+    }
+
+    public File getCytosinePositionIndex() {
+        return new File(configValues.getString(CVALUE_CYTOSINE_POSITION_INDEX))
+    }
+
+    public File getClipIndex() {
+        return new File(configValues.getString(CVALUE_CLIP_INDEX))
     }
 
 }

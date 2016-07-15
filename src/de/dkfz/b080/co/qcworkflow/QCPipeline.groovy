@@ -308,7 +308,12 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        return checkConfiguration(context) && checkSamples(context) && checkLaneFiles(context) && checkSingleBam(context);
+        boolean result = super.checkExecutability(context)
+        result &= checkConfiguration(context)
+        result &= checkSamples(context)
+        result &= checkLaneFiles(context)
+        result &= checkSingleBam(context)
+        return result
     }
 
 
