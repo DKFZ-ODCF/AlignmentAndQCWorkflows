@@ -75,7 +75,7 @@
         <tool name='alignAndPairSlim' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='bisulfiteWorkflow' >
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="50" cores="8" nodes="1" queue="devel"/>
+                <rset size="t" memory="50" cores="8" nodes="1" walltime="1"/>
                  <!-- ChIP-Seq -->
                 <rset size="s" memory="1" cores="8" nodes="1" walltime="2"/>
                 <!-- exome part lane -->
@@ -117,8 +117,8 @@
 
         <tool name="methylationCallingMeta" value="methylCtools_methylation_calling_meta.sh" basepath="bisulfiteWorkflow">
             <resourcesets>
-                <rset size="t" memory="1" cores="1" nodes="1" queue="devel"/>
-                <rset size="s" memory="1" cores="13" nodes="1" walltime="1"/>
+                <rset size="t" memory="8" cores="3" nodes="1" queue="devel"/>
+                <rset size="s" memory="8" cores="13" nodes="1" walltime="1"/>
                 <rset size="m" memory="8" cores="13" nodes="1" walltime="15"/>
                 <rset size="l" memory="8" cores="13" nodes="1" walltime="40"/>
                 <rset size="xl" memory="20" cores="13" nodes="1" walltime="120"/>

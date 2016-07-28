@@ -85,7 +85,7 @@ fakeDupMarkMetrics () {
 }
 
 
-toMinusIEqualsList () {
+toIEqualsList () {
     declare -la inputFiles=($@)
     for inFile in ${inputFiles[@]}; do
 	    echo -n "I=$inFile "

@@ -32,7 +32,6 @@ NP_MD5_IN=${localScratchDirectory}/np_md5_in
 returnCodeMarkDuplicatesFile=${tempDirectory}/rcMarkDup.txt
 bamname=`basename ${FILENAME}`
 
-## INPUT_FILES is provided via the parameter file in quoted form: "'(a b c)'". This gets rid of the quotes.
 declare -a INPUT_FILES="$INPUT_FILES"
 
 # Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
@@ -117,7 +116,7 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
 
         (JAVA_OPTIONS="-Xms64G -Xmx64G" \
             $PICARD_BINARY ${PICARD_MODE} \
-            $(toMinusIEqualsList ${INPUT_FILES[@]}) \
+            $(toIEqualsList ${INPUT_FILES[@]}) \
             OUTPUT=${NP_PIC_OUT} \
             ${DUPLICATION_METRICS_FILE} \
             ${MAX_FILE_HANDLES_FOR_READ_ENDS_MAP} \
@@ -206,7 +205,7 @@ elif markWithBiobambam; then
             level=9 \
             index=1 \
             indexfilename=$tempIndexFile \
-            $(toMinusIEqualsList ${INPUT_FILES[@]}) \
+            $(toIEqualsList ${INPUT_FILES[@]}) \
             O=${NP_PIC_OUT}; echo $? > ${returnCodeMarkDuplicatesFile}) & procIDMarkdup=$!
 
         md5File "$NP_MD5_IN" "$tempMd5File" & procIDMd5=$!

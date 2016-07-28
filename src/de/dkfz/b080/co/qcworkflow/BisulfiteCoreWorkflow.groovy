@@ -199,7 +199,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         FileSystemAccessProvider accessProvider = FileSystemAccessProvider.getInstance()
         File cposidx = aqcfg.getCytosinePositionIndex()
         if (cposidx.toString().equals("")) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_CYTOSINE_POSITION_INDEX} is not defined!"))
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_CYTOSINE_POSITIONS_INDEX} is not defined!"))
             return false
         } else if (!accessProvider.fileExists(cposidx)
                 || !accessProvider.isReadable(cposidx)) {
