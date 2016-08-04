@@ -84,16 +84,20 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
                     coverageTextFilesBySample.get(sampleType).addFile(mergedLibraryBam.calcReadBinsCoverage());
 
                     mergedBamFiles.addFile(mergedLibraryBam);
+                    // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
+                    // a method, in order to put library and merged methylation results into different directories.
+                    // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
+                    mergedLibraryBam.mergedMethylationCallingMeta()
                 }
                 else {
                     mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlimWithLibrary(sample, library)
+                    // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
+                    // a method, in order to put library and merged methylation results into different directories.
+                    // This allows for selection via onMethod="BisulfiteCoreWorkflow.libraryMethylationCallingMeta".
+                    mergedLibraryBam.libraryMethylationCallingMeta()
                 }
 
                 mergedBamsPerLibrary.addFile(mergedLibraryBam);
-                // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
-                // a method, in order to put library and merged methylation results into different directories.
-                // This allows for selection via onMethod="BisulfiteCoreWorkflow.libraryMethylationCallingMeta".
-                mergedLibraryBam.libraryMethylationCallingMeta()
             }
 
             // Merge library bams into per sample bams
