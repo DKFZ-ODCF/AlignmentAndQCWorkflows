@@ -94,18 +94,20 @@ if [[ ${bamFileExists} == false ]]; then	# we have to make the BAM
 		# But o2 now has to contain read2 here:
 		o2=${RODDY_SCRATCH}/at_o2
 		mkfifo $o2
-		eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+		eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" & procTrim=$!
 
 		# trimming with fastx does not work in combination with Trimmomatic!
 		# besides, bwa mem automagically reverts mate pair data
 		cat $o1 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1 & procID_fqconv_r1=$!
 		cat $o2 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - > $FNPIPE2 & procID_fqconv_r2=$!
 	elif [ "${qualityScore}" = "illumina" ]; then	# bwa mem has no possibility to convert Illumina 1.3 scores
+	    true & procTrim=$!     # dummy process id
 		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | \
 		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1" & procID_fqconv_r1=$!
 		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | \
 		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconf -2 - - > $FNPIPE2" & procID_fqconv_r2=$!
 	else
+	    true & procTrim=$!     # dummy process id
 		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1" & procID_fqconv_r1=$!
 		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - > $FNPIPE2" & procID_fqconv_r2=$!
 	fi
@@ -115,6 +117,8 @@ if [[ ${bamFileExists} == false ]]; then	# we have to make the BAM
 	[[ ${LENGTH_SEQ_2} != 0 ]] && INPUT_PIPES="${INPUT_PIPES} $FNPIPE2"
 	[[ ${LENGTH_SEQ_1} == 0 ]] && cat $FNPIPE1 >/dev/null
 	[[ ${LENGTH_SEQ_2} == 0 ]] && cat $FNPIPE2 >/dev/null
+else
+    true & procTrim=$!
 fi
 
 # Try to read from pipes BEFORE they are filled.
@@ -204,8 +208,9 @@ else	# make sure to rename BAM file when it has been produced correctly
 	
 fi
 
+wait $procTrim || throw 38 "Error from trimming"
 wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
-wait $procIDReadbinsCoverage || throw 15 "Error from genomceCoverage read bins"
+wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
 wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
 wait $procIDCBA || throw 17 "Error from combined QC perl script"
 if [[ ${bamFileExists} == false ]]; then
