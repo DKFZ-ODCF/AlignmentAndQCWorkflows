@@ -34,7 +34,7 @@
 				description="Path to the bisulfite compatible bwa binary" />
 		<cvalue name="INDEX_PREFIX" value="${indexPrefix_bwa06_methylCtools_mm10_GRC}" type="path" 
 				description="Absolute path to the in-silico bisulfite converted reference sequenced used for alignment." />
-		<cvalue name='CLIP_INDEX' value='$DIR_EXECUTION/analysisTools/qcPipeline/trimmomatic/adapters/tagmentationPlassGroup.fa' type="path"
+		<cvalue name='CLIP_INDEX' value='$DIR_EXECUTION/analysisTools/qcPipelineTools/trimmomatic/adapters/tagmentationPlassGroup.fa' type="path"
 				description="Absolute path to the sequences to be trimmed before alignment." />
 		<cvalue name='CHROM_SIZES_FILE' value='${chromosomeSizesFile_mm10_GRC_bisulfite}' type="path"
 				description="Absolute path to the chromosome sizes file. This file is related to the INDEX_PREFIX." />
