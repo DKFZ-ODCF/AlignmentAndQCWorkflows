@@ -3,7 +3,7 @@ package de.dkfz.b080.co.qcworkflow;
 import de.dkfz.b080.co.methods.ACEseq
 import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*
-import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
@@ -13,6 +13,7 @@ import java.util.*
 /**
  * @author michael
  */
+@groovy.transform.CompileStatic
 public class QCPipeline extends Workflow {
 
     private static LoggerWrapper logger = LoggerWrapper.getLogger(QCPipeline.class.getName());
@@ -95,14 +96,6 @@ public class QCPipeline extends Workflow {
         return true;
     }
 
-    private boolean runSlim(ExecutionContext context) {
-        return false;
-    }
-
-    private boolean runFat(ExecutionContext context) {
-        return false;
-    }
-
     /**
      * This entry is used for caching purposes.
      */
@@ -141,6 +134,7 @@ public class QCPipeline extends Workflow {
     }
 
     private BamFileGroup createSortedBams(AlignmentAndQCConfig cfg, COProjectsRuntimeService runtimeService, Sample sample) {
+
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
         if (cfg.useExistingPairedBams) {
@@ -186,7 +180,6 @@ public class QCPipeline extends Workflow {
     }
 
     private BamFile mergeAndRemoveDuplicatesFat(AlignmentAndQCConfig cfg, Sample sample, BamFileGroup sortedBamFiles) {
-
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
         for (BamFile sortedBam : sortedBamFiles.getFilesInGroup())
@@ -197,63 +190,61 @@ public class QCPipeline extends Workflow {
         if (cfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
         mergedBam.runDefaultOperations();
         mergedBam.calcCoverage();
-
-        Sample.SampleType sampleType = sample.getType();
-
-
         mergedBam.createQCSummaryFile();
+
         return mergedBam;
     }
 
+    private boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
+        if (value == null || value.toString() == "") {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Expected value to be set: ${variableName}"))
+            return true
+        }
+        return false
+    }
+
+    private boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
+        if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
+            return false
+        }
+        return true
+    }
+
+    private boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
+        if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
+            return false
+        }
+        return true
+    }
 
     private static ExecutionContextError getInvalidError (String message) {
         return ExecutionContextError.EXECUTION_SETUP_INVALID.expand(message)
     }
 
     private boolean checkConfiguration(ExecutionContext context) {
-        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance()
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
         boolean returnValue = true
-        File pathToIndex = new File(config.getIndexPrefix()).getParentFile()
-        if (!fsap.checkDirectory(pathToIndex, context, false)) {
-            context.addErrorEntry(getInvalidError("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToIndex}"))
-            returnValue = false
-        }
-        if (!fsap.checkFile(config.getChromosomeSizesFile())) {
-            context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE}: ${config.getChromosomeSizesFile()}"))
-            returnValue = false
-        }
-        if (config.getRunExomeAnalysis()) {
-            if (!fsap.checkFile(config.getTargetRegionsFile())) {
-                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE}: ${config.getChromosomeSizesFile()}"))
-                returnValue = false
-            }
-            if (config.getTargetSize() == null) {
-                context.addErrorEntry(getInvalidError("${AlignmentAndQCConfig.CVALUE_TARGET_SIZE} not set to a valid value: ${config.getTargetSize()}"))
-                returnValue = false
-            }
+        returnValue =
+                !valueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
+                directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
+        returnValue &=
+                fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
+        if (config.runExomeAnalysis) {
+            returnValue &=
+                    fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
+                    !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
         if (config.runACEseqQC) {
-            if (!fsap.checkFile(config.getMappabilityFile())) {
-                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE}: ${config.getMappabilityFile()}"))
-                returnValue = false
-            }
-            if (!fsap.checkFile(config.getReplicationTimeFile())) {
-                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE}: ${config.getReplicationTimeFile()}"))
-                returnValue = false
-            }
-            if (!fsap.checkFile(config.getGcContentFile())) {
-                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE}: ${config.getGcContentFile()}"))
-                returnValue = false
-            }
-            if (!fsap.checkFile(config.getChromosomeLengthFile())) {
-                context.addErrorEntry(getInvalidError("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_LENGTH_FILE}: ${config.getChromosomeLengthFile()}"))
-                returnValue = false
-            }
+            returnValue &=
+                    fileIsAccessible(context, config.mappabilityFile, AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE) &&
+                    fileIsAccessible(context, config.replicationTimeFile, AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE) &&
+                    fileIsAccessible(context, config.gcContentFile, AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE) &&
+                    fileIsAccessible(context, config.chromosomeLengthFile, AlignmentAndQCConfig.CVALUE_CHROMOSOME_LENGTH_FILE)
         }
         return returnValue
     }
-
 
     private boolean checkSamples(ExecutionContext context) {
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
@@ -266,7 +257,6 @@ public class QCPipeline extends Workflow {
             return true
         }
     }
-
 
     protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
@@ -291,11 +281,37 @@ public class QCPipeline extends Workflow {
         return returnValue;
     }
 
+    protected boolean checkSingleBam(ExecutionContext context) {
+
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
+        if (!aqcfg.getSingleBamParameter()) return true
+
+        boolean returnValue = true
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
+        if (samples.size() > 1) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
+            returnValue &= false;
+        }
+
+        def accessProvider = FileSystemAccessProvider.getInstance()
+        def bamFile = new File(aqcfg.getSingleBamParameter())
+        if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
+            returnValue &= false;
+        }
+
+        return returnValue
+    }
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        // Use context.addErrorEntry to add errors or warnings.
-        return checkSamples(context) && checkLaneFiles(context) && checkConfiguration(context)
+        boolean result = super.checkExecutability(context)
+        result &= checkConfiguration(context)
+        result &= checkSamples(context)
+        result &= checkLaneFiles(context)
+        result &= checkSingleBam(context)
+        return result
     }
 
 

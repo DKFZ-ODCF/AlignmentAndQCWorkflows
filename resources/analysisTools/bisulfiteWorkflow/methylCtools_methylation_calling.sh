@@ -50,11 +50,11 @@ FILENAME_METH_CALL_CH=${FILENAME_METH_CALLS}.CH.bed
 # Conversion of Methylation Calls -- CG and CH #
 ################################################
 if [[ ${METH_CALLS_CONVERTER} == 'moabs' ]]; then
-	sh ${TOOL_CONVERT_METH_CALLS_MOABS} ${NP_METHCALLS_CH} 'CH' >> ${FILENAME_METH_CALL_CH_TMP} & procIDMethConvCH=$!;
-	sh ${TOOL_CONVERT_METH_CALLS_MOABS} ${NP_METHCALLS_CG} 'CG' >> ${FILENAME_METH_CALL_CG_TMP} & procIDMethConvCG=$!;
+	sh ${TOOL_CONVERT_METH_CALLS_MOABS} ${NP_METHCALLS_CH} 'CH' > ${FILENAME_METH_CALL_CH_TMP} & procIDMethConvCH=$!;
+	sh ${TOOL_CONVERT_METH_CALLS_MOABS} ${NP_METHCALLS_CG} 'CG' > ${FILENAME_METH_CALL_CG_TMP} & procIDMethConvCG=$!;
 elif [[ ${METH_CALLS_CONVERTER} == 'none' ]]; then
-	cat ${NP_METHCALLS_CH} >> ${FILENAME_METH_CALL_CH_TMP} & procIDMethConvCH=$!;
-	cat ${NP_METHCALLS_CG} >> ${FILENAME_METH_CALL_CG_TMP} & procIDMethConvCG=$!;
+	cat ${NP_METHCALLS_CH} > ${FILENAME_METH_CALL_CH_TMP} & procIDMethConvCH=$!;
+	cat ${NP_METHCALLS_CG} > ${FILENAME_METH_CALL_CG_TMP} & procIDMethConvCG=$!;
 else
     throw 50 "Unknown methylation call converter: METH_CALLS_CONVERTER='$METH_CALLS_CONVERTER'"
 fi

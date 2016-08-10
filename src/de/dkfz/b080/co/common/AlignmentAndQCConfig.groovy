@@ -25,11 +25,16 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_GC_CONTENT_FILE = "GC_CONTENT_FILE";
     public static final String CVALUE_RUN_ACESEQ_QC = "runACEseqQc";
 
+    public static final String CVALUE_CLIP_INDEX = "CLIP_INDEX"
+    public static final String CVALUE_CYTOSINE_POSITIONS_INDEX = "CYTOSINE_POSITIONS_INDEX"
 
     public AlignmentAndQCConfig(ExecutionContext context) {
         super(context)
     }
 
+    public String getSingleBamParameter() {
+        return configValues.get("bam", "");
+    }
 
     public String getIndexPrefix() {
         return configValues.getString(CVALUE_INDEX_PREFIX, "")
@@ -132,7 +137,15 @@ class AlignmentAndQCConfig extends COConfig {
     }
 
     public void setSampleExtractionFromOutputFiles(boolean value) {
-        setConfig(COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, value.toString(), "boolean" )
+        setConfig(COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, value.toString(), "boolean")
+    }
+
+    public File getCytosinePositionIndex() {
+        return new File(configValues.getString(CVALUE_CYTOSINE_POSITIONS_INDEX))
+    }
+
+    public File getClipIndex() {
+        return new File(configValues.getString(CVALUE_CLIP_INDEX))
     }
 
 }

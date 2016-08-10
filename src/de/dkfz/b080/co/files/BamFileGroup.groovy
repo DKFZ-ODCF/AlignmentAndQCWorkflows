@@ -1,6 +1,8 @@
 package de.dkfz.b080.co.files
 
+import de.dkfz.b080.co.common.COConfig
 import de.dkfz.b080.co.common.COProjectsRuntimeService
+import de.dkfz.roddy.config.OnScriptParameterFilenamePattern
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.execution.jobs.JobManager
@@ -54,6 +56,7 @@ public class BamFileGroup extends FileGroup<BamFile> {
             boolean useBioBamBamMarkDuplicates = cvalues.getBoolean(COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES, true);
             String markDuplicatesVariant = cvalues.getString(COConstants.CVALUE_MARK_DUPLICATES_VARIANT, null);
             String toolId
+
             if (markDuplicatesVariant == null || markDuplicatesVariant == "") {
                 logger.postSometimesInfo("${COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES} is deprecated. Use ${COConstants.CVALUE_MARK_DUPLICATES_VARIANT}.")
                 toolId = useBioBamBamMarkDuplicates ? MERGEANDMORMDUP_SLIM_BIOBAMBAM : MERGEANDMORMDUP_SLIM_PICARD
@@ -72,6 +75,7 @@ public class BamFileGroup extends FileGroup<BamFile> {
                         throw new RuntimeException("markDuplicatesVariant=${markDuplicatesVariant} is not supported")
                 }
             }
+
             Object[] parameterList = ([this, "SAMPLE=${sample.getName()}"] as ArrayList<Object>) + (additionalMergeParameters as ArrayList<Object>) as Object[]
             mergedBam = (BamFile) GenericMethod.callGenericTool(toolId, getFilesInGroup().get(0), parameterList)
         }

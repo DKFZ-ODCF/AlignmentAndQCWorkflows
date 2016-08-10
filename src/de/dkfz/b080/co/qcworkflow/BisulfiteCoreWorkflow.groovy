@@ -1,5 +1,6 @@
 package de.dkfz.b080.co.qcworkflow
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig
 import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService
 import de.dkfz.b080.co.common.COProjectsRuntimeService
 import de.dkfz.b080.co.files.*
@@ -8,6 +9,8 @@ import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValu
 import de.dkfz.roddy.core.DataSet
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
+import de.dkfz.roddy.execution.io.ExecutionService
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 
 import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES
 
@@ -80,16 +83,20 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
                     coverageTextFilesBySample.get(sampleType).addFile(mergedLibraryBam.calcReadBinsCoverage());
 
                     mergedBamFiles.addFile(mergedLibraryBam);
+                    // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
+                    // a method, in order to put library and merged methylation results into different directories.
+                    // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
+                    mergedLibraryBam.mergedMethylationCallingMeta()
                 }
                 else {
                     mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlimWithLibrary(sample, library)
+                    // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
+                    // a method, in order to put library and merged methylation results into different directories.
+                    // This allows for selection via onMethod="BisulfiteCoreWorkflow.libraryMethylationCallingMeta".
+                    mergedLibraryBam.libraryMethylationCallingMeta()
                 }
 
                 mergedBamsPerLibrary.addFile(mergedLibraryBam);
-                // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
-                // a method, in order to put library and merged methylation results into different directories.
-                // This allows for selection via onMethod="BisulfiteCoreWorkflow.libraryMethylationCallingMeta".
-                mergedLibraryBam.libraryMethylationCallingMeta()
             }
 
             // Merge library bams into per sample bams
@@ -188,6 +195,43 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
             returnValue = false
         }
         return returnValue
+    }
+
+    protected boolean checkCytosinePositionIndex(ExecutionContext context) {
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
+        FileSystemAccessProvider accessProvider = FileSystemAccessProvider.getInstance()
+        File cposidx = aqcfg.getCytosinePositionIndex()
+        if (cposidx.toString().equals("")) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_CYTOSINE_POSITIONS_INDEX} is not defined!"))
+            return false
+        } else if (!accessProvider.fileExists(cposidx)
+                || !accessProvider.isReadable(cposidx)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cytosine position index '${cposidx}' is not accessible!"))
+            return false
+        } else {
+            return true
+        }
+
+    }
+
+    protected boolean checkClipIndex(ExecutionContext context) {
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
+        FileSystemAccessProvider accessProvider = FileSystemAccessProvider.getInstance()
+        if (!aqcfg.getClipIndex().toString().startsWith('$' + ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION)
+                && !accessProvider.isReadable(aqcfg.getClipIndex())) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Clip index '${aqcfg.getClipIndex()}' is not accessible!"));
+            return false
+        } else {
+            return true
+        }
+    }
+
+    @Override
+    public boolean checkExecutability(ExecutionContext context) {
+        boolean result = super.checkExecutability(context)
+        result &= checkCytosinePositionIndex(context)
+        result &= checkClipIndex(context)
+        return result
     }
 
 }

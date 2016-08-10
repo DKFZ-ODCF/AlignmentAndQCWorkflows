@@ -7,6 +7,9 @@
                listOfUsedTools="qcSummary,postMergeQCAnalysis,coveragePlot,coveragePlotSingle"
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools">
     <configurationvalues>
+        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
+        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
+
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
 

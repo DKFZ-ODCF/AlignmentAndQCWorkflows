@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source $CONFIG_FILE
+source $TOOL_BASH_LIB
 
 set -xuv
 
@@ -18,6 +19,7 @@ FILENAME_PREFIX_METHYLATION_CALLING_METRICS=${meth_call_metric_files_dirname}/${
 
 # Create named pipes in ${RODDY_SCRATCH}
 SORTED_CHROMOSOMES=${RODDY_SCRATCH}/sorted_chromosomes.txt;
+declare -a CHROMOSOME_INDICES="$CHROMOSOME_INDICES"
 
 # Sort Chromosome Indices by Chromosome length and store them in CHROMOSOME_INDICES_SORTED
 # Create associative array containing (chromosome: chromosome_size) pairs
@@ -42,6 +44,7 @@ done < ${SORTED_CHROMOSOMES};
 CNT=${#CHROMOSOME_INDICES[@]} 
 let "MAX=${CNT}/2"
 
+declare -a methCallProcIds=()
 for n in `seq 0 $MAX`; do
 	let "f=${n}";
 	let "r=${CNT}-1-${n}"
@@ -62,25 +65,29 @@ for n in `seq 0 $MAX`; do
 		if [[ ! -f ${FILE_FRONT_CP} ]] || [[ ! -f ${FILE_BACK_CP} ]]; then
 			if [ ! ${forward_index} -eq ${reverse_index} ]; then
 				# load methylation calling script twice with a wait after another.
-				(FILENAME_MERGED_BAM=${bamfile} \
-				PARM_CHR_INDEX=${CHR_INDEX_FRONT} \
-				FILENAME_METH_CALLS_CHECKPOINT=${FILE_FRONT_CP} \
-				FILENAME_METH_CALLS=${FILE_FRONT} \
-				FILENAME_METH_CALL_METRICS=${FILE_METRICS_FRONT} \
-				bash ${TOOL_METHYLATION_CALLING} ; \
 				FILENAME_MERGED_BAM=${bamfile} \
-				PARM_CHR_INDEX=${CHR_INDEX_BACK} \
-				FILENAME_METH_CALLS_CHECKPOINT=${FILE_BACK_CP} \
-				FILENAME_METH_CALLS=${FILE_BACK} \
-				FILENAME_METH_CALL_METRICS=${FILE_METRICS_BACK} \
-				bash ${TOOL_METHYLATION_CALLING}) &
+    				PARM_CHR_INDEX=${CHR_INDEX_FRONT} \
+    				FILENAME_METH_CALLS_CHECKPOINT=${FILE_FRONT_CP} \
+    				FILENAME_METH_CALLS=${FILE_FRONT} \
+    				FILENAME_METH_CALL_METRICS=${FILE_METRICS_FRONT} \
+    				bash ${TOOL_METHYLATION_CALLING} &
+    			methCallProcIds+=($!)
+
+				FILENAME_MERGED_BAM=${bamfile} \
+    				PARM_CHR_INDEX=${CHR_INDEX_BACK} \
+       				FILENAME_METH_CALLS_CHECKPOINT=${FILE_BACK_CP} \
+    				FILENAME_METH_CALLS=${FILE_BACK} \
+    				FILENAME_METH_CALL_METRICS=${FILE_METRICS_BACK} \
+	    			bash ${TOOL_METHYLATION_CALLING} &
+	    		methCallProcIds+=($!)
 			else
-				(FILENAME_MERGED_BAM=${bamfile} \
-				PARM_CHR_INDEX=${CHR_INDEX_FRONT} \
-				FILENAME_METH_CALLS_CHECKPOINT=${FILE_FRONT_CP} \
-				FILENAME_METH_CALLS=${FILE_FRONT} \
-				FILENAME_METH_CALL_METRICS=${FILE_METRICS_FRONT} \
-				bash ${TOOL_METHYLATION_CALLING}) &
+				FILENAME_MERGED_BAM=${bamfile} \
+    				PARM_CHR_INDEX=${CHR_INDEX_FRONT} \
+    				FILENAME_METH_CALLS_CHECKPOINT=${FILE_FRONT_CP} \
+    				FILENAME_METH_CALLS=${FILE_FRONT} \
+    				FILENAME_METH_CALL_METRICS=${FILE_METRICS_FRONT} \
+    				bash ${TOOL_METHYLATION_CALLING} &
+    			methCallProcIds+=($!)
 			fi;
 		else
 		    echo "Both files exist, skipping jobs for ${CHR_INDEX_FRONT}, ${CHR_INDEX_BACK}: ${FILE_FRONT}, ${FILE_BACK}";
@@ -90,7 +97,7 @@ done;
 
 # wait for the methylation calling processes to be done and check if all 
 # checkpoint files were created
-wait
+wait ${methCallProcIds[@]} || throw $? "Error during methylation calling"
 
 all_checkpoints_created=0
 for chrom in ${CHROMOSOME_INDICES[@]}; do

@@ -221,14 +221,6 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return qcJsonFile;
     }
 
-    public TextFile getDipStatisticsFile() {
-        return dipStatisticsFile;
-    }
-
-    public InsertSizesPlotFile getDipStatisticsPlotFile() {
-        return dipStatisticsPlotFile;
-    }
-
     public void setChromosomeDiffStatisticsFile(ChromosomeDiffValueFile chromosomeDiffStatisticsFile) {
         this.chromosomeDiffStatisticsFile = chromosomeDiffStatisticsFile;
     }
@@ -271,14 +263,6 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
 
     public void setQcJsonFile(TextFile qcJsonFile) {
         this.qcJsonFile = qcJsonFile;
-    }
-
-    public void setDipStatisticsFile(TextFile dipStatisticsFile) {
-        this.dipStatisticsFile = dipStatisticsFile;
-    }
-
-    public void setDipStatisticsPlotFile(InsertSizesPlotFile dipStatisticsPlotFile) {
-        this.dipStatisticsPlotFile = dipStatisticsPlotFile;
     }
 
     public ChromosomeDiffValueFile getChromosomeDiffStatisticsFile() {

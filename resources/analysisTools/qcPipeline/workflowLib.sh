@@ -46,7 +46,7 @@ runningOnConvey () {
 
 
 analysisType () {
-    if [[  -v runExomeAnalysis && "${runExomeAnalysis-false}" = "true" ]]; then
+    if [[  "${runExomeAnalysis-false}" = "true" ]]; then
         echo "exome"
     else
         echo "genome"
@@ -85,7 +85,7 @@ fakeDupMarkMetrics () {
 }
 
 
-toMinusIEqualsList () {
+toIEqualsList () {
     declare -la inputFiles=($@)
     for inFile in ${inputFiles[@]}; do
 	    echo -n "I=$inFile "

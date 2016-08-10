@@ -11,7 +11,6 @@ import de.dkfz.roddy.knowledge.methods.GenericMethod
 @StaticScriptProviderClass
 public final class ACEseq {
 
-
     @ScriptCallingMethod
     public static Tuple2<TextFile, TextFile> annotateCovWindows(CoverageTextFile windowCoverageTextFile, Sample sample) {
         return (Tuple2<TextFile, TextFile>) GenericMethod.callGenericTool("annotateCovWindows", windowCoverageTextFile, "SAMPLE=" + sample.name);
@@ -27,7 +26,7 @@ public final class ACEseq {
         return (Tuple4<TextFile, TextFile, TextFile, TextFile>) GenericMethod.callGenericTool("correctGc", mergedAndFilteredCovWinFile, "SAMPLE=" + sample.name);
     }
 
-    private static Tuple3<TextFile, TextFile, TextFile> aceSeqQc(CoverageTextFile windowedCoverageTextFile, Sample sample) {
+    public static Tuple3<TextFile, TextFile, TextFile> aceSeqQc(CoverageTextFile windowedCoverageTextFile, Sample sample) {
         Tuple2<TextFile, TextFile> annotationResult = ACEseq.annotateCovWindows(windowedCoverageTextFile, sample);
         TextFile mergedAndFilteredCoverageWindowFile = ACEseq.mergeAndFilterCovWindows(annotationResult.value0);
         Tuple3<TextFile, TextFile, TextFile, TextFile> correctedWindowFile = ACEseq.correctGc(mergedAndFilteredCoverageWindowFile, sample);
