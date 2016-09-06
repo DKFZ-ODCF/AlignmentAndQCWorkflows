@@ -125,7 +125,7 @@ class AlignmentAndQCConfig extends COConfig {
     }
 
     public boolean getRunACEseqQC () {
-        return configValues.getBoolean(CVALUE_RUN_ACESEQ_QC, true)
+        return configValues.getBoolean(CVALUE_RUN_ACESEQ_QC, false)
     }
 
     public String getControlBamName() {
