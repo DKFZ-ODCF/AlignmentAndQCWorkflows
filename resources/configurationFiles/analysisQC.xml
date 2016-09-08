@@ -10,12 +10,17 @@
     <configurationvalues>
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
+        <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
 
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
+        <cvalue name='runFingerprinting' value='true' type='boolean'
+                description='Fingerprint the individuals using a set of reference positions.'/>
+        <cvalue name='fingerprintingSitesFile' value='' type='file'
+                description='BED file with the reference positions used for fingerprinting.'/>
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer" description="Threads for bwa mem."/>
@@ -314,6 +319,7 @@
                 <rset size="xl" memory="73" cores="8" nodes="1" walltime="80"/>
             </resourcesets>
         </tool>
+        <tool name='fingerprint' value="bsnp.py" basepath="qcPipeline"/>
         <tool name='mergeAndRemoveDuplicatesSlimPicard' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
@@ -343,6 +349,7 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
+                <output type="file" variable="fingerprints" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" check="false"/>
             </output>
         </tool>
@@ -375,6 +382,7 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
+                <output type="file" variable="fingerprints" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" check="false" />
             </output>
         </tool>
@@ -407,6 +415,7 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
+                <output type="file" variable="fingerprints" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
             </output>
         </tool>
@@ -490,6 +499,7 @@
 
         <filename class='QCSummaryFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_wroteQcSummary.txt'/>
 
+        <filename class="TextFile" onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="fingerprints" pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="qcJson" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomic}_qualitycontrol.json'/>
 
         <!-- TODO Throw error if value overrides other value!-->
@@ -497,7 +507,6 @@
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample[0]}_vs_${sample[1]}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
         <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile' selectiontag="singlePlot"
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
-
 
     </filenames>
 </configuration>
