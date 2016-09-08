@@ -98,12 +98,12 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         return laneFiles;
     }
 
-    public List<LaneFileGroup> getLaneFileGroupsFromInputTable(ExecutionContext context, Sample sample, String libraryID) {
+    public List<LaneFileGroup> getLaneFileGroupsFromInputTable(ExecutionContext context, Sample sample, String libraryID = null) {
         MetadataTable inputTable = getMetadataTable(context).subsetBySample(sample.name)
         if (libraryID) inputTable = inputTable.subsetByLibrary(libraryID)
         List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
         for(String runID : inputTable.listRunIDs()) {
-            List<File> fastqFilesForRun = inputTable.subsetByColumn(COConstants.INPUT_TABLE_RUNCOL_NAME, runID).listFiles()
+            List<File> fastqFilesForRun = inputTable.subsetByRun(runID).listFiles()
             List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun);
             laneFiles.addAll(bundleFiles)
         }
