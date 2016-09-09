@@ -309,13 +309,16 @@ public class QCPipeline extends Workflow {
     public boolean checkFingerprintingSitesFile(ExecutionContext context) {
         def aqcfg = new AlignmentAndQCConfig(context)
         def accessProvider = FileSystemAccessProvider.getInstance()
+        boolean result = true
         if (aqcfg.runFingerprinting) {
             if (!accessProvider.fileExists(aqcfg.fingerprintingSitesFile)
                     || !accessProvider.isReadable(aqcfg.fingerprintingSitesFile)) {
                 context.addErrorEntry(ExecutionContextError.
                         EXECUTION_SETUP_INVALID.expand("Fingerprinting reference sites file not readable: '${aqcfg.fingerprintingSitesFile}'"))
+                result = false
             }
         }
+        return result
     }
 
     @Override

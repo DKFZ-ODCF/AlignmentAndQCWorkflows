@@ -43,10 +43,9 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     private OnTargetCoverageTextFile onTargetCoverageTextFile;
     private QCSummaryFile qcSummaryFile;
     private TextFile qcJsonFile;
-    private TextFile dipStatisticsFile;
-    private InsertSizesPlotFile dipStatisticsPlotFile;
     private MethylationMetaCheckpointFile methylationMetaCheckpointFile;
     private MethylationMetaMetricsCheckpointFile methylationMetaMetricsCheckpointFile;
+    private TextFile fingerprintingSitesFile;
 
     public BamFile(ConstructionHelperForBaseFiles helper) {
         super(helper);
@@ -297,12 +296,18 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return targetExtractedBamFile;
     }
 
+    public TextFile getFingerprintingSitesFile() { return fingerprintingSitesFile; }
+
     public void setTargetCoverageTextFile(CoverageTextFile targetCoverageTextFile) {
         this.targetCoverageTextFile = targetCoverageTextFile;
     }
 
     public CoverageTextFile getTargetsWithCoverageTextFile() {
         return targetsWithCoverageTextFile;
+    }
+
+    public void setFingerprintingSitesFile(TextFile fingerprintingSitesFile) {
+        this.fingerprintingSitesFile = fingerprintingSitesFile;
     }
 
     public void setTargetsWithCoverageTextFile(CoverageTextFile targetsWithCoverageTextFile) {
