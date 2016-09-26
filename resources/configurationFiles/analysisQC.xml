@@ -383,8 +383,8 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
-                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
-                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
+                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
             </output>
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimBioBambam' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -417,7 +417,7 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
-                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS"/>
+                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
             </output>
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimSambamba' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -450,7 +450,7 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
-                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS"/>
+                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
             </output>
         </tool>
 
