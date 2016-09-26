@@ -227,14 +227,6 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         }
     }
 
-    /** This overrides the method inherited from QCPipeline. WGBS does not have fingerprinting implemented.
-     *  Whether it would make sense, somebody else needs to investigate.
-     */
-    @Override
-    public boolean checkFingerprintingSitesFile(ExecutionContext context) {
-        return true
-    }
-
     @Override
     public boolean checkExecutability(ExecutionContext context) {
         boolean result = super.checkExecutability(context)

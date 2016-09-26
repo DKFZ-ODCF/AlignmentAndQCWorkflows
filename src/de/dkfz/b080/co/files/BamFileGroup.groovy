@@ -1,5 +1,6 @@
 package de.dkfz.b080.co.files
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig
 import de.dkfz.b080.co.common.COConfig
 import de.dkfz.b080.co.common.COProjectsRuntimeService
 import de.dkfz.roddy.config.OnScriptParameterFilenamePattern
@@ -43,7 +44,7 @@ public class BamFileGroup extends FileGroup<BamFile> {
     }
 
     public BamFile mergeAndRemoveDuplicatesSlimWithLibrary(Sample sample, String library) {
-        return baseMergeAndRemoveDuplicatesSlim(sample, "LIBRARY=${library}")
+        return baseMergeAndRemoveDuplicatesSlim(sample, "LIBRARY=${library}", "${AlignmentAndQCConfig.CVALUE_RUN_FINGERPRINTING}=false")
     }
 
     public BamFile mergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {
