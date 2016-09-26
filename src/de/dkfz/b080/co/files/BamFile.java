@@ -1,6 +1,5 @@
 package de.dkfz.b080.co.files;
 
-import de.dkfz.b080.co.common.ParallelizationHelper;
 import de.dkfz.b080.co.methods.Common;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
@@ -9,9 +8,7 @@ import de.dkfz.roddy.knowledge.files.*;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
 //import sun.net.www.content.text.Generic;
 
-import java.io.File;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * A bam file is the binary version of a sam file and contains sequence data.
@@ -45,7 +42,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     private TextFile qcJsonFile;
     private MethylationMetaCheckpointFile methylationMetaCheckpointFile;
     private MethylationMetaMetricsCheckpointFile methylationMetaMetricsCheckpointFile;
-    private TextFile fingerprintingSitesFile;
+    private TextFile fingerprintsFile;
 
     public BamFile(ConstructionHelperForBaseFiles helper) {
         super(helper);
@@ -296,7 +293,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return targetExtractedBamFile;
     }
 
-    public TextFile getFingerprintingSitesFile() { return fingerprintingSitesFile; }
+    public TextFile getFingerprintsFile() { return fingerprintsFile; }
 
     public void setTargetCoverageTextFile(CoverageTextFile targetCoverageTextFile) {
         this.targetCoverageTextFile = targetCoverageTextFile;
@@ -306,8 +303,8 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return targetsWithCoverageTextFile;
     }
 
-    public void setFingerprintingSitesFile(TextFile fingerprintingSitesFile) {
-        this.fingerprintingSitesFile = fingerprintingSitesFile;
+    public void setFingerprintsFile(TextFile fingerprintsFile) {
+        this.fingerprintsFile = fingerprintsFile;
     }
 
     public void setTargetsWithCoverageTextFile(CoverageTextFile targetsWithCoverageTextFile) {
