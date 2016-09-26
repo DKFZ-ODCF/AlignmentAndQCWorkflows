@@ -295,11 +295,26 @@ public class QCPipeline extends Workflow {
         def accessProvider = FileSystemAccessProvider.getInstance()
         def bamFile = new File(aqcfg.getSingleBamParameter())
         if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable: '${bamFile}'"));
             returnValue &= false;
         }
 
         return returnValue
+    }
+
+    public boolean checkFingerprintingSitesFile(ExecutionContext context) {
+        def aqcfg = new AlignmentAndQCConfig(context)
+        def accessProvider = FileSystemAccessProvider.getInstance()
+        boolean result = true
+        if (aqcfg.runFingerprinting) {
+            if (!accessProvider.fileExists(aqcfg.fingerprintingSitesFile)
+                    || !accessProvider.isReadable(aqcfg.fingerprintingSitesFile)) {
+                context.addErrorEntry(ExecutionContextError.
+                        EXECUTION_SETUP_INVALID.expand("Fingerprinting reference sites file not readable: '${aqcfg.fingerprintingSitesFile}'"))
+                result = false
+            }
+        }
+        return result
     }
 
     @Override
@@ -309,6 +324,7 @@ public class QCPipeline extends Workflow {
         result &= checkSamples(context)
         result &= checkLaneFiles(context)
         result &= checkSingleBam(context)
+        result &= checkFingerprintingSitesFile(context)
         return result
     }
 
