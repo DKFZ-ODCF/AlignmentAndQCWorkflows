@@ -9,6 +9,9 @@
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
+        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${library}/${SEQUENCER_PROTOCOL}' type='path'/>
+        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
+
         <cvalue name='useBioBamBamMarkDuplicates' value='false' type="boolean"
                 description="Currently, we do not know how to setup biobambam to just merge and NOT mark duplicates. Deprecated: use markDuplicatesVariant." />
         <cvalue name='markDuplicatesVariant' value='sambamba' type="string"
@@ -27,11 +30,11 @@
                 description="none: Keep methylCtools output format. moabs: Convert to moabs format."/>
         <cvalue name='METH_CALL_PARAMETERS' value="-t -e 5 -x -z" type="string"
                 description="Parameter to methylationCallingScript (see tools below)."/>
-		<cvalue name="BWA_BINARY" value="${bwaBinary_bwa078_bisulfit}"
+		<cvalue name="BWA_BINARY" value="${bwaBinary_bwa0712_bisulfit}"
 				description="Path to the bisulfite compatible bwa binary" />
 		<cvalue name="INDEX_PREFIX" value="${indexPrefix_bwa06_methylCtools_mm10_GRC}" type="path" 
 				description="Absolute path to the in-silico bisulfite converted reference sequenced used for alignment." />
-		<cvalue name='CLIP_INDEX' value='$DIR_EXECUTION/analysisTools/qcPipeline/trimmomatic/adapters/tagmentationPlassGroup.fa' type="path"
+		<cvalue name='CLIP_INDEX' value='$DIR_EXECUTION/analysisTools/qcPipelineTools/trimmomatic/adapters/tagmentationPlassGroup.fa' type="path"
 				description="Absolute path to the sequences to be trimmed before alignment." />
 		<cvalue name='CHROM_SIZES_FILE' value='${chromosomeSizesFile_mm10_GRC_bisulfite}' type="path"
 				description="Absolute path to the chromosome sizes file. This file is related to the INDEX_PREFIX." />
@@ -72,7 +75,7 @@
         <tool name='alignAndPairSlim' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='bisulfiteWorkflow' >
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="50" cores="8" nodes="1" queue="devel"/>
+                <rset size="t" memory="50" cores="8" nodes="1" walltime="1"/>
                  <!-- ChIP-Seq -->
                 <rset size="s" memory="1" cores="8" nodes="1" walltime="2"/>
                 <!-- exome part lane -->
@@ -114,8 +117,8 @@
 
         <tool name="methylationCallingMeta" value="methylCtools_methylation_calling_meta.sh" basepath="bisulfiteWorkflow">
             <resourcesets>
-                <rset size="t" memory="1" cores="1" nodes="1" queue="devel"/>
-                <rset size="s" memory="1" cores="13" nodes="1" walltime="1"/>
+                <rset size="t" memory="8" cores="3" nodes="1" queue="devel"/>
+                <rset size="s" memory="8" cores="13" nodes="1" walltime="1"/>
                 <rset size="m" memory="8" cores="13" nodes="1" walltime="15"/>
                 <rset size="l" memory="8" cores="13" nodes="1" walltime="40"/>
                 <rset size="xl" memory="20" cores="13" nodes="1" walltime="120"/>
@@ -171,8 +174,8 @@
              -->
         <filename class='MethylationMetaCheckpointFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${methCallingOutputDirectory}/.${sourcefileAtomic}.checkpoint'/>
         <filename class='MethylationMetaMetricsCheckpointFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${methCallingMetricsOutputDirectory}/.${sourcefileAtomic}.checkpoint'/>
-        <filename class='AlignedSequenceFile' fileStage="INDEXEDLANE" pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${fileStageID}_sequence.sai'/>
-        <filename class='FastqcFile' fileStage='INDEXEDLANE' pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${fileStageID}_sequence_fastqc.zip"/>
+        <filename class='AlignedSequenceFile' fileStage="INDEXEDLANE" pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${dataSet}_${sample}_${library}_${run}_${laneindex}_sequence.sai'/>
+        <filename class='FastqcFile' fileStage='INDEXEDLANE' pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${library}_${run}_${laneindex}_sequence_fastqc.zip"/>
         <filename class='BamMetricsAlignmentSummaryFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${metricsOutputDirectory}/${cvalue,name="COLLECT_METRICS_PREFIX"}.alignment_summary_metrics'/>
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicates' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
@@ -180,7 +183,7 @@
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlimWithLibrary' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${library}_${cvalue,name="defaultMergedBamSuffix"}'/>
         <!-- TODO targetextract should derive from the bamfile upon which it is based.-->
         <filename class='BamFile' onMethod='extractTargetsCalculateCoverage' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="TARGET_BAM_EXTENSION",default="targetExtract.rmdup.bam"}'/>
-        <filename class='BamFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${fileStageID}_${cvalue,name="pairedBamSuffix"}'/>
+        <filename class='BamFile' onMethod='LaneFileGroup.alignAndPairSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${library}_${run}_${lane}_${cvalue,name="pairedBamSuffix"}'/>
         <filename class='BamIndexFile' derivedFrom='BamFile' pattern='${sourcefile}.bai'/>
         <filename class='BamMetricsFile' derivedFrom='BamFile' pattern='${sourcefile}.dupmark_metrics.txt'/>
         <filename class='FlagstatsFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_flagstats.txt'/>
@@ -206,13 +209,10 @@
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="extendedFlagstats" pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
 
         <filename class='OnTargetCoverageTextFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}_TargetsWithCov.txt'/>
-        <filename class='OnTargetCoveragePlotFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${fileStageID}_targetCovDistribution.png'/>
+        <filename class='OnTargetCoveragePlotFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_targetCovDistribution.png'/>
         <filename class='InsertSizesPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png'/>
         <filename class='InsertSizesTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsizes.txt'/>
         <filename class='InsertSizesValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png_qcValues.txt'/>
-
-        <!--<filename class='TextFile' derivedFrom="BamFile" selectiontag="dipStatistics" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_HartigansDip.txt'/>-->
-        <!--<filename class='InsertSizesPlotFile' derivedFrom="BamFile" selectiontag="dipStatistics" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_HartigansDip_densityPlot.png'/>-->
 
         <filename class='InsertSizesPlotFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png'/>
         <filename class='InsertSizesTextFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsizes.txt'/>

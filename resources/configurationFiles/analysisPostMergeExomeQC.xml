@@ -7,6 +7,9 @@
                listOfUsedTools="qcSummary,postMergeQCAnalysis,coveragePlot,coveragePlotSingle"
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools,exomePipeline">
     <configurationvalues>
+        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
+        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
+
         <cvalue name='analysisMethodNameOnInput' value='exon_sequencing' type='string' />
         <cvalue name='analysisMethodNameOnOutput' value='exome' type='string' />
 

@@ -8,11 +8,19 @@
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
+        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
+        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
+        <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
+
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
+        <cvalue name='runFingerprinting' value='true' type='boolean'
+                description='Fingerprint the individuals using a set of reference positions.'/>
+        <cvalue name='fingerprintingSitesFile' value='' type='file'
+                description='BED file with the reference positions used for fingerprinting.'/>
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer" description="Threads for bwa mem."/>
@@ -70,6 +78,9 @@
         </tool>
         <tool name='sampesort' value='bwaSampeSort.sh' basepath='qcPipeline'>
             <resourcesets>
+                <!-- Test -->
+                <rset size="t" memory="25" cores="6" nodes="1" queue="devel"/>
+                <!-- Production -->
                 <rset size="s" memory="38" cores="6" nodes="1" walltime="2"/>
                 <rset size="m" memory="42" cores="6" nodes="1" walltime="4"/>
                 <rset size="l" memory="52" cores="6" nodes="1" walltime="10"/>
@@ -167,8 +178,6 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
-                <!--<output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" />-->
-                <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
             </output>
         </tool>
         <tool name='accelerated:alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
@@ -200,8 +209,6 @@
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
-                <!-- <output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" /> -->
-                <!-- <output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" /> -->
             </output>
         </tool>
 
@@ -216,7 +223,6 @@
         <!--<tool name='writeQcSummary' value='writeQCSummary.py' basepath='qcPipeline'/>-->
         <tool name='writeQcSummary' value='writeQCsummary.pl' basepath='qcPipeline'/>
         <tool name='qcJson' value='qcJson.pl' basepath='qcPipeline'/>
-        <tool name='dipStatistics' value='hartigansDip.R' basepath='qcPipeline'/>
 
         <tool name='samtoolsIndex' value='samtoolsIndexBamfile.sh' basepath='qcPipeline'>
             <resourcesets>
@@ -313,6 +319,7 @@
                 <rset size="xl" memory="73" cores="8" nodes="1" walltime="80"/>
             </resourcesets>
         </tool>
+        <tool name='fingerprint' value="bsnp.py" basepath="qcPipeline"/>
         <tool name='mergeAndRemoveDuplicatesSlimPicard' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
@@ -322,7 +329,7 @@
                 <rset size="s" memory="55" cores="8" nodes="1" walltime="2"/>
                 <rset size="m" memory="62" cores="8" nodes="1" walltime="5"/>
                 <rset size="l" memory="60" cores="8" nodes="1" walltime="15"/>
-                <rset size="xl" memory="80" cores="8" nodes="1" walltime="120"/>
+                <rset size="xl" memory="100" cores="8" nodes="1" walltime="240"/>
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>
@@ -342,9 +349,8 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
-                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" check="false"/>
-                <!--<output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" />-->
-                <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
+                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
             </output>
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimBioBambam' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -376,9 +382,8 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
-                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" check="false" />
-                <!--<output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" />-->
-                <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
+                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
             </output>
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimSambamba' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -410,9 +415,8 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
-                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
-                <!--<output type="file" variable="dipStatisticsFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_DIP_STATISTICS" />-->
-                <!--<output type="file" variable="dipStatisticsPlotFile" fnpatternselectiontag="dipStatistics" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_DIP_STATISTICS_PLOT" />-->
+                <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
             </output>
         </tool>
 
@@ -453,14 +457,14 @@
              A filename can be created using the used tool's name
              -->
 
-        <filename class='AlignedSequenceFile' fileStage="INDEXEDLANE" pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${fileStageID}_sequence.sai'/>
-        <filename class='FastqcFile' fileStage='INDEXEDLANE' pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${fileStageID}_sequence_fastqc.zip"/>
+        <filename class='AlignedSequenceFile' fileStage="INDEXEDLANE" pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence.sai'/>
+        <filename class='FastqcFile' fileStage='INDEXEDLANE' pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence_fastqc.zip"/>
         <filename class='BamMetricsAlignmentSummaryFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${metricsOutputDirectory}/${cvalue,name="COLLECT_METRICS_PREFIX"}.alignment_summary_metrics'/>
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicates' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
         <!-- TODO targetextract should derive from the bamfile upon which it is based.-->
         <filename class='BamFile' onMethod='extractTargetsCalculateCoverage' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="TARGET_BAM_EXTENSION",default="targetExtract.rmdup.bam"}'/>
-        <filename class='BamFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${fileStageID}_${cvalue,name="pairedBamSuffix"}'/>
+        <filename class='BamFile' onMethod='LaneFileGroup.alignAndPairSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${run}_${lane}_${cvalue,name="pairedBamSuffix"}'/>
         <filename class='BamIndexFile' derivedFrom='BamFile' pattern='${sourcefile}.bai'/>
         <filename class='BamMetricsFile' derivedFrom='BamFile' pattern='${sourcefile}.dupmark_metrics.txt'/>
         <filename class='FlagstatsFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_flagstats.txt'/>
@@ -482,13 +486,10 @@
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="extendedFlagstats" pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
 
         <filename class='OnTargetCoverageTextFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}_TargetsWithCov.txt'/>
-        <filename class='OnTargetCoveragePlotFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${fileStageID}_targetCovDistribution.png'/>
+        <filename class='OnTargetCoveragePlotFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_targetCovDistribution.png'/>
         <filename class='InsertSizesPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png'/>
         <filename class='InsertSizesTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsizes.txt'/>
         <filename class='InsertSizesValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png_qcValues.txt'/>
-
-        <!--<filename class='TextFile' derivedFrom="BamFile" selectiontag="dipStatistics" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_HartigansDip.txt'/>-->
-        <!--<filename class='InsertSizesPlotFile' derivedFrom="BamFile" selectiontag="dipStatistics" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_HartigansDip_densityPlot.png'/>-->
 
         <filename class='InsertSizesPlotFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png'/>
         <filename class='InsertSizesTextFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsizes.txt'/>
@@ -498,6 +499,7 @@
 
         <filename class='QCSummaryFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_wroteQcSummary.txt'/>
 
+        <filename class="TextFile" onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="fingerprints" pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="qcJson" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomic}_qualitycontrol.json'/>
 
         <!-- TODO Throw error if value overrides other value!-->
@@ -505,7 +507,6 @@
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample[0]}_vs_${sample[1]}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
         <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile' selectiontag="singlePlot"
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
-
 
     </filenames>
 </configuration>

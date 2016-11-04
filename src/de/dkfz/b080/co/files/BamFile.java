@@ -1,6 +1,5 @@
 package de.dkfz.b080.co.files;
 
-import de.dkfz.b080.co.common.ParallelizationHelper;
 import de.dkfz.b080.co.methods.Common;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
@@ -9,9 +8,7 @@ import de.dkfz.roddy.knowledge.files.*;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
 //import sun.net.www.content.text.Generic;
 
-import java.io.File;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * A bam file is the binary version of a sam file and contains sequence data.
@@ -43,10 +40,9 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     private OnTargetCoverageTextFile onTargetCoverageTextFile;
     private QCSummaryFile qcSummaryFile;
     private TextFile qcJsonFile;
-    private TextFile dipStatisticsFile;
-    private InsertSizesPlotFile dipStatisticsPlotFile;
     private MethylationMetaCheckpointFile methylationMetaCheckpointFile;
     private MethylationMetaMetricsCheckpointFile methylationMetaMetricsCheckpointFile;
+    private TextFile fingerprintsFile;
 
     public BamFile(ConstructionHelperForBaseFiles helper) {
         super(helper);
@@ -221,14 +217,6 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return qcJsonFile;
     }
 
-    public TextFile getDipStatisticsFile() {
-        return dipStatisticsFile;
-    }
-
-    public InsertSizesPlotFile getDipStatisticsPlotFile() {
-        return dipStatisticsPlotFile;
-    }
-
     public void setChromosomeDiffStatisticsFile(ChromosomeDiffValueFile chromosomeDiffStatisticsFile) {
         this.chromosomeDiffStatisticsFile = chromosomeDiffStatisticsFile;
     }
@@ -273,14 +261,6 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         this.qcJsonFile = qcJsonFile;
     }
 
-    public void setDipStatisticsFile(TextFile dipStatisticsFile) {
-        this.dipStatisticsFile = dipStatisticsFile;
-    }
-
-    public void setDipStatisticsPlotFile(InsertSizesPlotFile dipStatisticsPlotFile) {
-        this.dipStatisticsPlotFile = dipStatisticsPlotFile;
-    }
-
     public ChromosomeDiffValueFile getChromosomeDiffStatisticsFile() {
         return chromosomeDiffStatisticsFile;
     }
@@ -313,12 +293,18 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return targetExtractedBamFile;
     }
 
+    public TextFile getFingerprintsFile() { return fingerprintsFile; }
+
     public void setTargetCoverageTextFile(CoverageTextFile targetCoverageTextFile) {
         this.targetCoverageTextFile = targetCoverageTextFile;
     }
 
     public CoverageTextFile getTargetsWithCoverageTextFile() {
         return targetsWithCoverageTextFile;
+    }
+
+    public void setFingerprintsFile(TextFile fingerprintsFile) {
+        this.fingerprintsFile = fingerprintsFile;
     }
 
     public void setTargetsWithCoverageTextFile(CoverageTextFile targetsWithCoverageTextFile) {

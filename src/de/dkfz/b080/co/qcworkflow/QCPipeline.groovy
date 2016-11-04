@@ -2,11 +2,11 @@ package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*
-import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
-import de.dkfz.roddy.core.*;
+import de.dkfz.roddy.core.*
 
 import java.util.*;
 
@@ -15,6 +15,7 @@ import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT
 /**
  * @author michael
  */
+@groovy.transform.CompileStatic
 public class QCPipeline extends Workflow {
 
     private static LoggerWrapper logger = LoggerWrapper.getLogger(QCPipeline.class.getName());
@@ -24,6 +25,8 @@ public class QCPipeline extends Workflow {
     @Override
     public boolean execute(ExecutionContext context) {
         Configuration cfg = context.getConfiguration();
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context);
+
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "false", "boolean"); //Disable sample extraction from output for alignment workflows.
 
@@ -60,7 +63,7 @@ public class QCPipeline extends Workflow {
             }
 
             if (runExomeAnalysis) {
-                if(!runSlimWorkflow) mergedBam.rawBamCoverage();
+                if (!runSlimWorkflow) mergedBam.rawBamCoverage();
                 BamFile targetOnlyBamFile = mergedBam.extractTargetsCalculateCoverage();
             }
 
@@ -88,14 +91,6 @@ public class QCPipeline extends Workflow {
         }
 
         return true;
-    }
-
-    private boolean runSlim(ExecutionContext context) {
-        return false;
-    }
-
-    private boolean runFat(ExecutionContext context) {
-        return false;
     }
 
     /**
@@ -137,6 +132,7 @@ public class QCPipeline extends Workflow {
 
     private BamFileGroup createSortedBams(ExecutionContext context, COProjectsRuntimeService runtimeService, Sample sample) {
         Configuration cfg = context.getConfiguration();
+
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         // Run flags
         final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false);
@@ -176,7 +172,7 @@ public class QCPipeline extends Workflow {
                     }
                 } else { //I.e. bwa align
                     rawSequenceGroup.alignAll();
-                    if(runSlimWorkflow) {
+                    if (runSlimWorkflow) {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
                     } else {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSort();
@@ -195,7 +191,6 @@ public class QCPipeline extends Workflow {
         Configuration cfg = context.getConfiguration();
         RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
-        final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
 
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
@@ -207,41 +202,51 @@ public class QCPipeline extends Workflow {
         if (runCollectBamFileMetrics) mergedBam.collectMetrics();
         mergedBam.runDefaultOperations();
         mergedBam.calcCoverage();
-
-        Sample.SampleType sampleType = sample.getType();
-
-
         mergedBam.createQCSummaryFile();
+
         return mergedBam;
     }
 
+    private boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
+        if (value == null || value.toString() == "") {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Expected value to be set: ${variableName}"))
+            return true
+        }
+        return false
+    }
+
+    private boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
+        if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
+            return false
+        }
+        return true
+    }
+
+    private boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
+        if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
+            return false
+        }
+        return true
+    }
 
     private boolean checkConfiguration(ExecutionContext context) {
-        FileSystemAccessProvider fsap = FileSystemAccessProvider.getInstance()
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
-        boolean returnValue = true
-        File pathToIndex = new File(config.getIndexPrefix()).getParentFile()
-        if (!fsap.checkDirectory(pathToIndex, context, false)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Path to ${AlignmentAndQCConfig.CVALUE_INDEX_PREFIX} not accessible: ${pathToIndex}"))
-            returnValue = false
-        }
-        if (!fsap.checkFile(config.getChromosomeSizesFile())) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE}: ${config.getChromosomeSizesFile()}"))
-            returnValue = false
-        }
+
+        boolean returnValue
+        returnValue =
+                !valueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
+                directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
+        returnValue =
+                fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
         if (config.getRunExomeAnalysis()) {
-            if (!fsap.checkFile(config.getTargetRegionsFile())) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cannot access ${AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE}: ${config.getChromosomeSizesFile()}"))
-                returnValue = false
-            }
-            if (config.getTargetSize() == null) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_TARGET_SIZE} not set to a valid value: ${config.getTargetSize()}"))
-                returnValue = false
-            }
+            returnValue =
+                    fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
+                    !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
         return returnValue
     }
-
 
     private boolean checkSamples(ExecutionContext context) {
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
@@ -254,7 +259,6 @@ public class QCPipeline extends Workflow {
             return true
         }
     }
-
 
     protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
@@ -279,11 +283,53 @@ public class QCPipeline extends Workflow {
         return returnValue;
     }
 
+    protected boolean checkSingleBam(ExecutionContext context) {
+
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
+        if (!aqcfg.getSingleBamParameter()) return true
+
+        boolean returnValue = true
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
+        if (samples.size() > 1) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
+            returnValue &= false;
+        }
+
+        def accessProvider = FileSystemAccessProvider.getInstance()
+        def bamFile = new File(aqcfg.getSingleBamParameter())
+        if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable: '${bamFile}'"));
+            returnValue &= false;
+        }
+
+        return returnValue
+    }
+
+    public boolean checkFingerprintingSitesFile(ExecutionContext context) {
+        def aqcfg = new AlignmentAndQCConfig(context)
+        def accessProvider = FileSystemAccessProvider.getInstance()
+        boolean result = true
+        if (aqcfg.runFingerprinting) {
+            if (!accessProvider.fileExists(aqcfg.fingerprintingSitesFile)
+                    || !accessProvider.isReadable(aqcfg.fingerprintingSitesFile)) {
+                context.addErrorEntry(ExecutionContextError.
+                        EXECUTION_SETUP_INVALID.expand("Fingerprinting reference sites file not readable: '${aqcfg.fingerprintingSitesFile}'"))
+                result = false
+            }
+        }
+        return result
+    }
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        // Use context.addErrorEntry to add errors or warnings.
-        return checkSamples(context) && checkLaneFiles(context) && checkConfiguration(context)
+        boolean result = super.checkExecutability(context)
+        result &= checkConfiguration(context)
+        result &= checkSamples(context)
+        result &= checkLaneFiles(context)
+        result &= checkSingleBam(context)
+        result &= checkFingerprintingSitesFile(context)
+        return result
     }
 
 

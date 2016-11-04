@@ -15,11 +15,18 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_TARGET_REGIONS_FILE = "TARGET_REGIONS_FILE"
     public static final String CVALUE_TARGETSIZE = "TARGETSIZE"
     public static final String CVALUE_TARGET_SIZE = "TARGET_SIZE"
+    public static final String CVALUE_CLIP_INDEX = "CLIP_INDEX"
+    public static final String CVALUE_CYTOSINE_POSITIONS_INDEX = "CYTOSINE_POSITIONS_INDEX"
+    public static final String CVALUE_RUN_FINGERPRINTING = "runFingerprinting"
+    public static final String CVALUE_FINGERPRINTING_SITES_FILE="fingerprintingSitesFile"
 
     public AlignmentAndQCConfig(ExecutionContext context) {
         super(context)
     }
 
+    public String getSingleBamParameter() {
+        return configValues.get("bam", "");
+    }
 
     public String getIndexPrefix() {
         return configValues.getString(CVALUE_INDEX_PREFIX, "")
@@ -43,6 +50,22 @@ class AlignmentAndQCConfig extends COConfig {
 
     public boolean getRunExomeAnalysis() {
         return configValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS)
+    }
+
+    public File getCytosinePositionIndex() {
+        return new File(configValues.getString(CVALUE_CYTOSINE_POSITIONS_INDEX))
+    }
+
+    public File getClipIndex() {
+        return new File(configValues.getString(CVALUE_CLIP_INDEX))
+    }
+
+    public boolean getRunFingerprinting() {
+        return configValues.getBoolean(CVALUE_RUN_FINGERPRINTING, true)
+    }
+
+    public File getFingerprintingSitesFile() {
+        return new File(configValues.getString(CVALUE_FINGERPRINTING_SITES_FILE))
     }
 
 }
