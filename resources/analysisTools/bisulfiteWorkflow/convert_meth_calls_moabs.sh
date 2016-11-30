@@ -61,7 +61,7 @@ if [[ ${context} == 'CG' ]]; then
 	                                        STRAND="B";\
 	                                        RATIO=METHCB/TOTALCB;\
 	                                }\
-	                                print $1, START-1, E, RATIO, TOTALCB, METHCB, STRAND, NEXT, "+", TOTALCP, METHCP, "-", TOTALCM, METHCM, SNPSCORE;\
+	                                print $1, START, E+1, RATIO, TOTALCB, METHCB, STRAND, NEXT, "+", TOTALCP, METHCP, "-", TOTALCM, METHCM, SNPSCORE;\
 	                                COUNTER=0;\
 	                                CHROM="";\
 	                                START=0;\
