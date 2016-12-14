@@ -105,30 +105,34 @@ function arrayContains {
 function matchPrefixInArray {
     local ELEMENT="${1}"
     assertNonEmpty "$ELEMENT" "matchPrefixInArray called without parameters" || return $?
-    local DELIM=","
+    local DELIM=" "
     printf "${DELIM}%s${DELIM}" "${@:2}" | grep -q -P "${DELIM}${ELEMENT}[^${DELIM}]*${DELIM}"
 }
 
 function isControlSample {
     assertNonEmpty "$1" "isControlSample expects sample type name as single parameter" || return $?
     assertNonEmpty "$possibleControlSampleNamePrefixes" "Undefined/empty possibleControlSampleNamePrefixes" || return $?
-    matchPrefixInArray "$1" "${possibleControlSampleNamePrefixes[@]}"
+    declare -la prefixes="${possibleControlSampleNamePrefixes[@]}"
+    matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
 function isTumorSample {
     assertNonEmpty "$1" "isTumorSample expects sample type name as single parameter" || return $?
     assertNonEmpty "$possibleTumorSampleNamePrefixes" "Undefined/empty possibleTumorSampleNamePrefixes" || return $?
-    matchPrefixInArray "$1" "${possibleTumorSampleNamePrefixes[@]}"
+    declare -la prefixes="${possibleTumorSampleNamePrefixes[@]}"
+    matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
 function sampleType {
     assertNonEmpty "$1" "sampleType expects sample type name as single parameter" || return $?
-    if isControlSample "$1"; then
+    if isControlSample "$1" && isTumorSample "$1"; then
+        throw_illegal_argument "Sample '$1' cannot be control and tumor at the same time"
+    elif isControlSample "$1"; then
         echo "control"
     elif isTumorSample "$1"; then
         echo "tumor"
     else
-        throw $ILLEGAL_ARGUMENT_ERROR "'$1' is neither control nor tumor"
+        throw_illegal_argument "'$1' is neither control nor tumor"
     fi
 }
 

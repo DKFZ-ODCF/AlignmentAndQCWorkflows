@@ -168,7 +168,7 @@ public class QCPipeline extends Workflow {
                 }
 
                 // @Michael: The comment suggests that this should only be called in the else branch above!?
-                // @Michael: Why should BAM files created with sai files be temporary?
+                // @Michael: Why should BAM files created with sai files be temporary? Because they are lane BAMs?
                 bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
                 sortedBamFiles.addFile(bamFile);
             }
@@ -193,7 +193,8 @@ public class QCPipeline extends Workflow {
         return mergedBam;
     }
 
-    private boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
+    // Move to: de.dkfz.roddy.core.ExecutionContext
+    private boolean checkAndReportValueIsEmpty(ExecutionContext context, Object value, String variableName) {
         if (value == null || value.toString() == "") {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Expected value to be set: ${variableName}"))
             return true
@@ -201,16 +202,18 @@ public class QCPipeline extends Workflow {
         return false
     }
 
-    private boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
-        if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
+    // Move to: de.dkfz.roddy.core.ExecutionContext
+    private boolean checkAndReportInaccessibleFile(ExecutionContext context, File file, String variableName) {
+        if (checkAndReportValueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
             return false
         }
         return true
     }
 
-    private boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
-        if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
+    // Move to: de.dkfz.roddy.core.ExecutionContext
+    private boolean checkAndReportInaccessibleDirectory(ExecutionContext context, File directory, String variableName) {
+        if (checkAndReportValueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
             return false
         }
@@ -225,21 +228,21 @@ public class QCPipeline extends Workflow {
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
         boolean returnValue = true
         returnValue =
-                !valueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
-                directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
+                !checkAndReportValueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
+                checkAndReportInaccessibleDirectory(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
         returnValue &=
-                fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
+                checkAndReportInaccessibleFile(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
         if (config.runExomeAnalysis) {
             returnValue &=
-                    fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
-                    !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
+                    checkAndReportInaccessibleFile(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
+                    !checkAndReportValueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
         if (config.runACEseqQC) {
             returnValue &=
-                    fileIsAccessible(context, config.mappabilityFile, AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE) &&
-                    fileIsAccessible(context, config.replicationTimeFile, AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE) &&
-                    fileIsAccessible(context, config.gcContentFile, AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE) &&
-                    fileIsAccessible(context, config.chromosomeLengthFile, AlignmentAndQCConfig.CVALUE_CHROMOSOME_LENGTH_FILE)
+                    checkAndReportInaccessibleFile(context, config.mappabilityFile, AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE) &&
+                    checkAndReportInaccessibleFile(context, config.replicationTimeFile, AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE) &&
+                    checkAndReportInaccessibleFile(context, config.gcContentFile, AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE) &&
+                    checkAndReportInaccessibleFile(context, config.chromosomeLengthFile, AlignmentAndQCConfig.CVALUE_CHROMOSOME_LENGTH_FILE)
         }
         return returnValue
     }

@@ -12,6 +12,13 @@ UNSPECIFIED_ERROR_CODE=1
 
 EMPTY_VALUE_MSG="Empty value"
 EMPTY_VALUE_CODE=200
+throw_empty_value () {
+    throw 200 "Empty value"
+}
+
+throw_illegal_argument () {
+    throw 103 "Illegal argument: $1"
+}
 
 ## From http://unix.stackexchange.com/questions/26676/how-to-check-if-a-shell-is-login-interactive-batch
 shellIsInteractive () {
@@ -81,11 +88,10 @@ printInfo () {
 
 ## Use 'assertNonEmpty $parameter || return $?'
 assertNonEmpty () {
-
     local value="$1"
-    local message="${2-EMPTY_VALUE_MSG}"
+    local message="${2-$UNSPECIFIED_ERROR_MSG}"
     if [[ "$value" == "" ]]; then
-        throw "$EMPTY_VALUE_CODE" "$message" || return $?
+        throw_empty_value "$message" || return $?
     fi
 }
 
