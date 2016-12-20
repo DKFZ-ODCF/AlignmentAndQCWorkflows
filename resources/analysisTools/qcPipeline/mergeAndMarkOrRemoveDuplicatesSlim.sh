@@ -8,10 +8,11 @@ set -o pipefail
 
 today=`date +'%Y-%m-%d_%Hh%M'`
 
-localScratchDirectory=${RODDY_SCRATCH}  # is for PBS $PBS_SCRATCHDIR/$PBS_JOBID, for SGE /tmp/roddyScratch/jobid
-tempDirectory=${FILENAME}_MOMDUP
+# RODDY_SCRATCH is used here. Is for PBS $PBS_SCRATCH_DIR/$PBS_JOBID, for SGE /tmp/roddyScratch/jobid
+RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME}_MOMDUP")
+mkdir -p "$RODDY_BIG_SCRATCH"
 
-tempBamFile=${tempDirectory}/$(basename "$FILENAME")_TMP
+tempBamFile=${RODDY_BIG_SCRATCH}/$(basename "$FILENAME")_TMP
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 tempIndexFile=${tempBamFile}.bai.tmp
 tempMd5File=${tempBamFile}.md5.tmp
@@ -19,17 +20,17 @@ tempFilenameMetrics="$FILENAME_METRICS.tmp"
 
 CHECKSUM_BINARY=${CHECKSUM_BINARY-md5sum}
 
-NP_PIC_OUT=${localScratchDirectory}/np_picard_out.sam
-NP_SAM_IN=${localScratchDirectory}/np_compression_in
-NP_INDEX_IN=${localScratchDirectory}/np_index_in
-NP_FLAGSTATS_IN=${localScratchDirectory}/np_flagstats_in
-NP_READBINS_IN=${localScratchDirectory}/np_readbins_in
-NP_COVERAGEQC_IN=${localScratchDirectory}/np_coverageqc_in
-NP_COMBINEDANALYSIS_IN=${localScratchDirectory}/np_combinedanalysis_in
-NP_METRICS_IN=${localScratchDirectory}/np_metrics_in
-NP_MD5_IN=${localScratchDirectory}/np_md5_in
+NP_PIC_OUT=${RODDY_SCRATCH}/np_picard_out.sam
+NP_SAM_IN=${RODDY_SCRATCH}/np_compression_in
+NP_INDEX_IN=${RODDY_SCRATCH}/np_index_in
+NP_FLAGSTATS_IN=${RODDY_SCRATCH}/np_flagstats_in
+NP_READBINS_IN=${RODDY_SCRATCH}/np_readbins_in
+NP_COVERAGEQC_IN=${RODDY_SCRATCH}/np_coverageqc_in
+NP_COMBINEDANALYSIS_IN=${RODDY_SCRATCH}/np_combinedanalysis_in
+NP_METRICS_IN=${RODDY_SCRATCH}/np_metrics_in
+NP_MD5_IN=${RODDY_SCRATCH}/np_md5_in
 
-returnCodeMarkDuplicatesFile=${tempDirectory}/rcMarkDup.txt
+returnCodeMarkDuplicatesFile="$DIR_TEMP/rcMarkDup.txt"
 bamname=`basename ${FILENAME}`
 
 declare -a INPUT_FILES="$INPUT_FILES"
@@ -64,7 +65,6 @@ if [[ -v EXISTING_BAM ]]; then
         bamFileExists=true
         echo "All listed BAM files (lanes) are already in ${EXISTING_BAM}, re-creating other output files."
     else    # new lane(s) need to be merged to the BAM
-		mkdir -p $tempDirectory
         # input files is now the merged file and the new file(s)
         declare -a INPUT_FILES=("$EXISTING_BAM" $(echo $notyetmerged | sed -re 's/:/ /g'))
         # keep the old metrics file for comparison
@@ -73,11 +73,8 @@ if [[ -v EXISTING_BAM ]]; then
             mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
         fi
     fi
-else	# BAM needs to be created de novo
-	mkdir -p $tempDirectory
 fi
 
-mkdir -p $tempDirectory
 mkfifo ${NP_PIC_OUT} ${NP_SAM_IN} ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_MD5_IN} ${NP_METRICS_IN}
 
 # default: use biobambam
@@ -114,13 +111,13 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
 	        MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=""
 	    fi
 
-        (JAVA_OPTIONS="-Xms64G -Xmx64G" \
+        (JAVA_OPTIONS="$PICARD_MARKDUP_JVM_OPTS" \
             $PICARD_BINARY ${PICARD_MODE} \
             $(toIEqualsList ${INPUT_FILES[@]}) \
             OUTPUT=${NP_PIC_OUT} \
             ${DUPLICATION_METRICS_FILE} \
             ${MAX_FILE_HANDLES_FOR_READ_ENDS_MAP} \
-            TMP_DIR=${tempDirectory} \
+            TMP_DIR=${RODDY_BIG_SCRATCH} \
             COMPRESSION_LEVEL=0 \
             VALIDATION_STRINGENCY=SILENT \
             ${MERGEANDREMOVEDUPLICATES_ARGUMENTSLIST} \
@@ -177,7 +174,7 @@ elif markWithSambamba; then
         # sambamba outputs BAM with compression level that can be set by -l (9 is best compression)
     	sambamba_markdup_default="-t 6 -l 9 -hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
     	SAMBAMBA_MARKDUP_OPTS=${SAMBAMBA_MARKDUP_OPTS-$sambamba_markdup_default}
-    	(${SAMBAMBA_MARKDUP_BINARY} markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$tempDirectory" ${INPUT_FILES[@]} "$NP_PIC_OUT"; \
+    	(${SAMBAMBA_MARKDUP_BINARY} markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$RODDY_BIG_SCRATCH" ${INPUT_FILES[@]} "$NP_PIC_OUT"; \
 	        echo $? > "$returnCodeMarkDuplicatesFile") & procIDMarkdup=$!
 	else
         # To prevent abundancy of ifs, reuse the process id another time.
@@ -200,7 +197,7 @@ elif markWithBiobambam; then
     if [[ ${bamFileExists} == false ]]; then
         (${MARKDUPLICATES_BINARY} \
             M=${tempFilenameMetrics} \
-            tmpfile=${tempDirectory}/biobambammerge.tmp \
+            tmpfile=${RODDY_BIG_SCRATCH}/biobambammerge.tmp \
             markthreads=8 \
             level=9 \
             index=1 \
@@ -318,6 +315,10 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "Could not move file"
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
 
+if [[ "$RODDY_BIG_SCRATCH" != "$RODDY_SCRATCH" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
+    rm -rf "$RODDY_BIG_SCRATCH" 2> /dev/null # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
+fi
+
 # Run the fingerprinting. This requires the .bai file, which is only ready after the streaming finished.
 if [[ "${runFingerprinting:-false}" == true ]]; then
     "$PYTHON_BINARY" "$TOOL_FINGERPRINT" "$fingerprintingSitesFile" "$FILENAME" > "$FILENAME_FINGERPRINTS" || throw 43 "Fingerprinting failed"
@@ -335,8 +336,6 @@ else
     METRICS_OPTION="-m ${FILENAME_METRICS}"
 fi
 ${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $(analysisType) -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE ${METRICS_OPTION} > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY || throw 14 "Error from writeQCsummary.pl"
-
-[[ -d $tempDirectory ]] && rm -rf $tempDirectory
 
 # Produce qualitycontrol.json for OTP.
 ${PERL_BINARY} ${TOOL_QC_JSON} \

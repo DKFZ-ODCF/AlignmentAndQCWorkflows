@@ -44,6 +44,22 @@ runningOnConvey () {
     fi
 }
 
+## The return the directory, to which big temporary files should be written, e.g. for sorting.
+getBigScratchDirectory () {
+    local suggestedLocation="${1}"
+    local scratchDir
+    if [[ "${useRoddyScratchAsBigFileScratch:-false}" == true ]]; then
+        scratchDir="${RODDY_SCRATCH}"
+    elif [[ -z $suggestedLocation ]]; then
+        scratchDir="$outputAnalysisBaseDirectory/tmp"
+    else
+        scratchDir="$suggestedLocation"
+    fi
+    mkdir -p "$scratchDir" || throw "$NOT_WRITABLE_CODE" "$NOT_WRITABLE_MSG: '$scratchDir'"
+    echo "$scratchDir"
+}
+
+
 
 analysisType () {
     if [[  "${runExomeAnalysis-false}" = "true" ]]; then

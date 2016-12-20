@@ -1,5 +1,6 @@
 package de.dkfz.b080.co.qcworkflow
 
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.NoFixedFacet
 import de.dkfz.b080.co.common.AlignmentAndQCConfig
 import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService
 import de.dkfz.b080.co.common.COProjectsRuntimeService
@@ -41,6 +42,9 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         BamFileGroup mergedBamFiles = new BamFileGroup();
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
+        // This option is just a hack around the fact, that the WGS/WES and WGBS share the same merge script :-(.
+        String noFingerprintingOption = "${AlignmentAndQCConfig.CVALUE_RUN_FINGERPRINTING}=false"
+
         for (Sample sample in samples) {
 
             List<String> availableLibrariesForSample = sample.getLibraries();
@@ -75,7 +79,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
                 BamFile mergedLibraryBam;
                 if (availableLibrariesForSample.size() == 1) {
-                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
+                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample, noFingerprintingOption);
                     if (runCollectBamFileMetrics) mergedLibraryBam.collectMetrics();
 
                     Sample.SampleType sampleType = sample.getType();
@@ -102,7 +106,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
             // Merge library bams into per sample bams
             if(availableLibrariesForSample.size() > 1) {
-                BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample);
+                BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample, noFingerprintingOption);
                 // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
                 // a method, in order to put library and merged methylation results into different directories.
                 // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
