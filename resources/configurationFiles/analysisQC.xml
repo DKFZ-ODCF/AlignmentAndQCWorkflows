@@ -16,7 +16,7 @@
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
 
         <cvalue name='useRoddyScratchAsBigFileScratch' value='true' type='boolean'
-                description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."
+                description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
@@ -40,8 +40,8 @@
                 description="The sambamba version used only for duplication marking and merging."/>
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 6 -l 9 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'/>
 
-        <cvalue name='PICARD_MARKDUP_JVM_OPTS' value="-Xms64G -Xmx64G'"
-                description="Keep the -Xmx JVM option and the resources requested for the picard job in sync. Mind that there is more processes than Picard in this job."/>
+        <cvalue name='PICARD_MARKDUP_JVM_OPTS' value="-Xms64G -Xmx64G"
+                description="Keep the -Xmx JVM option and the resources requested for the picard job in sync. Picard should use less than the reserved total memory of the job, because also mbuffer etc. need some memory."/>
 
         <cvalue name="CONVEY_SAMBAMBA_SAMSORT_THREADS" value="8" type="integer"
                 description="Number of threads for sorting the SAM output when running on Convey."/>
