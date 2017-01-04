@@ -8,8 +8,8 @@ import de.dkfz.roddy.plugins.BasePlugin;
  */
 public class QualityControlWorkflowPlugin extends BasePlugin {
 
-	public static final String CURRENT_VERSION_STRING = "1.1.70";
-	public static final String CURRENT_VERSION_BUILD_DATE = "Fri Dec 16 16:38:25 CET 2016";
+	public static final String CURRENT_VERSION_STRING = "1.1.71";
+	public static final String CURRENT_VERSION_BUILD_DATE = "Mon Jan 02 13:36:36 CET 2017";
 
     @Override
     public String getVersionInfo() {
