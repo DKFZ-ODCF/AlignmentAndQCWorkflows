@@ -20,6 +20,9 @@ throw_illegal_argument () {
     throw 103 "Illegal argument: $1"
 }
 
+NOT_WRITABLE_MSG="File or directory is not writable"
+NOT_WRITABLE_CODE=201
+
 ## From http://unix.stackexchange.com/questions/26676/how-to-check-if-a-shell-is-login-interactive-batch
 shellIsInteractive () {
     case $- in
