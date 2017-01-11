@@ -68,4 +68,5 @@ if ( covFemale >= min_X_ratio ){
 	sex='male'
 }
 cat( sex)
-#write.table(data.frame(sex), file_out, row.names=FALSE, col.names=FALSE, quote=FALSE)
+
+write.table(data.frame(sex), file_out, row.names=FALSE, col.names=FALSE, quote=FALSE)

@@ -400,9 +400,9 @@
                 <rset size="t" memory="50" cores="8" nodes="1" walltime="00:10:00" queue="devel"/>
                 <!-- Production -->
                 <rset size="xs" memory="50" cores="8" nodes="1" walltime="1"/>
-                <rset size="s" memory="55" cores="8" nodes="1" walltime="2"/>
-                <rset size="m" memory="62" cores="8" nodes="1" walltime="5"/>
-                <rset size="l" memory="60" cores="8" nodes="1" walltime="15"/>
+                <rset size="s" memory="55" cores="8" nodes="1" walltime="10"/>
+                <rset size="m" memory="60" cores="8" nodes="1" walltime="80"/>
+                <rset size="l" memory="80" cores="8" nodes="1" walltime="160"/>
                 <rset size="xl" memory="100" cores="8" nodes="1" walltime="240"/>
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
@@ -433,7 +433,7 @@
                 <rset size="t" memory="5" cores="3" nodes="1" walltime="00:10:00" queue="devel"/>
                 <!-- Production -->
                 <rset size="xs" memory="5" cores="3" nodes="1" walltime="1"/>
-                <rset size="s" memory="5" cores="3" nodes="1" walltime="2"/>
+                <rset size="s" memory="5" cores="3" nodes="1" walltime="6"/>
                 <rset size="m" memory="5" cores="3" nodes="1" walltime="12"/>
                 <rset size="l" memory="15" cores="3" nodes="1" walltime="120"/>
                 <rset size="xl" memory="15" cores="3" nodes="1" walltime="240"/>
@@ -466,9 +466,9 @@
                 <rset size="t" memory="30" cores="6" nodes="1" walltime="00:10:00" queue="devel"/>
                 <!-- Production -->
                 <rset size="xs" memory="30" cores="6" nodes="1" walltime="1"/>
-                <rset size="s" memory="35" cores="6" nodes="1" walltime="2"/>
-                <rset size="m" memory="40" cores="6" nodes="1" walltime="5"/>
-                <rset size="l" memory="45" cores="6" nodes="1" walltime="15"/>
+                <rset size="s" memory="35" cores="6" nodes="1" walltime="10"/>
+                <rset size="m" memory="40" cores="6" nodes="1" walltime="30"/>
+                <rset size="l" memory="60" cores="6" nodes="1" walltime="60"/>
                 <rset size="xl" memory="80" cores="6" nodes="1" walltime="120"/>
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->

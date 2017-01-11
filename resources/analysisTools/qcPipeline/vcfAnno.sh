@@ -5,6 +5,10 @@ source "$CONFIG_FILE"
 source "$TOOL_WORKFLOW_LIB"
 set -x
 
+# Reformat original coverage file so it can be annotated with annotate_vcf.pl.
+A_FILE="${FILENAME_COV_WINDOWS_1KB}.end.txt.tmp"
+cat "$FILENAME_COV_WINDOWS_1KB" | awk '{print $1,$2,$2+999,$3}' | sed 's/ /\t/g' | sed 's/^/chr/' |  sed '1i\#chr\tpos\tend\tcoverage' > "$A_FILE"
+
 # Estimate gender of patient from X and Y coverage
 if isControlSample "$SAMPLE"
 then
@@ -12,7 +16,7 @@ then
 
 	${RSCRIPT_BINARY} "$TOOL_ESTIMATE_SEX" \
 		 --file_size "$CHROMOSOME_LENGTH_FILE" \
-		 --cnv_file "$FILENAME_COV_WINDOWS_1KB" \
+		 --cnv_file "$A_FILE" \
 		 --min_Y_ratio "$min_Y_ratio" \
 		 --min_X_ratio "$min_X_ratio" \
 		 --file_out "$tmp_sex_file"
@@ -28,10 +32,6 @@ then
 else
     echo "Gender-determination unsafe for tumor sample '$SAMPLE'." > "$FILENAME_SEX"
 fi
-
-# Reformat original coverage file so it can be annotated with annotate_vcf.pl.
-A_FILE="${FILENAME_COV_WINDOWS_1KB}.end.txt.tmp"
-cat "$FILENAME_COV_WINDOWS_1KB" | awk '{print $1,$2,$3+999,$3}' | sed 's/ /\t/g' | sed 's/^/chr/' |  sed '1i\#chr\tpos\tend\tcoverage' > "$A_FILE"
 
 O_FILE="$FILENAME_COV_WINDOWS_1KB_ANNO"
 tmp_out="${O_FILE}_tmp"
