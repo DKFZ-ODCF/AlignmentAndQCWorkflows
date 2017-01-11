@@ -172,7 +172,7 @@ elif markWithSambamba; then
     	    > "$tempBamFile" & procIDMarkOutPipe=$!
 
         # sambamba outputs BAM with compression level that can be set by -l (9 is best compression)
-    	sambamba_markdup_default="-t 6 -l 9 -hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
+    	sambamba_markdup_default="-t 6 -l 9 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
     	SAMBAMBA_MARKDUP_OPTS=${SAMBAMBA_MARKDUP_OPTS-$sambamba_markdup_default}
     	(${SAMBAMBA_MARKDUP_BINARY} markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$RODDY_BIG_SCRATCH" ${INPUT_FILES[@]} "$NP_PIC_OUT"; \
 	        echo $? > "$returnCodeMarkDuplicatesFile") & procIDMarkdup=$!
