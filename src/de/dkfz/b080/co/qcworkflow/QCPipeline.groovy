@@ -93,43 +93,6 @@ public class QCPipeline extends Workflow {
         return true;
     }
 
-    /**
-     * This entry is used for caching purposes.
-     */
-    protected Map<DataSet, Map<String, List<LaneFileGroup>>> foundRawSequenceFileGroups = new LinkedHashMap<>();
-
-    /**
-     * Provides a cached method for loading lane files from a sample.
-     *
-     * @param sample
-     * @return
-     */
-    protected synchronized List<LaneFileGroup> loadLaneFilesForSample(ExecutionContext context, Sample sample) {
-        DataSet dataSet = context.getDataSet();
-        if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
-            foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
-        }
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-        String sampleID = sample.getName();
-        Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
-        if (!mapForDataSet.containsKey(sampleID)) {
-            List<LaneFileGroup> laneFileGroups = runtimeService.getLanesForSample(context, sample);
-            mapForDataSet.put(sampleID, laneFileGroups);
-        }
-
-        List<LaneFileGroup> laneFileGroups = mapForDataSet.get(sampleID);
-        List<LaneFileGroup> copyOfLaneFileGroups = new LinkedList<LaneFileGroup>();
-        for (LaneFileGroup lfg : laneFileGroups) {
-            List<LaneFile> copyOfFiles = new LinkedList<>();
-            for (LaneFile lf : lfg.getFilesInGroup()) {
-                LaneFile copyOfFile = new LaneFile(lf, context);//lf.getPath(), context, lf.getCreatingJobsResult(), lf.getParentFiles(), lf.getFileStage());
-                copyOfFiles.add(copyOfFile);
-            }
-            copyOfLaneFileGroups.add(new LaneFileGroup(context, lfg.getId(), lfg.getRun(), sample, copyOfFiles));
-        }
-        return copyOfLaneFileGroups;
-    }
-
     private BamFileGroup createSortedBams(ExecutionContext context, COProjectsRuntimeService runtimeService, Sample sample) {
         Configuration cfg = context.getConfiguration();
 
@@ -152,7 +115,7 @@ public class QCPipeline extends Workflow {
         } else {
 
             //Create bam files out of the lane files
-            List<LaneFileGroup> rawSequenceGroups = loadLaneFilesForSample(context, sample);
+            List<LaneFileGroup> rawSequenceGroups = ((COProjectsRuntimeService)context.getRuntimeService()).loadLaneFilesForSample(context, sample);
             if (rawSequenceGroups == null || rawSequenceGroups.size() == 0)
                 return sortedBamFiles;
             for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
@@ -268,7 +231,7 @@ public class QCPipeline extends Workflow {
         if (!useExistingPairedBams) {
             int cnt = 0;
             for (Sample sample : samples) {
-                List<LaneFileGroup> laneFileGroups = loadLaneFilesForSample(context, sample);
+                List<LaneFileGroup> laneFileGroups = ((COProjectsRuntimeService)runtimeService).loadLaneFilesForSample(context, sample);
                 for (LaneFileGroup lfg : laneFileGroups) {
                     cnt += lfg.getFilesInGroup().size();
                 }

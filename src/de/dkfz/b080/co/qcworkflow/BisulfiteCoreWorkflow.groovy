@@ -34,7 +34,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
 
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
 
@@ -49,7 +49,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
             // Create per library merged bams
             for (String library in availableLibrariesForSample) {
                 BamFileGroup sortedBamFiles = []
-                List<LaneFileGroup> rawSequenceGroups = loadLaneFilesForSampleAndLibrary(context, sample, library)
+                List<LaneFileGroup> rawSequenceGroups = runtimeService.loadLaneFilesForSampleAndLibrary(context, sample, library)
                 if (rawSequenceGroups == null || rawSequenceGroups.size() > 0) {
                     for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
 
@@ -135,48 +135,17 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         return true;
     }
 
-    /**
-     * Provides a cached method for loading lane files from a sample.
-     *
-     * @param sample
-     * @return
-     */
-    protected synchronized List<LaneFileGroup> loadLaneFilesForSampleAndLibrary(ExecutionContext context, Sample sample, String library) {
-        DataSet dataSet = context.getDataSet();
-        if (!foundRawSequenceFileGroups.containsKey(dataSet)) {
-            foundRawSequenceFileGroups.put(dataSet, new LinkedHashMap<String, List<LaneFileGroup>>());
-        }
-        def runtimeService = context.getRuntimeService() as COProjectsRuntimeService
-        String sampleID = sample.getName() + "_" + library;
-        Map<String, List<LaneFileGroup>> mapForDataSet = foundRawSequenceFileGroups.get(dataSet);
-        if (!mapForDataSet.containsKey(sampleID)) {
-            List<LaneFileGroup> laneFileGroups = runtimeService.getLanesForSample(context, sample, library);
-            mapForDataSet.put(sampleID, laneFileGroups);
-        }
-
-        List<LaneFileGroup> laneFileGroups = mapForDataSet.get(sampleID);
-        List<LaneFileGroup> copyOfLaneFileGroups = new LinkedList<LaneFileGroup>();
-        for (LaneFileGroup lfg : laneFileGroups) {
-            List<LaneFile> copyOfFiles = new LinkedList<>();
-            for (LaneFile lf : lfg.getFilesInGroup()) {
-                LaneFile copyOfFile = new LaneFile(lf, context);//.getPath(), context, lf.getCreatingJobsResult(), lf.getParentFiles(), lf.getFileStage());
-                copyOfFiles.add(copyOfFile);
-            }
-            copyOfLaneFileGroups.add(new LaneFileGroup(context, lfg.getId(), lfg.getRun(), sample, copyOfFiles));
-        }
-        return copyOfLaneFileGroups;
-    }
 
     @Override
     protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
         int cnt = 0;
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         for (Sample sample : samples) {
             LinkedHashMap<String,LaneFileGroup> laneFileGroups = [:]
             for (String lib : sample.getLibraries()) {
-                for (LaneFileGroup group : loadLaneFilesForSampleAndLibrary(context, sample, lib)) {
+                for (LaneFileGroup group : runtimeService.loadLaneFilesForSampleAndLibrary(context, sample, lib)) {
                     String key = group.getRun() + " " + group.getId()
                     if (laneFileGroups.containsKey(key)) {
                         context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
