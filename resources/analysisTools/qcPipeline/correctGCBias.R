@@ -192,6 +192,7 @@ mean_curvature <- mean(curvature)
 #prepare for output
 GCcorrectQuant_string <- paste(t(cov_table), sep="\t")
 
+
 #write table again, so it can be converted to a json file
 write.table( data.frame(pid, main_cluster_FWHM_data, mean_slope, mean_abs_slope,
 			mean_curvature, mean_abs_curvature, 
@@ -255,7 +256,6 @@ if ( ! length(diffPeaks) == sum( is.na(diffPeaks) ) ) {
 #create coverage and gc/replication-timing plots
 if (plot_flag) {
   
- if(tolower(sample) == "control" | tolower(sample) == "normal"){
   for( chr in unique(sub_order_file$chromosome) ) {
     selSub <- which(sub_order_file$chromosome==chr)
     sub <- sub_order_file[selSub,]
@@ -263,7 +263,7 @@ if (plot_flag) {
     chr <- gsub( 24, "Y", chr)
     chr <- gsub( 23, "X", chr)
     
-    png(paste0(plotDir,"/control_", pid, "_chr", chr,"_coverage.png"), width=2000, height=1000, type="cairo")
+    png(paste0(plotDir,"/",sample, "_", pid, "_chr", chr,"_coverage.png"), width=2000, height=1000, type="cairo")
       plotCoverageSingle( sub, chr=chr, ylims=coverageLims )
     dev.off()
   }
@@ -272,10 +272,9 @@ if (plot_flag) {
   coordinates <- adjustCoordinates( chrLengthTab, sub_order_file )
   newCoverageTab    <- coordinates$coverageTab
   chromosomeBorders <- coordinates$chromosomeBorders
-  png(paste0(plotDir,"/control_", pid, "_wholeGenome_coverage.png"), width=2000, height=1000, type='cairo')
+  png(paste0(plotDir,"/", sample, "_", pid, "_wholeGenome_coverage.png"), width=2000, height=1000, type='cairo')
       plotCoverageSingle( newCoverageTab, chromosomeBorders=chromosomeBorders, ylims=coverageLims )
   dev.off()
-  }
 
 write.table(out_table, outfile, row.names=FALSE, col.names=TRUE,sep='\t', quote=F)
 write.table(sub_order_file, qq("@{plotDir}/all_corrected.txt"), row.names=FALSE, col.names=TRUE,sep='\t', quote=F)

@@ -5,7 +5,7 @@
 import argparse
 import sys
 import json
-from python_modules import Tabfile
+from gccorrection_python_modules import Tabfile
 
 parser=argparse.ArgumentParser(description='Convert tab seperated CNV calls to vcf file' )
 parser.add_argument('--file',	  	'-f', type=file, help='Tabfile with headerline')
