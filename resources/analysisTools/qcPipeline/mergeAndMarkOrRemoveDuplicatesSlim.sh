@@ -175,7 +175,7 @@ elif markWithSambamba; then
     	        -o ${NP_COMBINEDANALYSIS_IN} \
     	        -o ${NP_BAM_COMPRESS_IN} & procIDSamtoolsView=$!
 
-    	# create BAM pipes for samtools index, flagstat and the two D tools, write BAM
+    	# Create BAM pipes for samtools index, flagstat and the two D tools, write BAM.
 	    cat "$NP_PIC_OUT" \
     	    | mbuf 2g \
     	        -o "$NP_SAM_IN" \
@@ -183,7 +183,7 @@ elif markWithSambamba; then
     	        -o "$NP_COVERAGEQC_IN" \
     	        -o "$NP_READBINS_IN" & procIDMarkOutPipe=$!
 
-        # sambamba outputs BAM with compression level that can be set by -l (9 is best compression)
+        # Do the duplication marking/merging.
     	sambamba_markdup_default="-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
     	SAMBAMBA_MARKDUP_OPTS=${SAMBAMBA_MARKDUP_OPTS-$sambamba_markdup_default}
     	(${SAMBAMBA_MARKDUP_BINARY} markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$RODDY_BIG_SCRATCH" ${INPUT_FILES[@]} "$NP_PIC_OUT"; \
