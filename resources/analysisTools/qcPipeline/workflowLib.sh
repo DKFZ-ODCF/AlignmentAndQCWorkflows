@@ -32,8 +32,8 @@ markWithBiobambam () {
 mbuf () {
     local bufferSize="$1"
     shift
-    assertNonEmpty "$1" "No buffer size defined for mbuf()" || return $?
-    "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null "${@}"
+    assertNonEmpty "$bufferSize" "No buffer size defined for mbuf()" || return $?
+    "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null ${@}
 }
 
 

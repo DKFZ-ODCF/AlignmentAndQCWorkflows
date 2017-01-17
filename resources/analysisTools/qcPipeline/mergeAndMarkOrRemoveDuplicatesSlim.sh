@@ -76,7 +76,7 @@ if [[ -v EXISTING_BAM ]]; then
     fi
 fi
 
-mkfifo ${NP_PIC_OUT} ${NP_SAM_IN} ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_MD5_IN} ${NP_METRICS_IN}
+mkfifo ${NP_PIC_OUT} ${NP_SAM_IN} ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_MD5_IN} ${NP_METRICS_IN} ${NP_BAM_COMPRESS_IN}
 
 # default: use biobambam
 useBioBamBamMarkDuplicates=${useBioBamBamMarkDuplicates-true}
@@ -161,27 +161,33 @@ elif markWithSambamba; then
     	fakeDupMarkMetrics "$NP_METRICS_IN" "$tempFilenameMetrics" & procIDFakeMetrics=$!
 
     	# Compress with uncompressed BAM stream with multiple cores.
-    	${SAMTOOLS_BINARY} view -b -@ 6 ${NP_BAM_COMPRESS_IN} \
+    	${SAMTOOLS_BINARY} view -S -b -@ 6 "$NP_BAM_COMPRESS_IN" \
     	    | mbuf 100m \
-    	        -o ${NP_INDEX_IN} \
-    	        -o "$tempBamFile" \
-    	        -o "$NP_MD5_IN" & procBamCompress=$!
+    	    | tee \
+    	        "$NP_INDEX_IN" \
+    	        "$tempBamFile" \
+    	        "$NP_MD5_IN" \
+    	        > /dev/null & procBamCompress=$!
 
         # Sambamba outputs uncompressed BAM, so convert to SAM make a SAM pipe for the Perl tools.
         # The tee-like mbuffer decouples the IO in the output stream.
-	    ${SAMTOOLS_BINARY} view ${NP_SAM_IN} \
+	    ${SAMTOOLS_BINARY} view -h "$NP_SAM_IN" \
     	    | mbuf 2g \
-    	        -o ${NP_METRICS_IN} \
-    	        -o ${NP_COMBINEDANALYSIS_IN} \
-    	        -o ${NP_BAM_COMPRESS_IN} & procIDSamtoolsView=$!
+    	    | tee \
+    	        "$NP_METRICS_IN" \
+    	        "$NP_COMBINEDANALYSIS_IN" \
+    	        "$NP_BAM_COMPRESS_IN" \
+    	        > /dev/null & procIDSamtoolsView=$!
 
     	# Create BAM pipes for samtools index, flagstat and the two D tools, write BAM.
 	    cat "$NP_PIC_OUT" \
     	    | mbuf 2g \
-    	        -o "$NP_SAM_IN" \
-    	        -o "$NP_FLAGSTATS_IN" \
-    	        -o "$NP_COVERAGEQC_IN" \
-    	        -o "$NP_READBINS_IN" & procIDMarkOutPipe=$!
+    	    | tee \
+    	        "$NP_SAM_IN" \
+    	        "$NP_FLAGSTATS_IN" \
+    	        "$NP_COVERAGEQC_IN" \
+    	        "$NP_READBINS_IN" \
+    	        > /dev/null  & procIDMarkOutPipe=$!
 
         # Do the duplication marking/merging.
     	sambamba_markdup_default="-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
