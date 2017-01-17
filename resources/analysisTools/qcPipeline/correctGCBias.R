@@ -24,7 +24,6 @@ getopt2(matrix(c('timefile',				 't', 1, "character", 'file for replication timi
 	                 'pid',				 'p', 1, "character", 'patient ID',
                 	 'outfile',			 'o', 1, "character", 'new file with corrected and raw coverage',
 	                 'corPlot',			 'c', 1, "character", 'Name for plot with corrected GC bias',
-        	         'corTab',			 'r', 1, "character", 'Name for table with GC bias parameter',
         	         'qcTab',			 'q', 1, "character", 'Name for table with GC bias parameters relevant for qc',
 	                 'gcFile',			 'g', 1, "character", 'table with gc content per 10kb window',
         	         'outDir',			 'x', 1, "character", 'directory for outputfiles',
@@ -41,7 +40,6 @@ cat(qq("chrLengthFile: @{chrLengthFile}"))
 cat(qq("pid: @{pid}\n\n"))
 cat(qq("outfile: @{outfile}\n\n"))
 cat(qq("corPlot: @{corPlot}\n\n"))
-cat(qq("corTab: @{corTab}\n\n"))
 cat(qq("qcTab: @{qcTab}\n\n"))
 cat(qq("gcFile: @{gcFile}\n\n"))
 cat(qq("outDir: @{outDir}\n\n"))
@@ -57,7 +55,6 @@ outputfile_rep <- paste0(plotDir,"/", pid, "_qc_rep_corrected.png")
 
 # define files for output of quantification of correction factors
 outrepQuant_file <- paste0(plotDir,"/",pid,"_qc_repQuant.tsv")
-outGCcorrectQuant_file <- corTab
 plot_flag <- 1
 restrict_flag <- 1
 writeGCcorrect_flag <- 1
