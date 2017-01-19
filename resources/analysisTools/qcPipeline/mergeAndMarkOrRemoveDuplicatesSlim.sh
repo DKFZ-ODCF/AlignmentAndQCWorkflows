@@ -160,34 +160,32 @@ elif markWithSambamba; then
 
     	fakeDupMarkMetrics "$NP_METRICS_IN" "$tempFilenameMetrics" & procIDFakeMetrics=$!
 
+        # The tee-like mbuffer decouples the IO in the output stream. -f forces writing into existing FIFO file.
+
     	# Compress with uncompressed BAM stream with multiple cores.
     	${SAMTOOLS_BINARY} view -S -b -@ 6 "$NP_BAM_COMPRESS_IN" \
     	    | mbuf 100m \
-    	    | tee \
-    	        "$NP_INDEX_IN" \
-    	        "$tempBamFile" \
-    	        "$NP_MD5_IN" \
-    	        > /dev/null & procBamCompress=$!
+    	        -f -o "$NP_INDEX_IN" \
+    	        -f -o "$tempBamFile" \
+    	        -f -o "$NP_MD5_IN" \
+    	        & procBamCompress=$!
 
         # Sambamba outputs uncompressed BAM, so convert to SAM make a SAM pipe for the Perl tools.
-        # The tee-like mbuffer decouples the IO in the output stream.
 	    ${SAMTOOLS_BINARY} view -h "$NP_SAM_IN" \
-    	    | mbuf 2g \
-    	    | tee \
-    	        "$NP_METRICS_IN" \
-    	        "$NP_COMBINEDANALYSIS_IN" \
-    	        "$NP_BAM_COMPRESS_IN" \
-    	        > /dev/null & procIDSamtoolsView=$!
+    	    | mbuf 100m \
+      	        -f -o "$NP_METRICS_IN" \
+    	        -f -o "$NP_COMBINEDANALYSIS_IN" \
+    	        -f -o "$NP_BAM_COMPRESS_IN" \
+    	        & procIDSamtoolsView=$!
 
     	# Create BAM pipes for samtools index, flagstat and the two D tools, write BAM.
 	    cat "$NP_PIC_OUT" \
-    	    | mbuf 2g \
-    	    | tee \
-    	        "$NP_SAM_IN" \
-    	        "$NP_FLAGSTATS_IN" \
-    	        "$NP_COVERAGEQC_IN" \
-    	        "$NP_READBINS_IN" \
-    	        > /dev/null  & procIDMarkOutPipe=$!
+    	    | mbuf 100m \
+    	        -f -o "$NP_SAM_IN" \
+    	        -f -o "$NP_FLAGSTATS_IN" \
+    	        -f -o "$NP_COVERAGEQC_IN" \
+    	        -f -o "$NP_READBINS_IN" \
+    	        & procIDMarkOutPipe=$!
 
         # Do the duplication marking/merging.
     	sambamba_markdup_default="-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
