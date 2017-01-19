@@ -30,6 +30,9 @@
                 description="Threads for bwa mem. NOTE: This does not change the number of threads requested via the batch processing system!"/>
 
         <!-- Former ACEseq QC configurations. -->
+        <cvalue name='runACEseqQc' value='true' type='boolean'
+                description="Turn on/off the GC correction."/>
+
         <cvalue name='gccorOutputDirectory' value='correctedGcBias' type="path"/>
         <cvalue name='gccorCnvSnpOutputDirectory' value='${gccorOutputDirectory}/cnv_snp' type="path"/>
         <cvalue name='gccorPlotOutputDirectory' value='${gccorOutputDirectory}/plots' type="path"/>
@@ -45,18 +48,18 @@
         <cvalue name="CHROMOSOME_LENGTH_FILE" value="" type="path"
                 description="Window size must match WINDOW_SIZE parameter. For instance stats/chrlengths.txt"/>
 
-        <!--annotateCnvFiles Opts-->
+        <!-- annotateCnvFiles Opts-->
         <cvalue name='min_X_ratio' value='0.8' type="float"/>
         <cvalue name='min_Y_ratio' value='0.12' type="float"/>
 
-        <!--cnvMergeFilter Opts-->
+        <!-- cnvMergeFilter Opts-->
 
-        <!--cnv_min_coverage should be 50 for controls and 0 for tumors-->
+        <!-- cnv_min_coverage should be 50 for controls and 0 for tumors. Take care that you correctly set the possible{Tumor,Control}SampleNamePrefixes variables! -->
         <cvalue name='cnv_min_coverage' value='50' type="integer"/>
         <cvalue name='mapping_quality' value='1000' type="integer"/>
         <cvalue name='min_windows' value='5' type="integer"/>
 
-        <!--correctGC Opts-->
+        <!-- correctGC Opts-->
         <cvalue name='LOWESS_F' value='0.1' type="float"/>
         <cvalue name='SCALE_FACTOR' value='0.9' type="float"/>
         <cvalue name='COVERAGEPLOT_YLIMS' value='4' type="float"/>
