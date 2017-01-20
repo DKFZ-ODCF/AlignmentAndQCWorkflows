@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="Python" name="Python">
+      <configuration sdkName="Python 2.7.8" />
+    </facet>
+  </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
@@ -12,10 +17,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="DefaultPlugin" />
-    <orderEntry type="module" module-name="PluginBase" />
     <orderEntry type="module" module-name="COWorkflows" />
-    <orderEntry type="library" name="roddy" level="project" />
     <orderEntry type="library" name="roddyBundledLibraries" level="project" />
+    <orderEntry type="module" module-name="PluginBase" />
+    <orderEntry type="module" module-name="roddy" />
+    <orderEntry type="library" name="Python 2.7.8 interpreter library" level="application" />
   </component>
 </module>

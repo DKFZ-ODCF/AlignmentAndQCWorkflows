@@ -435,7 +435,7 @@
                 <rset size="s" memory="4" cores="6" nodes="1" walltime="15"/>
                 <rset size="m" memory="5" cores="6" nodes="1" walltime="20"/>
                 <rset size="l" memory="6" cores="6" nodes="1" walltime="30"/>
-                <rset size="xl" memory="8" cores="6" nodes="1" walltime="40"/>
+                <rset size="xl" memory="8" cores="6" nodes="1" walltime="100"/>
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>

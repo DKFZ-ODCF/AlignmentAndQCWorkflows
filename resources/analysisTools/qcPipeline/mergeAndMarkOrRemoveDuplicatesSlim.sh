@@ -12,7 +12,7 @@ today=`date +'%Y-%m-%d_%Hh%M'`
 RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME}_MOMDUP")
 mkdir -p "$RODDY_BIG_SCRATCH"
 
-tempBamFile=${RODDY_BIG_SCRATCH}/$(basename "$FILENAME")_TMP
+tempBamFile="${FILENAME}.tmp"
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 tempIndexFile=${tempBamFile}.bai.tmp
 tempMd5File=${tempBamFile}.md5.tmp
