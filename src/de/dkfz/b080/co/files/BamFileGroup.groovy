@@ -39,12 +39,17 @@ public class BamFileGroup extends FileGroup<BamFile> {
         super(files);
     }
 
-    public BamFile mergeSlim(Sample sample) {
-        return baseMergeAndRemoveDuplicatesSlim(sample, "MERGE_BAM_ONLY=true")
+    public BamFile mergeSlim(Sample sample, String... additionalMergeParameters) {
+        return baseMergeAndRemoveDuplicatesSlim(sample,
+                ((["MERGE_BAM_ONLY=true"] +
+                        (additionalMergeParameters as List)) as String[]))
     }
 
-    public BamFile mergeAndRemoveDuplicatesSlimWithLibrary(Sample sample, String library) {
-        return baseMergeAndRemoveDuplicatesSlim(sample, "LIBRARY=${library}", "${AlignmentAndQCConfig.CVALUE_RUN_FINGERPRINTING}=false")
+    public BamFile mergeAndRemoveDuplicatesSlimWithLibrary(Sample sample, String library, String... additionalMergeParameters) {
+        return baseMergeAndRemoveDuplicatesSlim(sample,
+                (["LIBRARY=${library}", "${AlignmentAndQCConfig.CVALUE_RUN_FINGERPRINTING}=false"] +
+                        (additionalMergeParameters as List<GString>).
+                                findAll({ !it.startsWith(AlignmentAndQCConfig.CVALUE_RUN_FINGERPRINTING + "=") })) as String[])
     }
 
     public BamFile mergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {

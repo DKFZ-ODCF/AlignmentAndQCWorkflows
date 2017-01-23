@@ -10,12 +10,9 @@ set -o pipefail
 ID=${RUN}_${LANE}
 SM=sample_${SAMPLE}_${PID}
 
-# use scratch dir for temp files: samtools sort uses the current working directory for them unless provided with a different prefix
-# so far, it's not the local scratch (${RODDY_SCRATCH}) but inside roddyExecutionStore of the PID
-# here, using the job ID is a bad idea because if the job fails, the temp files remain
-#WORKDIR=${DIR_TEMP}/${RODDY_JOBID}
-WORKDIR=${FILENAME_SORTED_BAM}_TEMP_SORTING
-mkdir -p ${WORKDIR}
+# RODDY_SCRATCH is used here. Is for PBS $PBS_SCRATCH_DIR/$PBS_JOBID, for SGE /tmp/roddyScratch/jobid
+RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME_SORTED_BAM}_TEMP")
+mkdir -p "$RODDY_BIG_SCRATCH"
 
 # pipes via local scratch dir
 FNPIPE1=${RODDY_SCRATCH}/NAMED_PIPE1
@@ -36,7 +33,7 @@ mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAG
 bamname=`basename ${FILENAME_SORTED_BAM}`
 INDEX_FILE=${FILENAME_SORTED_BAM}.bai
 tempSortedBamFile=${FILENAME_SORTED_BAM}.tmp
-tempFileForSort=${WORKDIR}/${bamname}_forsorting
+tempFileForSort=${RODDY_BIG_SCRATCH}/${bamname}_forsorting
 tempBamIndexFile=${FILENAME_SORTED_BAM}.tmp.bai
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 
@@ -193,7 +190,6 @@ if [[ ${bamFileExists} == true ]]; then
 	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
 else	# make sure to rename BAM file when it has been produced correctly
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
-	rm -rf ${WORKDIR} 2> /dev/null # Remove temporary files sorting
 	rm $FNPIPE1
 	rm $FNPIPE2
 	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
@@ -227,6 +223,10 @@ mv ${FILENAME_DIFFCHROM_STATISTICS}.tmp ${FILENAME_DIFFCHROM_STATISTICS} || thro
 mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "Could not move file"
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
+
+if [[ "$RODDY_BIG_SCRATCH" != "$RODDY_SCRATCH" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
+    rm -rf "$RODDY_BIG_SCRATCH" 2> /dev/null # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
+fi
 
 # QC summary
 # remove old warnings file if it exists (due to errors in run such as wrong chromsizes file)

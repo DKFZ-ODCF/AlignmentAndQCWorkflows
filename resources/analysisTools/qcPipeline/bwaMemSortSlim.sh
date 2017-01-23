@@ -11,12 +11,9 @@ ON_CONVEY=$(runningOnConvey)
 ID=${RUN}_${LANE}
 SM=sample_${SAMPLE}_${PID}
 
-# use scratch dir for temp files: samtools sort uses the current working directory for them unless provided with a different prefix
-# so far, it's not the local scratch (${RODDY_SCRATCH}) but inside roddyExecutionStore of the PID
-# here, using the job ID is a bad idea because if the job fails, the temp files remain
-#WORKDIR=${DIR_TEMP}/${RODDY_JOBID}
-WORKDIR=${FILENAME_SORTED_BAM}_TEMP_SORTING
-mkdir -p ${WORKDIR}
+# RODDY_SCRATCH is used here. It is $PBS_SCRATCH_DIR/$PBS_JOBID for Torque/PBS, and /tmp/roddyScratch/jobid for SGE.
+RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME_SORTED_BAM}_TEMP")
+mkdir -p "$RODDY_BIG_SCRATCH"
 
 # pipes via local scratch dir
 FNPIPE1=${RODDY_SCRATCH}/NAMED_PIPE1
@@ -35,7 +32,7 @@ mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAG
 bamname=`basename ${FILENAME_SORTED_BAM}`
 INDEX_FILE=${FILENAME_SORTED_BAM}.bai
 tempSortedBamFile=${FILENAME_SORTED_BAM}.tmp
-tempFileForSort=${WORKDIR}/${bamname}_forsorting
+tempFileForSort=${RODDY_BIG_SCRATCH}/${bamname}_forsorting
 tempBamIndexFile=${FILENAME_SORTED_BAM}.tmp.bai
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 
@@ -146,12 +143,12 @@ then
 else
 	if [[ "$ON_CONVEY" == true ]]
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
-		# here, we use the local scratch (${RODDY_SCRATCH}) for sorting!
+		# Here, we use always use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
 		(set -o pipefail; ${BWA_ACCELERATED_BINARY} mem ${BWA_MEM_CONVEY_ADDITIONAL_OPTIONS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_2G | tee $NP_COMBINEDANALYSIS_IN | \
 		${SAMBAMBA_BINARY} view -f bam -S -l 0 -t 8 /dev/stdin | $MBUF_2G | \
 		tee ${NP_FLAGSTATS} | \
-		${SAMBAMBA_BINARY} sort --tmpdir=${RODDY_SCRATCH} -l 9 -t 8 -m ${SAMPESORT_MEMSIZE} /dev/stdin -o /dev/stdout 2>$NP_SORT_ERRLOG | \
+		${SAMBAMBA_BINARY} sort --tmpdir=${RODDY_SCRATCH} -l 9 -t ${CONVEY_SAMBAMBA_SAMSORT_THREADS} -m ${CONVEY_SAMBAMBA_SAMSORT_MEMSIZE} /dev/stdin -o /dev/stdout 2>$NP_SORT_ERRLOG | \
 		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} > $tempSortedBamFile; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
 
 		wait $procID_MEMSORT; [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem - sambamba pipe returned a non-zero exit code and the job will die now." && exit 100
@@ -203,8 +200,6 @@ else	# make sure to rename BAM file when it has been produced correctly
 	
 fi
 
-rm -rf ${WORKDIR} 2> /dev/null # Remove temporary files sorting
-
 wait $procTrim || throw 38 "Error from trimming"
 wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 14
 wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomeCoverage read bins" && exit 15
@@ -221,6 +216,9 @@ mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 
+if [[ "$RODDY_BIG_SCRATCH" != "$RODDY_SCRATCH" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
+    rm -rf "$RODDY_BIG_SCRATCH" 2> /dev/null # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
+fi
 
 # QC summary
 # remove old warnings file if it exists (due to errors in run such as wrong chromsizes file)
