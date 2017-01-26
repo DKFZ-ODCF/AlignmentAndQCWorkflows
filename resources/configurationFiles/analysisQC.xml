@@ -38,7 +38,8 @@
         <!-- Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats. -->
         <cvalue name="SAMBAMBA_MARKDUP_BINARY" value="sambamba_v0.5.9" type="string"
                 description="The sambamba version used only for duplication marking and merging."/>
-        <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 6 -l 9 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'/>
+        <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'
+                description="Please use -l 0, the workflow unpacks the BAM directly with samtools. Compression is faster and more stable with samtools."/>
 
         <cvalue name='PICARD_MARKDUP_JVM_OPTS' value="-Xms64G -Xmx64G"
                 description="Keep the -Xmx JVM option and the resources requested for the picard job in sync. Picard should use less than the reserved total memory of the job, because also mbuffer etc. need some memory."/>
