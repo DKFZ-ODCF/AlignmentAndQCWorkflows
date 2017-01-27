@@ -12,7 +12,7 @@ today=`date +'%Y-%m-%d_%Hh%M'`
 RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME}_MOMDUP")
 mkdir -p "$RODDY_BIG_SCRATCH"
 
-tempBamFile=${RODDY_BIG_SCRATCH}/$(basename "$FILENAME")_TMP
+tempBamFile="${FILENAME}.tmp"
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 tempIndexFile=${tempBamFile}.bai.tmp
 tempMd5File=${tempBamFile}.md5.tmp
@@ -21,7 +21,7 @@ tempFilenameMetrics="$FILENAME_METRICS.tmp"
 CHECKSUM_BINARY=${CHECKSUM_BINARY-md5sum}
 
 NP_PIC_OUT=${RODDY_SCRATCH}/np_picard_out.sam
-NP_SAM_IN=${RODDY_SCRATCH}/np_compression_in
+NP_SAM_IN=${RODDY_SCRATCH}/np_sam_in
 NP_INDEX_IN=${RODDY_SCRATCH}/np_index_in
 NP_FLAGSTATS_IN=${RODDY_SCRATCH}/np_flagstats_in
 NP_READBINS_IN=${RODDY_SCRATCH}/np_readbins_in
@@ -29,6 +29,7 @@ NP_COVERAGEQC_IN=${RODDY_SCRATCH}/np_coverageqc_in
 NP_COMBINEDANALYSIS_IN=${RODDY_SCRATCH}/np_combinedanalysis_in
 NP_METRICS_IN=${RODDY_SCRATCH}/np_metrics_in
 NP_MD5_IN=${RODDY_SCRATCH}/np_md5_in
+NP_BAM_COMPRESS_IN=${RODDY_SCRATCH}/np_bam_compress_in
 
 returnCodeMarkDuplicatesFile="$DIR_TEMP/rcMarkDup.txt"
 bamname=`basename ${FILENAME}`
@@ -75,7 +76,7 @@ if [[ -v EXISTING_BAM ]]; then
     fi
 fi
 
-mkfifo ${NP_PIC_OUT} ${NP_SAM_IN} ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_MD5_IN} ${NP_METRICS_IN}
+mkfifo ${NP_PIC_OUT} ${NP_SAM_IN} ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_MD5_IN} ${NP_METRICS_IN} ${NP_BAM_COMPRESS_IN}
 
 # default: use biobambam
 useBioBamBamMarkDuplicates=${useBioBamBamMarkDuplicates-true}
@@ -159,20 +160,35 @@ elif markWithSambamba; then
 
     	fakeDupMarkMetrics "$NP_METRICS_IN" "$tempFilenameMetrics" & procIDFakeMetrics=$!
 
-        # sambamba outputs BAM, so make a SAM pipe for the Perl tools
-	    ${SAMTOOLS_BINARY} view ${NP_SAM_IN} \
-    	    | mbuf 2g \
-    	    | tee ${NP_METRICS_IN} \
-    	    > ${NP_COMBINEDANALYSIS_IN} & procIDSamtoolsView=$!
+        # The tee-like mbuffer decouples the IO in the output stream. -f forces writing into existing FIFO file.
 
-    	# create BAM pipes for samtools index, flagstat and the two D tools, write BAM
+    	# Compress with uncompressed BAM stream with multiple cores.
+    	${SAMTOOLS_BINARY} view -S -b -@ 6 "$NP_BAM_COMPRESS_IN" \
+    	    | mbuf 100m \
+    	        -f -o "$NP_INDEX_IN" \
+    	        -f -o "$tempBamFile" \
+    	        -f -o "$NP_MD5_IN" \
+    	        & procBamCompress=$!
+
+        # Sambamba outputs uncompressed BAM, so convert to SAM make a SAM pipe for the Perl tools.
+	    ${SAMTOOLS_BINARY} view -h "$NP_SAM_IN" \
+    	    | mbuf 100m \
+      	        -f -o "$NP_METRICS_IN" \
+    	        -f -o "$NP_COMBINEDANALYSIS_IN" \
+    	        -f -o "$NP_BAM_COMPRESS_IN" \
+    	        & procIDSamtoolsView=$!
+
+    	# Create BAM pipes for samtools index, flagstat and the two D tools, write BAM.
 	    cat "$NP_PIC_OUT" \
-    	    | mbuf 2g \
-    	    | tee "$NP_INDEX_IN" "$NP_SAM_IN" "$NP_FLAGSTATS_IN" "$NP_COVERAGEQC_IN" "$NP_READBINS_IN" "$NP_MD5_IN" \
-    	    > "$tempBamFile" & procIDMarkOutPipe=$!
+    	    | mbuf 100m \
+    	        -f -o "$NP_SAM_IN" \
+    	        -f -o "$NP_FLAGSTATS_IN" \
+    	        -f -o "$NP_COVERAGEQC_IN" \
+    	        -f -o "$NP_READBINS_IN" \
+    	        & procIDMarkOutPipe=$!
 
-        # sambamba outputs BAM with compression level that can be set by -l (9 is best compression)
-    	sambamba_markdup_default="-t 6 -l 9 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
+        # Do the duplication marking/merging.
+    	sambamba_markdup_default="-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
     	SAMBAMBA_MARKDUP_OPTS=${SAMBAMBA_MARKDUP_OPTS-$sambamba_markdup_default}
     	(${SAMBAMBA_MARKDUP_BINARY} markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$RODDY_BIG_SCRATCH" ${INPUT_FILES[@]} "$NP_PIC_OUT"; \
 	        echo $? > "$returnCodeMarkDuplicatesFile") & procIDMarkdup=$!
@@ -274,14 +290,13 @@ elif markWithSambamba; then
     if [[ ${bamFileExists} == false ]]; then
     	wait $procIDMarkdup
     	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Sambamba returned an exit code and the job will die now." && exit 100
+        waitAndMaybeExit $procBamCompress "Error during BAM compression"
         waitAndMaybeExit $procIDFakeMetrics "Error from sambamba fake metrics" 5
         mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
         mv "$tempFilenameMetrics" "$FILENAME_METRICS" || throw 39 "Could not move file"
       	waitAndMaybeExit $procIDMd5 "Error from MD5" 15
         mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
     fi
-	# index is always made again, needs to be updated to not be older than BAM
-	# this file does not exist!!!!!!!
 	waitAndMaybeExit $procIDSamtoolsIndex "Error from samtools index pipe" 6
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
 
