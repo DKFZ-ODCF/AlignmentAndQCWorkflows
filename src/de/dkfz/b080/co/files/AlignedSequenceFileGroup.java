@@ -35,8 +35,8 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
         String libString = configuration.getConfigurationValues().getString(COConstants.PRM_CVAL_LIBRARY);
         String sampleName = laneFile0.getSample().getName();
         String pid = context.getDataSet().getId();
-        String run = laneFile0.getRunID();
-        String lane = laneFile0.getLaneId();
+        String run = laneFile0.getRunID().toString();
+        String lane = laneFile0.getLaneId().toString();
         String lb = sampleName + "_" + pid + (libString.equals("addToOldLib") ? "" : "_lib2");
 
         String laneId0 = "RAW_SEQ_FILE_1_INDEX=" + ((COFileStageSettings) laneFile0.getFileStage()).getNumericIndex();

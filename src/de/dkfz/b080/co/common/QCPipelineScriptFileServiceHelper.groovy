@@ -89,16 +89,16 @@ class QCPipelineScriptFileServiceHelper {
                         break;
                     }
                     blocks0 = blocks0.reverse().toList()[0..indexOfIndex];
-                    String id = blocks0.join("_");
+                    String laneId = blocks0.join("_");
 
                     LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>();
 
                     JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
 
-                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index0, 0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
-                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index1, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
+                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(laneId, index0, 0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
+                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(laneId, index1, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
 
-                    fileGroups << new LaneFileGroup(context, id, runName, sample, filesInGroup)
+                    fileGroups << new LaneFileGroup(context, laneId, runName, sample, filesInGroup)
                 }
             }
         }

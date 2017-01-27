@@ -243,7 +243,7 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
                 String lane = String.format("L%03d", laneID);
 
 
-                BamFile bamFile = COBaseFile.constructSourceFile(BamFile, f, context, new COFileStageSettings(lane, run, sample, context.getDataSet())) as BamFile
+                BamFile bamFile = COBaseFile.constructSourceFile(BamFile, f, context, new COFileStageSettings(new LaneID(lane), new RunID(run), null, sample, context.getDataSet())) as BamFile
                 return bamFile;
         })
         BamFileGroup bamFileGroup = new BamFileGroup(bamFiles);

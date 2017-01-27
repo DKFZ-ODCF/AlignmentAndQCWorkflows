@@ -1,5 +1,8 @@
 package de.dkfz.b080.co.files;
 
+import de.dkfz.b080.co.common.IndexID;
+import de.dkfz.b080.co.common.LaneID;
+import de.dkfz.b080.co.common.RunID;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.io.ExecutionResult;
@@ -135,15 +138,15 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
         return alignedSequenceFile;
     }
 
-    public String getLaneId() {
+    public LaneID getLaneId() {
         return ((COFileStageSettings) fileStageSettings).getLaneId();
     }
 
-    public String getIndex() {
+    public IndexID getIndex() {
         return ((COFileStageSettings) fileStageSettings).getIndex();
     }
 
-    public String getRunID() {
+    public RunID getRunID() {
         return ((COFileStageSettings) fileStageSettings).getRunID();
     }
 
