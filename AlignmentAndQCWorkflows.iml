@@ -6,8 +6,9 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/resources/analysisTools" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/resources/configurationFiles" type="java-resource" />
-      <sourceFolder url="file://$MODULE_DIR$/test/resources" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/test/src" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/test/resources" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
