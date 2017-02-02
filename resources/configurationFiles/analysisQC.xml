@@ -515,35 +515,38 @@
 
         <tool name="annotateCovWindows" value="vcfAnno.sh" basepath="qcPipeline">
             <resourcesets>
+                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00"/>
                 <rset size="l" memory="0.2" cores="2" nodes="1" walltime="4"/>
             </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_1KB"/>
+            <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS"/>
             <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
             <output type="tuple">
-                <output type="file" fnpatternselectiontag="windowAnnotation" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_1KB_ANNO"/>
+                <output type="file" fnpatternselectiontag="windowAnnotation" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_ANNO"/>
                 <output type="file" fnpatternselectiontag="sex" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_SEX"/>
             </output>
         </tool>
 
         <tool name="mergeAndFilterCovWindows" value="cnvMergeFilter.sh" basepath="qcPipeline">
             <resourcesets>
+                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00"/>
                 <rset size="l" memory="0.2" cores="2" nodes="1" walltime="5"/>
             </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_1KB_ANNO"/>
+            <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_ANNO"/>
             <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_WG"/>
         </tool>
 
         <tool name="correctGc" value="correct_gc_bias.sh" basepath="qcPipeline">
             <resourcesets>
-                <rset size="l" memory="2" walltime="1"/>
+                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00"/>
+                <rset size="l" memory="2" cores="1" nodes="1" walltime="1"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_WG"/>
             <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
             <output type="tuple">
                 <output type="file" fnpatternselectiontag="correctedWindows" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_WINDOWS"/>
                 <output type="file" fnpatternselectiontag="tab" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_QUALITY"/>
-                <output type="file" fnpatternselectiontag="tabSlim" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QC_GC_CORRECTION_JSON" />
                 <output type="file" fnpatternselectiontag="correctedGcPlot" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter='FILENAME_GC_CORRECT_PLOT'/>
+                    <output type="file" fnpatternselectiontag="tabSlim" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QC_GC_CORRECTION_JSON" />
             </output>
         </tool>
 
@@ -585,7 +588,6 @@
         <filename class='BamMetricsAlignmentSummaryFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${metricsOutputDirectory}/${cvalue,name="COLLECT_METRICS_PREFIX"}.alignment_summary_metrics'/>
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicates' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
-        <!-- TODO targetextract should derive from the bamfile upon which it is based.-->
         <filename class='BamFile' onMethod='extractTargetsCalculateCoverage' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="TARGET_BAM_EXTENSION",default="targetExtract.rmdup.bam"}'/>
         <filename class='BamFile' onMethod='LaneFileGroup.alignAndPairSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${run}_${lane}_${cvalue,name="pairedBamSuffix"}'/>
         <filename class='BamIndexFile' derivedFrom='BamFile' pattern='${sourcefile}.bai'/>
@@ -625,7 +627,6 @@
         <filename class="TextFile" onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="fingerprints" pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="qcJson" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomic}_qualitycontrol.json'/>
 
-        <!-- TODO Throw error if value overrides other value!-->
         <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile[2]'
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${pid}_${sample[0]}_vs_${sample[1]}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows_coveragePlot.png'/>
         <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile' selectiontag="singlePlot"
@@ -633,38 +634,38 @@
 
         <!-- GC-bias corrected statistics from ACEseq workflow -->
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.annotateCovWindows" selectiontag="windowAnnotation"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.anno.txt.gz'/>
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.anno.txt.gz'/>
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.annotateCovWindows" selectiontag="sex"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_sex.txt'/>
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_sex.txt'/>
 
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.mergeAndFilterCovWindows"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.txt.gz'/>
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_readCoverage_10kb_windows.filtered.txt.gz'/>
 
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedWindows"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt.gz'/>
+                  pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_readCoverage_10kb_windows.filtered.corrected.txt.gz'/>
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="tabSlim"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.json'/>
+                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.json'/>
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="tab"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>
+                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.tsv'/>
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedGcPlot"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${pid}_gc_corrected.png'/>
+                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_gc_corrected.png'/>
 
-        <!--<filename class="TextFile" onScriptParameter="annotateCovWindows:FILENAME_COV_WINDOWS_1KB_ANNO"-->
-                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.anno.txt.gz'/>-->
+        <!--<filename class="TextFile" onScriptParameter="annotateCovWindows:FILENAME_COV_WINDOWS_ANNO"-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.anno.txt.gz'/>-->
         <!--<filename class="TextFile" onScriptParameter="annotateCovWindows:FILENAME_SEX"-->
-                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_sex.txt'/>-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_sex.txt'/>-->
 
         <!--<filename class="TextFile" onScriptParameter="mergeAndFilterCovWindows:FILENAME_SEX"-->
-                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.txt.gz'/>-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_readCoverage_10kb_windows.filtered.txt.gz'/>-->
 
         <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_GC_CORRECTED_WINDOWS"-->
-                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${run}_readCoverage_10kb_windows.filtered.corrected.txt.gz'/>-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_readCoverage_10kb_windows.filtered.corrected.txt.gz'/>-->
         <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_QC_GC_CORRECTION_JSON"-->
-                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.json'/>-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.json'/>-->
         <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_GC_CORRECTED_QUALITY"-->
-                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${run}_qc_gc_corrected.tsv'/>-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.tsv'/>-->
         <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_GC_CORRECT_PLOT"-->
-                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${pid}_gc_corrected.png'/>-->
+                  <!--pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_gc_corrected.png'/>-->
 
     </filenames>
 </configuration>

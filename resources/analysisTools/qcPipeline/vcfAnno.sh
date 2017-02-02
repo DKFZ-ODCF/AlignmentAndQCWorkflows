@@ -6,8 +6,8 @@ source "$TOOL_WORKFLOW_LIB"
 set -x
 
 # Reformat original coverage file so it can be annotated with annotate_vcf.pl.
-A_FILE="${FILENAME_COV_WINDOWS_1KB}.end.txt.tmp"
-cat "$FILENAME_COV_WINDOWS_1KB" | awk '{print $1,$2,$2+999,$3}' | sed 's/ /\t/g' | sed 's/^/chr/' |  sed '1i\#chr\tpos\tend\tcoverage' > "$A_FILE"
+A_FILE="${FILENAME_COV_WINDOWS}.end.txt.tmp"
+cat "$FILENAME_COV_WINDOWS" | awk '{print $1,$2,$2+999,$3}' | sed 's/ /\t/g' | sed 's/^/chr/' |  sed '1i\#chr\tpos\tend\tcoverage' > "$A_FILE"
 
 # Estimate gender of patient from X and Y coverage
 if isControlSample "$SAMPLE"
@@ -33,7 +33,7 @@ else
     echo "Gender-determination unsafe for tumor sample '$SAMPLE'." > "$FILENAME_SEX"
 fi
 
-O_FILE="$FILENAME_COV_WINDOWS_1KB_ANNO"
+O_FILE="$FILENAME_COV_WINDOWS_ANNO"
 tmp_out="${O_FILE}_tmp"
 
 ${PERL_BINARY} "$TOOL_ANNOTATE_CNV_VCF" \

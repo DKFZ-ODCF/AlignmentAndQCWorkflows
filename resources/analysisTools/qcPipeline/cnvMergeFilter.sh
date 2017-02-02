@@ -5,7 +5,7 @@ source "$CONFIG_FILE"
 set -x
 
 ${PYTHON_BINARY} "${TOOL_MERGE_FILTER_CNV}" \
-            --inputfile    "$FILENAME_COV_WINDOWS_1KB_ANNO" \
+            --inputfile    "$FILENAME_COV_WINDOWS_ANNO" \
             --output       "$FILENAME_COV_WINDOWS_WG" \
             --coverage     "$cnv_min_coverage" \
             --mappability  "$mapping_quality" \

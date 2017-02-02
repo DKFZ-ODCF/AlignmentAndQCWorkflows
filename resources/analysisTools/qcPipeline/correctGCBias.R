@@ -36,7 +36,7 @@ getopt2(matrix(c('timefile',				 't', 1, "character", 'file for replication timi
 
 cat(qq("windowFile: @{windowFile}\n\n"))
 cat(qq("timefile: @{timefile}\n\n"))
-cat(qq("chrLengthFile: @{chrLengthFile}"))
+cat(qq("chrLengthFile: @{chrLengthFile}\n\n"))
 cat(qq("pid: @{pid}\n\n"))
 cat(qq("outfile: @{outfile}\n\n"))
 cat(qq("corPlot: @{corPlot}\n\n"))
