@@ -240,7 +240,7 @@ if(length(sel_y_windows)>0){
 
 #TODO: insert pdf here
 #      filenames?
-pdf( paste0(plotDir, "/", pid, "_qc_coverageDensityByChroomosome.pdf") )
+pdf( paste0(plotDir, "/", pid, "_qc_coverageDensityByChromosome.pdf") )
   corCovInd <- which( colnames(sub_order_file) =="covnorm" )
   diffPeaks <- checkControl( sub_order_file, corCovInd )
 dev.off()
@@ -273,7 +273,7 @@ if (plot_flag) {
       plotCoverageSingle( newCoverageTab, chromosomeBorders=chromosomeBorders, ylims=coverageLims )
   dev.off()
 
-write.table(out_table, outfile, row.names=FALSE, col.names=TRUE,sep='\t', quote=F)
+write.table(out_table, gzfile(outfile), row.names=FALSE, col.names=TRUE,sep='\t', quote=F)
 write.table(sub_order_file, qq("@{plotDir}/all_corrected.txt"), row.names=FALSE, col.names=TRUE,sep='\t', quote=F)
 
 cat(qq("creating plots...\n\n"))

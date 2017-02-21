@@ -650,12 +650,13 @@
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedGcPlot"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_gc_corrected.png'/>
 
+        <!-- These don't work - probably due to a Roddy bug -->
         <!--<filename class="TextFile" onScriptParameter="annotateCovWindows:FILENAME_COV_WINDOWS_ANNO"-->
                   <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.anno.txt.gz'/>-->
         <!--<filename class="TextFile" onScriptParameter="annotateCovWindows:FILENAME_SEX"-->
                   <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_sex.txt'/>-->
 
-        <!--<filename class="TextFile" onScriptParameter="mergeAndFilterCovWindows:FILENAME_SEX"-->
+        <!--<filename class="TextFile" onScriptParameter="mergeAndFilterCovWindows:FILENAME_COV_WINDOWS_WG"-->
                   <!--pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_readCoverage_10kb_windows.filtered.txt.gz'/>-->
 
         <!--<filename class="TextFile" onScriptParameter="correctGc:FILENAME_GC_CORRECTED_WINDOWS"-->
