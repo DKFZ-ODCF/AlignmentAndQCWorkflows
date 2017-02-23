@@ -22,20 +22,10 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
     @Override
     public boolean execute(ExecutionContext context) {
-        Configuration cfg = context.getConfiguration();
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "false", "boolean"); //Disable sample extraction from output for alignment workflows.
-        //cfgValues.put(COConstants.FLAG_USE_ACCELERATED_HARDWARE, "false", "boolean"); //Disable accelerated hardware usage for testing
-
-        // Run flags
-        final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false)
-        final boolean runFastQC = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC, true)
-        final boolean runAlignmentOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false);
-        final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
-        final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
+        aqcfg.extractSamplesFromOutputFiles = false
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-
         List<Sample> samples = runtimeService.getSamplesForContext(context);
 
         BamFileGroup mergedBamFiles = new BamFileGroup();
@@ -53,9 +43,9 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
                 if (rawSequenceGroups == null || rawSequenceGroups.size() > 0) {
                     for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
 
-                        if (runFastQC && !runAlignmentOnly)
+                        if (aqcfg.runFastQC && !aqcfg.runAlignmentOnly)
                             rawSequenceGroup.calcFastqcForAll();
-                        if (runFastQCOnly)
+                        if (aqcfg.runFastQCOnly)
                             continue;
 
 
@@ -71,12 +61,12 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
                 if (!sortedBamFiles.getFilesInGroup()) continue;
 
-                if (runAlignmentOnly) continue;
+                if (aqcfg.runAlignmentOnly) continue;
 
                 BamFile mergedLibraryBam;
                 if (availableLibrariesForSample.size() == 1) {
                     mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
-                    if (runCollectBamFileMetrics) mergedLibraryBam.collectMetrics();
+                    if (aqcfg.runCollectBamFileMetrics) mergedLibraryBam.collectMetrics();
 
                     Sample.SampleType sampleType = sample.getType();
                     if (!coverageTextFilesBySample.containsKey(sampleType))
@@ -108,7 +98,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
                 // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
                 mergedBam.mergedMethylationCallingMeta()
 
-                if (runCollectBamFileMetrics) mergedBam.collectMetrics();
+                if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
 
                 Sample.SampleType sampleType = sample.getType();
                 if (!coverageTextFilesBySample.containsKey(sampleType))
@@ -125,9 +115,9 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
             return false;
         }
 
-        if (runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
+        if (aqcfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
             coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
-        } else if (runCoveragePlots && coverageTextFilesBySample.keySet().size() == 1) {
+        } else if (aqcfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
             ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot();
         }
@@ -184,23 +174,10 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
     }
 
-    protected boolean checkClipIndex(ExecutionContext context) {
-        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
-        FileSystemAccessProvider accessProvider = FileSystemAccessProvider.getInstance()
-        if (!aqcfg.getClipIndex().toString().startsWith('$' + ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION)
-                && !accessProvider.isReadable(aqcfg.getClipIndex())) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Clip index '${aqcfg.getClipIndex()}' is not accessible!"));
-            return false
-        } else {
-            return true
-        }
-    }
-
     @Override
     public boolean checkExecutability(ExecutionContext context) {
         boolean result = super.checkExecutability(context)
         result &= checkCytosinePositionIndex(context)
-        result &= checkClipIndex(context)
         return result
     }
 

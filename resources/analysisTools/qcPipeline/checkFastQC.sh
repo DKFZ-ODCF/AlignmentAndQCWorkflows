@@ -5,6 +5,8 @@
 #PBS -m a
 
 source ${CONFIG_FILE}
+source "$TOOL_WORKFLOW_LIB"
+printInfo
 
 # Check for single lane processing.
 # For single lanes an empty fastqc file is created
@@ -17,8 +19,13 @@ DIRNAME_FASTQC=`dirname $FILENAME_FASTQC`
 TMP_DIR=$DIRNAME_FASTQC/$PBS_JOBID
 mkdir $TMP_DIR
 
-${FASTQC_BINARY} ${RAW_SEQ} --noextract -o $TMP_DIR
+${FASTQC_BINARY} ${RAW_SEQ} --noextract -o $TMP_DIR \
+    || throw 1 "Error during FASTQC"
 
 mv $TMP_DIR/* $FILENAME_FASTQC
+
+"$TOOL_FASTQC_CLASSIFY" \
+    <(unzip -p "$FILENAME_FASTQC" "*/fastqc_data.txt") \
+    > "$FILENAME_FASTQ_QC_STATUS" || throw 10 "Error classifying the FASTQ quality"
 
 rm -r $TMP_DIR

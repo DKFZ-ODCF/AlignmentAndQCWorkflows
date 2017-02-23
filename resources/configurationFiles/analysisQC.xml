@@ -78,8 +78,9 @@
                 <rset size="l" nodes="1" walltime="10"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter='RAW_SEQ'/>
-            <output type="file" typeof="de.dkfz.b080.co.files.FastqcFile" scriptparameter="FILENAME_FASTQC" check="true">
-                <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FASTQ_QC_STATUS" check="true"/>
+            <output type="tuple">
+                <output type="file" typeof="de.dkfz.b080.co.files.FastqcFile" scriptparameter="FILENAME_FASTQC"/>
+                <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FASTQ_QC_STATUS"/>
             </output>
         </tool>
         <tool name='adaptorTrimming' value='trimmomatic/trimmomatic-0.30.jar' basepath="qcPipelineTools"/>
@@ -504,8 +505,8 @@
              -->
 
         <filename class='AlignedSequenceFile' fileStage="INDEXEDLANE" pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence.sai'/>
-        <filename class='FastqcFile' fileStage='INDEXEDLANE' pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence_fastqc.zip"/>
-        <filename class='TextFile'   fileStage="INDEXEDLANE" pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence_fastq_qcpass_status.txt"/>
+        <filename class='FastqcFile' onMethod="LaneFile.calcFastqc" pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence_fastqc.zip"/>
+        <filename class='TextFile'   onMethod="LaneFile.calcFastqc" pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence_fastq_qcpass_status.txt"/>
         <filename class='BamMetricsAlignmentSummaryFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${metricsOutputDirectory}/${cvalue,name="COLLECT_METRICS_PREFIX"}.alignment_summary_metrics'/>
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicates' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
         <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>

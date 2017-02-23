@@ -2,6 +2,8 @@ package de.dkfz.b080.co.common
 
 import de.dkfz.b080.co.files.COConstants
 import de.dkfz.roddy.core.ExecutionContext
+import de.dkfz.roddy.core.ExecutionContextLevel
+import de.dkfz.roddy.execution.io.ExecutionService
 import groovy.transform.CompileStatic
 
 /**
@@ -22,6 +24,10 @@ class AlignmentAndQCConfig extends COConfig {
 
     public AlignmentAndQCConfig(ExecutionContext context) {
         super(context)
+    }
+
+    protected String substituteDirExecution(String filename) {
+        return filename.replaceAll("[\$]${ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION}(?=\\W|\$)", dirExecution)
     }
 
     public String getSingleBamParameter() {
@@ -56,6 +62,10 @@ class AlignmentAndQCConfig extends COConfig {
         return new File(configValues.getString(CVALUE_CYTOSINE_POSITIONS_INDEX))
     }
 
+    public boolean getUseAdapterTrimming() {
+        return configValues.getBoolean(COConstants.FLAG_USE_ADAPTOR_TRIMMING, false)
+    }
+
     public File getClipIndex() {
         return new File(configValues.getString(CVALUE_CLIP_INDEX))
     }
@@ -65,7 +75,47 @@ class AlignmentAndQCConfig extends COConfig {
     }
 
     public File getFingerprintingSitesFile() {
-        return new File(configValues.getString(CVALUE_FINGERPRINTING_SITES_FILE))
+        return new File (configValues.getString(CVALUE_FINGERPRINTING_SITES_FILE))
+    }
+
+    public String getDirExecution() {
+        return context.executionDirectory.absolutePath
+    }
+
+    public boolean getRunFastQCOnly() {
+        return configValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false)
+    }
+
+    public boolean getRunAlignmentOnly() {
+        return configValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false)
+    }
+
+    public boolean getRunCoveragePlots() {
+        return configValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true)
+    }
+
+    public boolean getRunSlimWorkflow() {
+        return configValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false)
+    }
+
+    public boolean getRunCollectBamFileMetrics() {
+        return configValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false)
+    }
+
+    public boolean setExtractSamplesFromOutputFiles(boolean value) {
+        return configValues.put(COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, value.toString(), "boolean")
+    }
+
+    public boolean getRunFastQC() {
+        return configValues.getBoolean(COConstants.FLAG_RUN_FASTQC, true)
+    }
+
+    public boolean getUseCombinedAlignAndSampe() {
+        return configValues.getBoolean(COConstants.FLAG_USE_COMBINED_ALIGN_AND_SAMPE, false)
+    }
+
+    public boolean getUseExistingPairedBams() {
+        return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false)
     }
 
 }

@@ -2,6 +2,7 @@ package de.dkfz.b080.co.qcworkflow;
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*
+import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.config.Configuration;
@@ -23,20 +24,9 @@ public class QCPipeline extends Workflow {
     public QCPipeline() {}
 
     @Override
-    public boolean execute(ExecutionContext context) {
-        Configuration cfg = context.getConfiguration();
-        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context);
-
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "false", "boolean"); //Disable sample extraction from output for alignment workflows.
-
-        // Run flags
-        final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false);
-        final boolean runAlignmentOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false);
-        final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
-        final boolean runSlimWorkflow = cfgValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false);
-        final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
-        final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
+    public boolean execute(ExecutionContext context) { ;
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
+        aqcfg.extractSamplesFromOutputFiles = false
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
@@ -52,18 +42,18 @@ public class QCPipeline extends Workflow {
 
             if (sortedBamFiles.getFilesInGroup().size() == 0) continue;
 
-            if (runFastQCOnly || runAlignmentOnly) continue;
+            if (aqcfg.runFastQCOnly || aqcfg.runAlignmentOnly) continue;
 
             BamFile mergedBam;
-            if (runSlimWorkflow) {
+            if (aqcfg.runSlimWorkflow) {
                 mergedBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
-                if (runCollectBamFileMetrics) mergedBam.collectMetrics();
+                if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
             } else {
                 mergedBam = mergeAndRemoveDuplicatesFat(context, sample, sortedBamFiles);
             }
 
-            if (runExomeAnalysis) {
-                if (!runSlimWorkflow) mergedBam.rawBamCoverage();
+            if (aqcfg.runExomeAnalysis) {
+                if (!aqcfg.runSlimWorkflow) mergedBam.rawBamCoverage();
                 BamFile targetOnlyBamFile = mergedBam.extractTargetsCalculateCoverage();
             }
 
@@ -80,10 +70,10 @@ public class QCPipeline extends Workflow {
             return false;
         }
 
-        if (runFastQCOnly)
+        if (aqcfg.runFastQCOnly)
             return true;
 
-        if (runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
+        if (aqcfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
             coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
         } else if (coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
@@ -94,22 +84,10 @@ public class QCPipeline extends Workflow {
     }
 
     private BamFileGroup createSortedBams(ExecutionContext context, COProjectsRuntimeService runtimeService, Sample sample) {
-        Configuration cfg = context.getConfiguration();
-
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        // Run flags
-        final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false);
-        final boolean runFastQC = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC, true);
-        final boolean runAlignmentOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false);
-
-        final boolean useExistingPairedBams = cfgValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
-        // Usage flags
-        final boolean useCombinedAlignAndSampe = cfgValues.getBoolean(COConstants.FLAG_USE_COMBINED_ALIGN_AND_SAMPE, false);
-        final boolean runSlimWorkflow = cfgValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false);
-
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
-        if (useExistingPairedBams) {
+        if (aqcfg.useExistingPairedBams) {
             //Start from the paired bams instead of the lane files.
             sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(context, sample);
         } else {
@@ -119,23 +97,23 @@ public class QCPipeline extends Workflow {
             if (rawSequenceGroups == null || rawSequenceGroups.size() == 0)
                 return sortedBamFiles;
             for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
-                if (runFastQC && !runAlignmentOnly)
+                if (aqcfg.runFastQC && !aqcfg.runAlignmentOnly)
                     rawSequenceGroup.calcFastqcForAll();
-                if (runFastQCOnly)
+                if (aqcfg.runFastQCOnly)
                     continue;
 
 
                 BamFile bamFile = null;
 
-                if (useCombinedAlignAndSampe) { //I.e. bwa mem
-                    if (runSlimWorkflow) {
+                if (aqcfg.useCombinedAlignAndSampe) { //I.e. bwa mem
+                    if (aqcfg.runSlimWorkflow) {
                         bamFile = rawSequenceGroup.alignAndPairSlim();
                     } else {
                         bamFile = rawSequenceGroup.alignAndPair();
                     }
                 } else { //I.e. bwa align
                     rawSequenceGroup.alignAll();
-                    if (runSlimWorkflow) {
+                    if (aqcfg.runSlimWorkflow) {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
                     } else {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSort();
@@ -151,9 +129,7 @@ public class QCPipeline extends Workflow {
     }
 
     private BamFile mergeAndRemoveDuplicatesFat(ExecutionContext context, Sample sample, BamFileGroup sortedBamFiles) {
-        Configuration cfg = context.getConfiguration();
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
 
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
@@ -162,7 +138,7 @@ public class QCPipeline extends Workflow {
 
         BamFile mergedBam = sortedBamFiles.mergeAndRemoveDuplicates();
 
-        if (runCollectBamFileMetrics) mergedBam.collectMetrics();
+        if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
         mergedBam.runDefaultOperations();
         mergedBam.calcCoverage();
         mergedBam.createQCSummaryFile();
@@ -170,7 +146,7 @@ public class QCPipeline extends Workflow {
         return mergedBam;
     }
 
-    private boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
+    boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
         if (value == null || value.toString() == "") {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Expected value to be set: ${variableName}"))
             return true
@@ -178,7 +154,7 @@ public class QCPipeline extends Workflow {
         return false
     }
 
-    private boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
+    boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
         if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
             return false
@@ -186,7 +162,7 @@ public class QCPipeline extends Workflow {
         return true
     }
 
-    private boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
+    boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
         if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
             return false
@@ -201,10 +177,10 @@ public class QCPipeline extends Workflow {
         returnValue =
                 !valueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
                 directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
-        returnValue =
+        returnValue &=
                 fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
         if (config.getRunExomeAnalysis()) {
-            returnValue =
+            returnValue &=
                     fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
                     !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
@@ -269,16 +245,33 @@ public class QCPipeline extends Workflow {
         return returnValue
     }
 
+    /** Check that the fingerprinting sites file is accessible, unless it is in the plugin.
+     *
+     * @param context
+     * @return
+     */
     public boolean checkFingerprintingSitesFile(ExecutionContext context) {
         def aqcfg = new AlignmentAndQCConfig(context)
-        def accessProvider = FileSystemAccessProvider.getInstance()
         boolean result = true
         if (aqcfg.runFingerprinting) {
-            if (!accessProvider.fileExists(aqcfg.fingerprintingSitesFile)
-                    || !accessProvider.isReadable(aqcfg.fingerprintingSitesFile)) {
-                context.addErrorEntry(ExecutionContextError.
-                        EXECUTION_SETUP_INVALID.expand("Fingerprinting reference sites file not readable: '${aqcfg.fingerprintingSitesFile}'"))
-                result = false
+            if (!aqcfg.fingerprintingSitesFile.absolutePath.contains("\$${ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION}")) {
+                result = fileIsAccessible(context, aqcfg.fingerprintingSitesFile, AlignmentAndQCConfig.CVALUE_FINGERPRINTING_SITES_FILE)
+            }
+        }
+        return result
+    }
+
+    /** Check that the clipping index file is accessible, unless it is in the plugin.
+     *
+     * @param context
+     * @return
+     */
+    public boolean checkClipIndexFile(ExecutionContext context) {
+        def aqcfg = new AlignmentAndQCConfig(context)
+        Boolean result = true
+        if (aqcfg.useAdapterTrimming) {
+            if (!aqcfg.clipIndex.absolutePath.contains("\$${ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION}")) {
+                result = fileIsAccessible(context, aqcfg.clipIndex, AlignmentAndQCConfig.CVALUE_CLIP_INDEX)
             }
         }
         return result
@@ -292,6 +285,7 @@ public class QCPipeline extends Workflow {
         result &= checkLaneFiles(context)
         result &= checkSingleBam(context)
         result &= checkFingerprintingSitesFile(context)
+        result &= checkClipIndexFile(context)
         return result
     }
 
