@@ -218,7 +218,7 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 
 # Run the fingerprinting. This requires the .bai file, which is only ready after the streaming finished.
 if [[ "${runFingerprinting:-false}" == true ]]; then
-    "$PYTHON_BINARY" "$TOOL_FINGERPRINT" "$fingerprintingSitesFile" "$FILENAME" > "$FILENAME_FINGERPRINTS.tmp" || throw 43 "Fingerprinting failed"
+    "$PYTHON_BINARY" "$TOOL_FINGERPRINT" "$fingerprintingSitesFile" "$FILENAME_SORTED_BAM" > "$FILENAME_FINGERPRINTS.tmp" || throw 43 "Fingerprinting failed"
     mv "$FILENAME_FINGERPRINTS.tmp" "$FILENAME_FINGERPRINTS" || throw 39 "Could not move file"
 fi
 
