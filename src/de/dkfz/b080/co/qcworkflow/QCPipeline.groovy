@@ -20,8 +20,8 @@ public class QCPipeline extends Workflow {
 
     @Override
     public boolean execute(ExecutionContext context) {
-        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
-        cfg.sampleExtractionFromOutputFiles = false
+        AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
+        aqcfg.sampleExtractionFromOutputFiles = false
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
@@ -32,22 +32,22 @@ public class QCPipeline extends Workflow {
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
 
         for (Sample sample : samples) {
-            BamFileGroup sortedBamFiles = createSortedBams(cfg, runtimeService, sample);
+            BamFileGroup sortedBamFiles = createSortedBams(aqcfg, runtimeService, sample);
 
             if (sortedBamFiles.getFilesInGroup().size() == 0) continue;
 
-            if (cfg.runFastQCOnly || cfg.runAlignmentOnly) continue;
+            if (aqcfg.runFastQCOnly || aqcfg.runAlignmentOnly) continue;
 
             BamFile mergedBam;
-            if (cfg.runSlimWorkflow) {
+            if (aqcfg.runSlimWorkflow) {
                 mergedBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
-                if (cfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
+                if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
             } else {
-                mergedBam = mergeAndRemoveDuplicatesFat(cfg, sample, sortedBamFiles);
+                mergedBam = mergeAndRemoveDuplicatesFat(aqcfg, sample, sortedBamFiles);
             }
 
-            if (cfg.runExomeAnalysis) {
-                if(!cfg.runSlimWorkflow) mergedBam.rawBamCoverage();
+            if (aqcfg.runExomeAnalysis) {
+                if(!aqcfg.runSlimWorkflow) mergedBam.rawBamCoverage();
                 BamFile targetOnlyBamFile = mergedBam.extractTargetsCalculateCoverage();
             }
 
@@ -59,17 +59,17 @@ public class QCPipeline extends Workflow {
             mergedBamFiles.addFile(mergedBam);
 
             // The ACEseq QC could also be done per lane/run, but for non X10 data there is not the required >30x coverage (Kortine).
-            if (cfg.runACEseqQC) {
-                if (cfg.windowSize.toInteger() != 1) {
+            if (aqcfg.runACEseqQC) {
+                if (aqcfg.windowSize.toInteger() != 1) {
                     // Kortine: The mappability file may have other than the same window size as the input data (i.e. WINDOW_SIZE),
                     //          the replication timing and GC content files need to have the same window size as the input.
-                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${cfg.windowSize}. SKIPPING!"))
-                } else if (cfg.mappabilityFile == null) {
-                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require MAPPABILITY_FILE to be set. SKIPPING!"))
-                } else if (cfg.replicationTimeFile == null) {
-                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require REPLICATION_TIME_FILE to be set. SKIPPING!"))
-                } else if (cfg.gcContentFile == null) {
-                    cfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require GC_CONTENT_FILE to be set. SKIPPING!"))
+                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${aqcfg.windowSize}. SKIPPING!"))
+                } else if (aqcfg.mappabilityFile == null) {
+                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require MAPPABILITY_FILE to be set. SKIPPING!"))
+                } else if (aqcfg.replicationTimeFile == null) {
+                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require REPLICATION_TIME_FILE to be set. SKIPPING!"))
+                } else if (aqcfg.gcContentFile == null) {
+                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require GC_CONTENT_FILE to be set. SKIPPING!"))
                 } else {
                     ACEseq.aceSeqQc(mergedBam.readBinsCoverageTextFile, sample)
                 }
@@ -81,10 +81,10 @@ public class QCPipeline extends Workflow {
             return false;
         }
 
-        if (cfg.runFastQCOnly)
+        if (aqcfg.runFastQCOnly)
             return true;
 
-        if (cfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
+        if (aqcfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
             coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
         } else if (coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
@@ -95,35 +95,35 @@ public class QCPipeline extends Workflow {
     }
 
 
-    private BamFileGroup createSortedBams(AlignmentAndQCConfig cfg, COProjectsRuntimeService runtimeService, Sample sample) {
+    private BamFileGroup createSortedBams(AlignmentAndQCConfig aqcfg, COProjectsRuntimeService runtimeService, Sample sample) {
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
-        if (cfg.useExistingPairedBams) {
+        if (aqcfg.useExistingPairedBams) {
             //Start from the paired bams instead of the lane files.
-            sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(cfg.context, sample);
+            sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(aqcfg.context, sample);
 
         } else {
             //Create bam files out of the lane files
-            List<LaneFileGroup> rawSequenceGroups = runtimeService.loadLaneFilesForSample(cfg.context, sample);
+            List<LaneFileGroup> rawSequenceGroups = runtimeService.loadLaneFilesForSample(aqcfg.context, sample);
             if (rawSequenceGroups == null || rawSequenceGroups.size() == 0)
                 return sortedBamFiles;
             for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
-                if (cfg.runFastqQC && !cfg.runAlignmentOnly)
+                if (aqcfg.runFastqQC && !aqcfg.runAlignmentOnly)
                     rawSequenceGroup.calcFastqcForAll();
-                if (cfg.runFastQCOnly)
+                if (aqcfg.runFastQCOnly)
                     continue;
 
                 BamFile bamFile = null;
 
-                if (cfg.useCombinedAlignAndSampe) { //I.e. bwa mem
-                    if (cfg.runSlimWorkflow) {
+                if (aqcfg.useCombinedAlignAndSampe) { //I.e. bwa mem
+                    if (aqcfg.runSlimWorkflow) {
                         bamFile = rawSequenceGroup.alignAndPairSlim();
                     } else {
                         bamFile = rawSequenceGroup.alignAndPair();
                     }
                 } else { //I.e. bwa align
                     rawSequenceGroup.alignAll();
-                    if (cfg.runSlimWorkflow) {
+                    if (aqcfg.runSlimWorkflow) {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
                     } else {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSort();
@@ -140,7 +140,7 @@ public class QCPipeline extends Workflow {
         return sortedBamFiles;
     }
 
-    private BamFile mergeAndRemoveDuplicatesFat(AlignmentAndQCConfig cfg, Sample sample, BamFileGroup sortedBamFiles) {
+    private BamFile mergeAndRemoveDuplicatesFat(AlignmentAndQCConfig aqcfg, Sample sample, BamFileGroup sortedBamFiles) {
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
         for (BamFile sortedBam : sortedBamFiles.getFilesInGroup())
@@ -148,7 +148,7 @@ public class QCPipeline extends Workflow {
 
         BamFile mergedBam = sortedBamFiles.mergeAndRemoveDuplicates();
 
-        if (cfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
+        if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
         mergedBam.runDefaultOperations();
         mergedBam.calcCoverage();
         mergedBam.createQCSummaryFile();
