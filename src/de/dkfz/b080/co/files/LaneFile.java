@@ -24,7 +24,6 @@ import java.util.logging.Level;
 /**
  * @author michael
  */
-@groovy.transform.CompileStatic
 public class LaneFile extends COBaseFile implements ITestdataSource {
     private static final LoggerWrapper logger = LoggerWrapper.getLogger(LaneFile.class.getName());
 
@@ -64,9 +63,8 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
         align();
     }
 
-    public FastqcFile calcFastqc() {
-        fastqcFile = GenericMethod.callGenericTool("fastqc", this);//Common.fastqc(executionContext, this);
-        return fastqcFile;
+    public Tuple2<FastqcFile,TextFile> calcFastqc() {
+        return GenericMethod.callGenericTool("fastqc", this);//Common.fastqc(executionContext, this);
     }
 
     @Override

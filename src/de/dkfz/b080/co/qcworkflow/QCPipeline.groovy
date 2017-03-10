@@ -3,6 +3,7 @@ package de.dkfz.b080.co.qcworkflow;
 import de.dkfz.b080.co.methods.ACEseq
 import de.dkfz.b080.co.files.*;
 import de.dkfz.b080.co.common.*
+import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.core.*;
@@ -21,7 +22,8 @@ public class QCPipeline extends Workflow {
     @Override
     public boolean execute(ExecutionContext context) {
         AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
-        aqcfg.sampleExtractionFromOutputFiles = false
+        aqcfg.extractSamplesFromOutputFiles = false
+
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
@@ -47,7 +49,7 @@ public class QCPipeline extends Workflow {
             }
 
             if (aqcfg.runExomeAnalysis) {
-                if(!aqcfg.runSlimWorkflow) mergedBam.rawBamCoverage();
+                if (!aqcfg.runSlimWorkflow) mergedBam.rawBamCoverage();
                 BamFile targetOnlyBamFile = mergedBam.extractTargetsCalculateCoverage();
             }
 
@@ -94,7 +96,6 @@ public class QCPipeline extends Workflow {
         return true;
     }
 
-
     private BamFileGroup createSortedBams(AlignmentAndQCConfig aqcfg, COProjectsRuntimeService runtimeService, Sample sample) {
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
@@ -108,7 +109,7 @@ public class QCPipeline extends Workflow {
             if (rawSequenceGroups == null || rawSequenceGroups.size() == 0)
                 return sortedBamFiles;
             for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
-                if (aqcfg.runFastqQC && !aqcfg.runAlignmentOnly)
+                if (aqcfg.runFastQC && !aqcfg.runAlignmentOnly)
                     rawSequenceGroup.calcFastqcForAll();
                 if (aqcfg.runFastQCOnly)
                     continue;
@@ -156,8 +157,7 @@ public class QCPipeline extends Workflow {
         return mergedBam;
     }
 
-    // Move to: de.dkfz.roddy.core.ExecutionContext
-    private boolean checkAndReportValueIsEmpty(ExecutionContext context, Object value, String variableName) {
+    boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
         if (value == null || value.toString() == "") {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Expected value to be set: ${variableName}"))
             return true
@@ -165,18 +165,16 @@ public class QCPipeline extends Workflow {
         return false
     }
 
-    // Move to: de.dkfz.roddy.core.ExecutionContext
-    private boolean checkAndReportInaccessibleFile(ExecutionContext context, File file, String variableName) {
-        if (checkAndReportValueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
+    boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
+        if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
             return false
         }
         return true
     }
 
-    // Move to: de.dkfz.roddy.core.ExecutionContext
-    private boolean checkAndReportInaccessibleDirectory(ExecutionContext context, File directory, String variableName) {
-        if (checkAndReportValueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
+    boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
+        if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
             return false
         }
@@ -189,23 +187,16 @@ public class QCPipeline extends Workflow {
 
     private boolean checkConfiguration(ExecutionContext context) {
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
-        boolean returnValue = true
+        boolean returnValue
         returnValue =
-                !checkAndReportValueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
-                checkAndReportInaccessibleDirectory(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
+                !valueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
+                directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
         returnValue &=
-                checkAndReportInaccessibleFile(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
-        if (config.runExomeAnalysis) {
+                fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
+        if (config.getRunExomeAnalysis()) {
             returnValue &=
-                    checkAndReportInaccessibleFile(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
-                    !checkAndReportValueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
-        }
-        if (config.runACEseqQC) {
-            returnValue &=
-                    checkAndReportInaccessibleFile(context, config.mappabilityFile, AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE) &&
-                    checkAndReportInaccessibleFile(context, config.replicationTimeFile, AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE) &&
-                    checkAndReportInaccessibleFile(context, config.gcContentFile, AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE) &&
-                    checkAndReportInaccessibleFile(context, config.chromosomeLengthFile, AlignmentAndQCConfig.CVALUE_CHROMOSOME_LENGTH_FILE)
+                    fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
+                    !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
         return returnValue
     }
@@ -268,16 +259,33 @@ public class QCPipeline extends Workflow {
         return returnValue
     }
 
+    /** Check that the fingerprinting sites file is accessible, unless it is in the plugin.
+     *
+     * @param context
+     * @return
+     */
     public boolean checkFingerprintingSitesFile(ExecutionContext context) {
         def aqcfg = new AlignmentAndQCConfig(context)
-        def accessProvider = FileSystemAccessProvider.getInstance()
         boolean result = true
         if (aqcfg.runFingerprinting) {
-            if (!accessProvider.fileExists(aqcfg.fingerprintingSitesFile)
-                    || !accessProvider.isReadable(aqcfg.fingerprintingSitesFile)) {
-                context.addErrorEntry(ExecutionContextError.
-                        EXECUTION_SETUP_INVALID.expand("Fingerprinting reference sites file not readable: '${aqcfg.fingerprintingSitesFile}'"))
-                result = false
+            if (!aqcfg.fingerprintingSitesFile.absolutePath.contains("\$${ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION}")) {
+                result = fileIsAccessible(context, aqcfg.fingerprintingSitesFile, AlignmentAndQCConfig.CVALUE_FINGERPRINTING_SITES_FILE)
+            }
+        }
+        return result
+    }
+
+    /** Check that the clipping index file is accessible, unless it is in the plugin.
+     *
+     * @param context
+     * @return
+     */
+    public boolean checkClipIndexFile(ExecutionContext context) {
+        def aqcfg = new AlignmentAndQCConfig(context)
+        Boolean result = true
+        if (aqcfg.useAdapterTrimming) {
+            if (!aqcfg.clipIndex.absolutePath.contains("\$${ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION}")) {
+                result = fileIsAccessible(context, aqcfg.clipIndex, AlignmentAndQCConfig.CVALUE_CLIP_INDEX)
             }
         }
         return result
@@ -291,6 +299,7 @@ public class QCPipeline extends Workflow {
         result &= checkLaneFiles(context)
         result &= checkSingleBam(context)
         result &= checkFingerprintingSitesFile(context)
+        result &= checkClipIndexFile(context)
         return result
     }
 
