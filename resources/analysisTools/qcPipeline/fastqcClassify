@@ -1,0 +1,16 @@
+#!/bin/gawk -f
+
+# Variables
+# sum: float; cumulated value of the firs quantile
+# n: integer; total number of positions evaluated
+# down: boolean; Was any median below 21?
+# status: 
+
+BEGIN{FS="\t";OFS="\t";sum=0;n=0;down=1==2} # Set the field delimiters and initialize 'sum' and 'n' to 0, and 'down' to false
+/Median/{flag=1;next}/^>>END/{flag=0} # Extracts the text block that goes from the line matching 'Median' to the first line starting with '>>END', excluding these lines
+flag{sum+=$4;n++;down=down || $3<=20} # Processes the lines of interest: accumulates the value of the first quantile in 'sum', updates the number of positions evaluated in 'n' and checks if the median was above 20
+END{status="PASS"; # Once all the positions have been read makes the final calculations: sets 'status' to 'PASS' by default
+avg=sum/n; # calculates the average of the first quantile
+if (avg<=28){if (avg<=20) {status="FAIL"} else {status="WARN"}}; # updates 'status' to 'WARN' if it's lower or equal to 28, and to 'FAIL' if it's lower or equal to 20
+if (down && status == "PASS"){status="WARN"}; # downgrades 'status' to 'WARN' if it had been left as 'PASS' but one of the medians was lower or equal to 20
+print status} # Finally prints 'status' ('PASS', 'WARN' or 'FAIL')
