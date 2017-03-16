@@ -1,13 +1,10 @@
 package de.dkfz.b080.co.files
 
-import de.dkfz.b080.co.common.AlignmentAndQCConfig
-import de.dkfz.b080.co.common.COConfig
 import de.dkfz.b080.co.common.COProjectsRuntimeService
-import de.dkfz.roddy.config.OnScriptParameterFilenamePattern
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
 import de.dkfz.roddy.core.ExecutionContext
-import de.dkfz.roddy.execution.jobs.JobManager
 import de.dkfz.roddy.execution.jobs.Job
+import de.dkfz.roddy.execution.jobs.JobManager
 import de.dkfz.roddy.execution.jobs.JobResult
 import de.dkfz.roddy.knowledge.files.BaseFile
 import de.dkfz.roddy.knowledge.files.FileGroup

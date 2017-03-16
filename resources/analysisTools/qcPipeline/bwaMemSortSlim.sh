@@ -145,13 +145,15 @@ else
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
 		# Here, we use always use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
+		${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
 		(set -o pipefail; ${BWA_ACCELERATED_BINARY} mem ${BWA_MEM_CONVEY_ADDITIONAL_OPTIONS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_2G | tee $NP_COMBINEDANALYSIS_IN | \
 		${SAMBAMBA_BINARY} view -f bam -S -l 0 -t 8 /dev/stdin | $MBUF_2G | \
 		tee ${NP_FLAGSTATS} | \
 		${SAMBAMBA_BINARY} sort --tmpdir=${RODDY_SCRATCH} -l 9 -t ${CONVEY_SAMBAMBA_SAMSORT_THREADS} -m ${CONVEY_SAMBAMBA_SAMSORT_MEMSIZE} /dev/stdin -o /dev/stdout 2>$NP_SORT_ERRLOG | \
-		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} > $tempSortedBamFile; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_SAMTOOLS_INDEX_IN} > $tempSortedBamFile; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
 
 		wait $procID_MEMSORT; [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem - sambamba pipe returned a non-zero exit code and the job will die now." && exit 100
+		wait $procID_IDX || throw 10 "Error from samtools index"
 
 	elif [[ ${useBioBamBamSort} == false ]]
 	then	# we use samtools for making the index
@@ -165,7 +167,7 @@ else
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
 		wait $procID_logwrite	# do we need a check for it?
 		wait $procID_MEMSORT; [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem - samtools pipe returned a non-zero exit code and the job will die now." && exit 100
-		wait $procID_IDX; [[ ! $? -eq 0 ]] && echo "Error from samtools index" && exit 10
+		wait $procID_IDX || throw 10 "Error from samtools index"
 
 	else	# biobambam makes the index
 		(cat ${NP_BAMSORT} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} > ${tempSortedBamFile}) & procIDview=$!
@@ -176,8 +178,8 @@ else
 		${BAMSORT_BINARY} O=${NP_BAMSORT} level=1 inputthreads=2 outputthreads=2 \
 		index=1 indexfilename=${tempBamIndexFile} calmdnm=1 calmdnmrecompindetonly=1 calmdnmreference=${INDEX_PREFIX} \
 		tmpfile=${tempFileForSort} 2>$NP_SORT_ERRLOG; echo $? > ${DIR_TEMP}/ec_bbam) & procIDBamsort=$!
-		wait $procIDBamsort; [[ $? -gt 0 ]] && echo "Error from bamsort binary" && exit 11
-		wait $procIDview; [[ $? -gt 0 ]] && echo "Error from cat from bamsort output for pipes" && exit 12
+		wait $procIDBamsort || throw 11 "Error from bamsort binary"
+		wait $procIDview || throw 12 "Error from cat from bamsort output for pipes"
 	fi
 fi
 
@@ -217,7 +219,7 @@ mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Coul
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 
 # Run the fingerprinting. This requires the .bai file, which is only ready after the streaming finished.
-if [[ "${runFingerprinting:-false}" == true ]]; then
+if [[ "${runFingerprinting:-false}" == true && "$ON_CONVEY" != true ]]; then
     "${PYTHON_BINARY}" "${TOOL_FINGERPRINT}" "${fingerprintingSitesFile}" "${FILENAME_SORTED_BAM}" > "${FILENAME_FINGERPRINTS}.tmp" || throw 43 "Fingerprinting failed"
     mv "${FILENAME_FINGERPRINTS}.tmp" "${FILENAME_FINGERPRINTS}" || throw 39 "Could not move file"
 fi
