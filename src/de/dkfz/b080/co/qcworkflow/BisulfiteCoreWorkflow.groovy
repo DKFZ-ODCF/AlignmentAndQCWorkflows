@@ -1,18 +1,15 @@
 package de.dkfz.b080.co.qcworkflow
 
 import de.dkfz.b080.co.common.AlignmentAndQCConfig
-import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService
 import de.dkfz.b080.co.common.COProjectsRuntimeService
-import de.dkfz.b080.co.files.*
-import de.dkfz.roddy.config.Configuration
-import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
-import de.dkfz.roddy.core.DataSet
+import de.dkfz.b080.co.files.BamFile
+import de.dkfz.b080.co.files.BamFileGroup
+import de.dkfz.b080.co.files.CoverageTextFileGroup
+import de.dkfz.b080.co.files.LaneFileGroup
+import de.dkfz.b080.co.files.Sample
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
-import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
-
-import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES
 
 /**
  * @author michael

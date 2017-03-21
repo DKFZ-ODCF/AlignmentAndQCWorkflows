@@ -7,6 +7,7 @@ import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.core.*;
+
 import java.util.*
 
 /**
@@ -193,7 +194,7 @@ public class QCPipeline extends Workflow {
                 directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
         returnValue &=
                 fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
-        if (config.getRunExomeAnalysis()) {
+        if (config.runExomeAnalysis) {
             returnValue &=
                     fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
                     !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
@@ -292,7 +293,7 @@ public class QCPipeline extends Workflow {
     }
 
     @Override
-    public boolean checkExecutability(ExecutionContext context) {
+    boolean checkExecutability(ExecutionContext context) {
         boolean result = super.checkExecutability(context)
         result &= checkConfiguration(context)
         result &= checkSamples(context)

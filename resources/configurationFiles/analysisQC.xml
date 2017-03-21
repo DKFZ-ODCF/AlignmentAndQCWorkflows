@@ -26,6 +26,28 @@
                 description='BED file with the reference positions used for fingerprinting.'/>
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
+
+        <cvalue name='markDuplicatesVariant' value='' type="string"
+                description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
+
+        <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.4.6" type="string"
+                description="The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort."/>
+        <cvalue name="SAMBAMBA_FLAGSTATS_BINARY" value="sambamba_v0.4.6" type="string"
+                description="The sambamba version used only for making flagstats."/>
+        <!-- Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats. -->
+        <cvalue name="SAMBAMBA_MARKDUP_BINARY" value="sambamba_v0.5.9" type="string"
+                description="The sambamba version used only for duplication marking and merging."/>
+        <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'
+                description="Please use -l 0, the workflow unpacks the BAM directly with samtools. Compression is faster and more stable with samtools."/>
+
+        <cvalue name='PICARD_MARKDUP_JVM_OPTS' value="-Xms64G -Xmx64G"
+                description="Keep the -Xmx JVM option and the resources requested for the picard job in sync. Picard should use less than the reserved total memory of the job, because also mbuffer etc. need some memory."/>
+
+        <cvalue name="CONVEY_SAMBAMBA_SAMSORT_THREADS" value="8" type="integer"
+                description="Number of threads for sorting the SAM output when running on Convey."/>
+        <cvalue name="CONVEY_SAMBAMBA_SAMSORT_MEMSIZE" value="96G" type="string"
+                description="Estimated memory for sorting SAM output on Convey. Conveys have 128 GB. Safety margin for sambamba GC is included."/>
+
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer"
                 description="Threads for bwa mem. NOTE: This does not change the number of threads requested via the batch processing system!"/>
 
@@ -64,27 +86,6 @@
         <cvalue name='SCALE_FACTOR' value='0.9' type="float"/>
         <cvalue name='COVERAGEPLOT_YLIMS' value='4' type="float"/>
         <cvalue name='GC_bias_json_key' value='gc-bias' type="string"/>
-
-        <cvalue name='markDuplicatesVariant' value='' type="string"
-                description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
-
-        <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.4.6" type="string"
-                description="The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort."/>
-        <cvalue name="SAMBAMBA_FLAGSTATS_BINARY" value="sambamba_v0.4.6" type="string"
-                description="The sambamba version used only for making flagstats."/>
-        <!-- Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats. -->
-        <cvalue name="SAMBAMBA_MARKDUP_BINARY" value="sambamba_v0.5.9" type="string"
-                description="The sambamba version used only for duplication marking and merging."/>
-        <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'
-                description="Please use -l 0, the workflow unpacks the BAM directly with samtools. Compression is faster and more stable with samtools."/>
-
-        <cvalue name='PICARD_MARKDUP_JVM_OPTS' value="-Xms64G -Xmx64G"
-                description="Keep the -Xmx JVM option and the resources requested for the picard job in sync. Picard should use less than the reserved total memory of the job, because also mbuffer etc. need some memory."/>
-
-        <cvalue name="CONVEY_SAMBAMBA_SAMSORT_THREADS" value="8" type="integer"
-                description="Number of threads for sorting the SAM output when running on Convey."/>
-        <cvalue name="CONVEY_SAMBAMBA_SAMSORT_MEMSIZE" value="96G" type="string"
-                description="Estimated memory for sorting SAM output on Convey. Conveys have 128 GB. Safety margin for sambamba GC is included."/>
 
     </configurationvalues>
     <!--<testdataoptions>-->
@@ -417,7 +418,7 @@
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>
-            <input type="filegroup" typeof="de.dkfz.b080.co.files.BamFileGroup" scriptparameter="INPUT_FILES" passas="array"/>
+            <input type="filegroup" typeof="de.dkfz.b080.co.files.BamFileGroup" fileclass="BamFile" scriptparameter="INPUT_FILES" passas="array"/>
             <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
             <output type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME">
                 <output type="file" variable="indexFile" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="FILENAME_INDEX"/>
@@ -433,8 +434,8 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
-                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
             </output>
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimBioBambam' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -450,7 +451,7 @@
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>
-            <input type="filegroup" typeof="de.dkfz.b080.co.files.BamFileGroup" scriptparameter="INPUT_FILES" passas="array"/>
+            <input type="filegroup" typeof="de.dkfz.b080.co.files.BamFileGroup" fileclass="BamFile" scriptparameter="INPUT_FILES" passas="array"/>
             <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
             <output type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME">
                 <output type="file" variable="indexFile" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="FILENAME_INDEX"/>
@@ -466,8 +467,8 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
-                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
             </output>
         </tool>
         <tool name='mergeAndRemoveDuplicatesSlimSambamba' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -483,7 +484,7 @@
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="IGNORED_FILENAME"/>
-            <input type="filegroup" typeof="de.dkfz.b080.co.files.BamFileGroup" scriptparameter="INPUT_FILES" passas="array"/>
+            <input type="filegroup" typeof="de.dkfz.b080.co.files.BamFileGroup" fileclass="BamFile" scriptparameter="INPUT_FILES" passas="array"/>
             <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
             <output type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME">
                 <output type="file" variable="indexFile" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="FILENAME_INDEX"/>
@@ -499,8 +500,8 @@
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
-                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
+                <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
             </output>
         </tool>
 
