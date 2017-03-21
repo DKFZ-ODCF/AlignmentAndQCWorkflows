@@ -29,6 +29,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample in samples) {
+
             List<String> availableLibrariesForSample = sample.getLibraries();
             BamFileGroup mergedBamsPerLibrary = new BamFileGroup();
 

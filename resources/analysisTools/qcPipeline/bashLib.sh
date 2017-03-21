@@ -13,11 +13,11 @@ UNSPECIFIED_ERROR_CODE=1
 EMPTY_VALUE_MSG="Empty value"
 EMPTY_VALUE_CODE=200
 throw_empty_value () {
-    throw 200 "Empty value"
+    throw "$EMPTY_VALUE_CODE" "$EMPTY_VALUE_MSG"
 }
 
 throw_illegal_argument () {
-    throw 103 "Illegal argument: $1"
+    throw 103 "Illegal argument: ${1:-not provided to throw}"
 }
 
 NOT_WRITABLE_MSG="File or directory is not writable"
@@ -92,7 +92,6 @@ printInfo () {
 ## Use 'assertNonEmpty $parameter || return $?'
 assertNonEmpty () {
     local value="$1"
-    local message="${2-$UNSPECIFIED_ERROR_MSG}"
     if [[ "$value" == "" ]]; then
         throw_empty_value "$message" || return $?
     fi

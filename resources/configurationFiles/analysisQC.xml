@@ -412,7 +412,7 @@
                 <!-- Production -->
                 <rset size="xs" memory="50" cores="8" nodes="1" walltime="1"/>
                 <rset size="s" memory="55" cores="8" nodes="1" walltime="10"/>
-                <rset size="m" memory="60" cores="8" nodes="1" walltime="80"/>
+                <rset size="m" memory="62" cores="8" nodes="1" walltime="80"/>
                 <rset size="l" memory="80" cores="8" nodes="1" walltime="160"/>
                 <rset size="xl" memory="100" cores="8" nodes="1" walltime="240"/>
             </resourcesets>
