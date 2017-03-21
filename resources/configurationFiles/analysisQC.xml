@@ -22,8 +22,9 @@
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
         <cvalue name='runFingerprinting' value='false' type='boolean'
                 description='Fingerprint the individuals using a set of reference positions.'/>
-        <cvalue name='fingerprintingSitesFile' value='' type='file'
-                description='BED file with the reference positions used for fingerprinting.'/>
+        <cvalue name="fingerprintingSitesFile_hs37" value="${hg19DatabasesDirectory}/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
+        <cvalue name="fingerprintingSitesFile" value="${fingerprintingSitesFile_hs37}" type="path"
+                description='BED file with the reference positions used for fingerprinting. Used by alignment workflow for fingerprinting individuals to discover swaps. Use runFingerprinting=true/false to toggle fingerprinting.'/>
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
 
@@ -56,18 +57,23 @@
                 description="Turn on/off the GC correction."/>
 
         <cvalue name='gccorOutputDirectory' value='correctedGcBias' type="path"/>
-        <cvalue name='gccorCnvSnpOutputDirectory' value='${gccorOutputDirectory}/cnv_snp' type="path"/>
         <cvalue name='gccorPlotOutputDirectory' value='${gccorOutputDirectory}/plots' type="path"/>
 
-        <!-- Genome-specific files. -->
-        <cvalue name="MAPPABILITY_FILE" value="" type="path"
-                description="For instance UCSC/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz."/>
-        <cvalue name="REPLICATION_TIME_FILE" value="" type="path"
-                description="Window size must match WINDOW_SIZE parameter. For instance ENCODE/ReplicationTime_10cellines_mean_10KB.Rda"/>
-        <cvalue name="GC_CONTENT_FILE" value="" type="path"
-                description="Window size must match WINDOW_SIZE parameter. For instance stats/hg19_GRch37_100genomes_gc_content_10kb.txt"/>
-        <!-- TODO Substitute this file by the CHROM_SIZES_FILE. Code needs to be adapted! -->
-        <cvalue name="CHROMOSOME_LENGTH_FILE" value="" type="path"
+
+        <!-- For ACEseq QC in the alignment plugin -->
+        <cvalue name="gcContentFile_hg19_10kb" value="${chromosomeSizesBaseDirectory_human}/hg19_GRch37_100genomes_gc_content_10kb.txt" type="path"/>
+        <cvalue name="gcContentFile_hg19_1kb"  value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_1kb.txt" type="path"/>
+        <cvalue name="mappabilityFile_hg19" value="${hg19DatabaseUCSCDirectory}/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz" type="path"/>
+        <cvalue name="replicationTimingFile_hg19_10kb" value="${hg19DatabaseENCODEDirectory}/ReplicationTime_10cellines_mean_10KB.Rda" type="path"/>
+        <cvalue name="chromosomeLengthFile_hg19" value="${assembliesHG191000GenomesDirectory}/stats/chrlengths.txt" type="path"/>
+
+        <cvalue name="GC_CONTENT_FILE" value="${gcContentFile_hg19_10kb}" type="path"
+                description="Window size of this file must match WINDOW_SIZE parameter. For instance stats/hg19_GRch37_100genomes_gc_content_10kb.txt."/>
+        <cvalue name="MAPPABILITY_FILE" value="${mappabilityFile_hg19}" type="path"
+                description="For the ACEseq workflow and the ACEseq QC in the alignment workflows. WARNING: There is a similar variable MAPABILITY in the variant calling workflows."/>
+        <cvalue name="REPLICATION_TIME_FILE" value="${replicationTimingFile_hg19_10kb}" type="path"
+                description="Window size of this file must match WINDOW_SIZE parameter. For instance ENCODE/ReplicationTime_10cellines_mean_10KB.Rda."/>
+        <cvalue name="CHROMOSOME_LENGTH_FILE" value="${chromosomeLengthFile_hg19}" type="path"
                 description="Window size must match WINDOW_SIZE parameter. For instance stats/chrlengths.txt"/>
 
         <!-- annotateCnvFiles Opts-->
