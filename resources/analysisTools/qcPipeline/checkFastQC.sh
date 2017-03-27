@@ -24,7 +24,7 @@ ${FASTQC_BINARY} ${RAW_SEQ} --noextract -o $TMP_DIR \
 
 mv $TMP_DIR/* $FILENAME_FASTQC
 
-gawk "${TOOL_FASTQC_CLASSIFY}" \
+"${TOOL_FASTQC_CLASSIFY}" \
     <(unzip -p "${FILENAME_FASTQC}" "*/fastqc_data.txt") \
     > "${FILENAME_FASTQ_QC_STATUS}" || throw 10 "Error classifying the FASTQ quality"
 

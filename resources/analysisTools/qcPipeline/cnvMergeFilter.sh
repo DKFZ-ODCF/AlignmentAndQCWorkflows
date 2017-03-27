@@ -7,9 +7,9 @@ set -x
 ${PYTHON_BINARY} "${TOOL_MERGE_FILTER_CNV}" \
             --inputfile    "$FILENAME_COV_WINDOWS_ANNO" \
             --output       "$FILENAME_COV_WINDOWS_WG" \
-            --coverage     "$cnv_min_coverage" \
-            --mappability  "$mapping_quality" \
-            --NoOfWindows  "$min_windows"
+            --coverage     "$cnv_min_coverage_ALN" \
+            --mappability  "$mapping_quality_ALN" \
+            --NoOfWindows  "$min_windows_ALN"
 
 if [[ "$?" != 0 ]]
 then

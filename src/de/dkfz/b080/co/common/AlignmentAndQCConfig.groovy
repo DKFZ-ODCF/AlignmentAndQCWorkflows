@@ -15,16 +15,16 @@ class AlignmentAndQCConfig extends COConfig {
 
     public static final String CVALUE_INDEX_PREFIX = "INDEX_PREFIX"
     public static final String CVALUE_CHROMOSOME_SIZES_FILE = "CHROM_SIZES_FILE"
-    public static final String CVALUE_CHROMOSOME_LENGTH_FILE = "CHROMOSOME_LENGTH_FILE"
+    public static final String CVALUE_CHROMOSOME_LENGTH_FILE = "CHROMOSOME_LENGTH_FILE_ALN"
     public static final String CVALUE_TARGET_REGIONS_FILE = "TARGET_REGIONS_FILE"
     public static final String CVALUE_TARGETSIZE = "TARGETSIZE"
     public static final String CVALUE_TARGET_SIZE = "TARGET_SIZE"
     public static final String CVALUE_RUN_COVERAGE_PLOTS_ONLY = "runCoveragePlotsOnly";
     public static final String CVALUE_OVERRIDE_BAM_FILES = "overrideBamFiles";
     public static final String CVALUE_OVERRIDE_SAMPLE_NAMES = "overrideSampleNames";
-    public static final String CVALUE_MAPPABILITY_FILE = "MAPPABILITY_FILE";
-    public static final String CVALUE_REPLICATION_TIME_FILE = "REPLICATION_TIME_FILE";
-    public static final String CVALUE_GC_CONTENT_FILE = "GC_CONTENT_FILE";
+    public static final String CVALUE_MAPPABILITY_FILE = "MAPPABILITY_FILE_ALN";
+    public static final String CVALUE_REPLICATION_TIME_FILE = "REPLICATION_TIME_FILE_ALN";
+    public static final String CVALUE_GC_CONTENT_FILE = "GC_CONTENT_FILE_ALN";
     public static final String CVALUE_RUN_ACESEQ_QC = "runACEseqQc";
 
     public static final String CVALUE_CLIP_INDEX = "CLIP_INDEX"

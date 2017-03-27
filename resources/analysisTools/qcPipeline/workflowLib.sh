@@ -112,35 +112,35 @@ toIEqualsList () {
 
 
 # Stolen from http://stackoverflow.com/questions/3685970/check-if-an-array-contains-a-value
-function arrayContains {
+arrayContains () {
     local ELEMENT="${1}"
     assertNonEmpty "$ELEMENT" "arrayContains called without parameters" || return $?
     local DELIM=","
     printf "${DELIM}%s${DELIM}" "${@:2}" | grep -q "${DELIM}${ELEMENT}${DELIM}"
 }
 
-function matchPrefixInArray {
+matchPrefixInArray () {
     local ELEMENT="${1}"
     assertNonEmpty "$ELEMENT" "matchPrefixInArray called without parameters" || return $?
     local DELIM=" "
     printf "${DELIM}%s${DELIM}" "${@:2}" | grep -q -P "${DELIM}${ELEMENT}[^${DELIM}]*${DELIM}"
 }
 
-function isControlSample {
+isControlSample () {
     assertNonEmpty "$1" "isControlSample expects sample type name as single parameter" || return $?
     assertNonEmpty "$possibleControlSampleNamePrefixes" "Undefined/empty possibleControlSampleNamePrefixes" || return $?
     declare -la prefixes="${possibleControlSampleNamePrefixes[@]}"
     matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
-function isTumorSample {
+isTumorSample () {
     assertNonEmpty "$1" "isTumorSample expects sample type name as single parameter" || return $?
     assertNonEmpty "$possibleTumorSampleNamePrefixes" "Undefined/empty possibleTumorSampleNamePrefixes" || return $?
     declare -la prefixes="${possibleTumorSampleNamePrefixes[@]}"
     matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
-function sampleType {
+sampleType () {
     assertNonEmpty "$1" "sampleType expects sample type name as single parameter" || return $?
     if isControlSample "$1" && isTumorSample "$1"; then
         throw_illegal_argument "Sample '$1' cannot be control and tumor at the same time"
@@ -152,5 +152,39 @@ function sampleType {
         throw_illegal_argument "'$1' is neither control nor tumor"
     fi
 }
+
+runFingerprinting () {
+    local bamFile="${1:?No input BAM file given}"
+    local fingerPrintsFile="${2:?No output fingerprints file given}"
+    if [[ "${runFingerprinting:-false}" == true && $(runningOnConvey) != true ]]; then
+        "${PYTHON_BINARY}" "${TOOL_FINGERPRINT}" "${fingerprintingSitesFile}" "${bamFile}" > "${fingerPrintsFile}.tmp" || throw 43 "Fingerprinting failed"
+        mv "${fingerPrintsFile}.tmp" "${fingerPrintsFile}" || throw 39 "Could not move file"
+    fi
+}
+
+
+# Remove a single directory, owned by the current user, recursively. Certain file names are forbidden and it is checked
+# that only a single file or directory (including contained files) will be removed.
+saferRemoveSingleDirRecursively () {
+    local file="${1:?No file given}"
+    if [[ "${file}" == "" || "${file}" == "." || "${file}" == "/" || "${file}" == "*" ]]; then
+        throw 1 "Trying to recursively remove with forbidden file name: '${file}'"
+    fi
+    declare -a owner=( $(stat -c "%U" "${file}") )
+    if [[ "${#owner[@]}" -gt 1 ]]; then
+        throw 1 "Trying to remove multiple files with file pattern: '${file}'"
+    fi
+    if [[ "${owner}" != $(whoami) ]]; then
+        throw 1 "${file} is owned by ${owner}, so it won't be deleted by $(whoami)"
+    fi
+    rm -rf "${file}"
+}
+
+removeRoddyBigScratch () {
+    if [[ "${RODDY_BIG_SCRATCH}" && "${RODDY_BIG_SCRATCH}" != "${RODDY_SCRATCH}" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
+        saferRemoveSingleDirRecursively "${RODDY_BIG_SCRATCH}" # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
+    fi
+}
+
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"

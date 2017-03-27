@@ -15,10 +15,10 @@ then
 	tmp_sex_file="${FILENAME_SEX}_tmp"
 
 	${RSCRIPT_BINARY} "$TOOL_ESTIMATE_SEX" \
-		 --file_size "$CHROMOSOME_LENGTH_FILE" \
+		 --file_size "$CHROMOSOME_LENGTH_FILE_ALN" \
 		 --cnv_file "$A_FILE" \
-		 --min_Y_ratio "$min_Y_ratio" \
-		 --min_X_ratio "$min_X_ratio" \
+		 --min_Y_ratio "$min_Y_ratio_ALN" \
+		 --min_X_ratio "$min_X_ratio_ALN" \
 		 --file_out "$tmp_sex_file"
 
 
@@ -42,7 +42,7 @@ ${PERL_BINARY} "$TOOL_ANNOTATE_CNV_VCF" \
       --aChromColumn chr \
       --aPosColumn pos \
       --aEndColumn end \
-      -b "$MAPPABILITY_FILE" \
+      -b "$MAPPABILITY_FILE_ALN" \
       --bFileType=bed \
       --reportBFeatCoord \
       --columnName map |

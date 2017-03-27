@@ -10,14 +10,14 @@ corrected_table_slim="${FILENAME_GC_CORRECTED_QUALITY}.slim.txt"
 
 ${RSCRIPT_BINARY} "$TOOL_CORRECT_GC_BIAS_R" \
 	--windowFile	"$FILENAME_COV_WINDOWS_WG" \
-	--timefile	"$REPLICATION_TIME_FILE" \
-	--chrLengthFile	"$CHROMOSOME_LENGTH_FILE" \
+	--timefile	"$REPLICATION_TIME_FILE_ALN" \
+	--chrLengthFile	"$CHROMOSOME_LENGTH_FILE_ALN" \
 	--pid		"$PID" \
 	--sample	$(sampleType "$SAMPLE") \
 	--outfile	"$tmp_corrected_windowfile" \
 	--corPlot	"$FILENAME_GC_CORRECT_PLOT" \
 	--qcTab		"$corrected_table_slim" \
-	--gcFile	"$GC_CONTENT_FILE" \
+	--gcFile	"$GC_CONTENT_FILE_ALN" \
 	--outDir	"$aceseqOutputDirectory" \
 	--lowess_f	"$LOWESS_F" \
 	--scaleFactor	"$SCALE_FACTOR" \

@@ -330,15 +330,8 @@ mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "Could not move file"
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
 
-if [[ "$RODDY_BIG_SCRATCH" != "$RODDY_SCRATCH" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
-    rm -rf "$RODDY_BIG_SCRATCH" 2> /dev/null # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
-fi
-
-# Run the fingerprinting. This requires the .bai file, which is only ready after the streaming finished.
-if [[ "${runFingerprinting:-false}" == true ]]; then
-    "${PYTHON_BINARY}" "${TOOL_FINGERPRINT}" "${fingerprintingSitesFile}" "${FILENAME}" > "${FILENAME_FINGERPRINTS}.tmp" || throw 43 "Fingerprinting failed"
-    mv "${FILENAME_FINGERPRINTS}.tmp" "${FILENAME_FINGERPRINTS}" || throw 39 "Could not move file"
-fi
+runFingerprinting "${FILENAME}" "${FILENAME_FINGERPRINTS}"
+removeRoddyBigScratch
 
 # QC summary
 # if the warnings file had been created before, remove it:

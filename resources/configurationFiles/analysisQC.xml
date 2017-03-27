@@ -8,28 +8,40 @@
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
+        <!-- Directories -->
+        <cvalue name="sharedFilesBaseDirectory" value="/icgc/ngs_share" type="path"/>
+        <cvalue name="assembliesBaseDirectory" value="${sharedFilesBaseDirectory}/assemblies" type="path"/>
+        <cvalue name="assembliesHG191000GenomesDirectory" value="${assembliesBaseDirectory}/hg19_GRCh37_1000genomes" type="path"/>
+        <cvalue name="chromosomeSizesBaseDirectory_human" value="${assembliesHG191000GenomesDirectory}/stats" type="path"/>
+        <cvalue name="hg19DatabasesDirectory" value="${assembliesHG191000GenomesDirectory}/databases" type="path"/>
+        <cvalue name='hg19DatabaseUCSCDirectory' value='${hg19DatabasesDirectory}/UCSC' type="path"/>
+        <cvalue name='hg19DatabaseENCODEDirectory' value='${hg19DatabasesDirectory}/ENCODE' type="path"/>
+
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
-        <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
 
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
 
+        <!-- Configuration options -->
         <cvalue name='useRoddyScratchAsBigFileScratch' value='true' type='boolean'
                 description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
-        <cvalue name='runFingerprinting' value='false' type='boolean'
-                description='Fingerprint the individuals using a set of reference positions.'/>
-        <cvalue name="fingerprintingSitesFile_hs37" value="${hg19DatabasesDirectory}/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
-        <cvalue name="fingerprintingSitesFile" value="${fingerprintingSitesFile_hs37}" type="path"
-                description='BED file with the reference positions used for fingerprinting. Used by alignment workflow for fingerprinting individuals to discover swaps. Use runFingerprinting=true/false to toggle fingerprinting.'/>
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
 
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer"
                 description="Threads for bwa mem. NOTE: This does not change the number of threads requested via the batch processing system!"/>
+
+        <!-- Fingerprinting -->
+        <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
+        <cvalue name='runFingerprinting' value='false' type='boolean'
+                description='Fingerprint the individuals using a set of reference positions.'/>
+        <cvalue name="fingerprintingSitesFile_hs37" value="${hg19DatabasesDirectory}/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
+        <cvalue name="fingerprintingSitesFile" value="${fingerprintingSitesFile_hs37}" type="path"
+                description='BED file with the reference positions used for fingerprinting. Used by alignment workflow for fingerprinting individuals to discover swaps. Use runFingerprinting=true/false to toggle fingerprinting.'/>
 
         <!-- Former ACEseq QC configurations. -->
         <cvalue name='runACEseqQc' value='true' type='boolean'
@@ -46,32 +58,33 @@
         <cvalue name="replicationTimingFile_hg19_10kb" value="${hg19DatabaseENCODEDirectory}/ReplicationTime_10cellines_mean_10KB.Rda" type="path"/>
         <cvalue name="chromosomeLengthFile_hg19" value="${assembliesHG191000GenomesDirectory}/stats/chrlengths.txt" type="path"/>
 
-        <cvalue name="GC_CONTENT_FILE" value="${gcContentFile_hg19_10kb}" type="path"
+        <cvalue name="GC_CONTENT_FILE_ALN" value="${gcContentFile_hg19_10kb}" type="path"
                 description="Window size of this file must match WINDOW_SIZE parameter. For instance stats/hg19_GRch37_100genomes_gc_content_10kb.txt."/>
-        <cvalue name="MAPPABILITY_FILE" value="${mappabilityFile_hg19}" type="path"
+        <cvalue name="MAPPABILITY_FILE_ALN" value="${mappabilityFile_hg19}" type="path"
                 description="For the ACEseq workflow and the ACEseq QC in the alignment workflows. WARNING: There is a similar variable MAPABILITY in the variant calling workflows."/>
-        <cvalue name="REPLICATION_TIME_FILE" value="${replicationTimingFile_hg19_10kb}" type="path"
+        <cvalue name="REPLICATION_TIME_FILE_ALN" value="${replicationTimingFile_hg19_10kb}" type="path"
                 description="Window size of this file must match WINDOW_SIZE parameter. For instance ENCODE/ReplicationTime_10cellines_mean_10KB.Rda."/>
-        <cvalue name="CHROMOSOME_LENGTH_FILE" value="${chromosomeLengthFile_hg19}" type="path"
+        <cvalue name="CHROMOSOME_LENGTH_FILE_ALN" value="${chromosomeLengthFile_hg19}" type="path"
                 description="Window size must match WINDOW_SIZE parameter. For instance stats/chrlengths.txt"/>
 
         <!-- annotateCnvFiles Opts-->
-        <cvalue name='min_X_ratio' value='0.8' type="float"/>
-        <cvalue name='min_Y_ratio' value='0.12' type="float"/>
+        <cvalue name='min_X_ratio_ALN' value='0.8' type="float"/>
+        <cvalue name='min_Y_ratio_ALN' value='0.12' type="float"/>
 
         <!-- cnvMergeFilter Opts-->
 
         <!-- cnv_min_coverage should be 50 for controls and 0 for tumors. Take care that you correctly set the possible{Tumor,Control}SampleNamePrefixes variables! -->
-        <cvalue name='cnv_min_coverage' value='50' type="integer"/>
-        <cvalue name='mapping_quality' value='1000' type="integer"/>
-        <cvalue name='min_windows' value='5' type="integer"/>
+        <cvalue name='cnv_min_coverage_ALN' value='50' type="integer"/>
+        <cvalue name='mapping_quality_ALN' value='1000' type="integer"/>
+        <cvalue name='min_windows_ALN' value='5' type="integer"/>
 
         <!-- correctGC Opts-->
-        <cvalue name='LOWESS_F' value='0.1' type="float"/>
-        <cvalue name='SCALE_FACTOR' value='0.9' type="float"/>
-        <cvalue name='COVERAGEPLOT_YLIMS' value='4' type="float"/>
-        <cvalue name='GC_bias_json_key' value='gc-bias' type="string"/>
+        <cvalue name='LOWESS_F_ALN' value='0.1' type="float"/>
+        <cvalue name='SCALE_FACTOR_ALN' value='0.9' type="float"/>
+        <cvalue name='COVERAGEPLOT_YLIMS_ALN' value='4' type="float"/>
+        <cvalue name='GC_bias_json_key_ALN' value='gc-bias' type="string"/>
 
+        <!-- Duplication marking -->
         <cvalue name='markDuplicatesVariant' value='' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
 
@@ -92,7 +105,7 @@
                 description="Number of threads for sorting the SAM output when running on Convey."/>
         <cvalue name="CONVEY_SAMBAMBA_SAMSORT_MEMSIZE" value="96G" type="string"
                 description="Estimated memory for sorting SAM output on Convey. Conveys have 128 GB. Safety margin for sambamba GC is included."/>
-        
+
     </configurationvalues>
     <!--<testdataoptions>-->
         <!--&lt;!&ndash; id is the name of the test data option set-->

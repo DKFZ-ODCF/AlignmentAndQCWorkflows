@@ -68,11 +68,11 @@ public class QCPipeline extends Workflow {
                     //          the replication timing and GC content files need to have the same window size as the input.
                     aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${aqcfg.windowSize}. SKIPPING!"))
                 } else if (aqcfg.mappabilityFile == null) {
-                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require MAPPABILITY_FILE to be set. SKIPPING!"))
+                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE} to be set. SKIPPING!"))
                 } else if (aqcfg.replicationTimeFile == null) {
-                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require REPLICATION_TIME_FILE to be set. SKIPPING!"))
+                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE} to be set. SKIPPING!"))
                 } else if (aqcfg.gcContentFile == null) {
-                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require GC_CONTENT_FILE to be set. SKIPPING!"))
+                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE} to be set. SKIPPING!"))
                 } else {
                     ACEseq.aceSeqQc(mergedBam.readBinsCoverageTextFile, sample)
                 }
