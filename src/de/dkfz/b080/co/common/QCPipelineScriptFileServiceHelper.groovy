@@ -42,19 +42,23 @@ class QCPipelineScriptFileServiceHelper {
             for (int i = 0; i < sortedFiles.size(); i++) {
                 File _f0 = sortedFiles[i];
                 File _f1 = new File(_f0.getAbsolutePath() + "_dummySecondary");
-                String index = "R1";
-                String index2 = "R2";
+                IndexID index = new IndexID("R1");
+                IndexID index2 = new IndexID("R2");
                 String lane = String.format("L%03d", i);
-                String id = String.format("%s_%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), libraryID, runName, lane, index);
+                LaneID laneId = new LaneID(String.format("%s_%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), libraryID, runName, lane, index));
 
 
                 JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
                 LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>(Arrays.asList(
-                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index,  0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result),
-                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index2, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result)
+                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context,
+                                new COFileStageSettings(laneId, index,  0, new RunID(runName), new LibraryID(libraryID), sample, context.getDataSet(), COFileStage.INDEXEDLANE),
+                                result),
+                        (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context,
+                                new COFileStageSettings(laneId, index2, 1, new RunID(runName), new LibraryID(libraryID), sample, context.getDataSet(), COFileStage.INDEXEDLANE),
+                                result)
                 ));
                 filesInGroup[1].setFileIsValid();
-                fileGroups << new LaneFileGroup(context, id, runName, sample, filesInGroup)
+                fileGroups << new LaneFileGroup(context, laneId.toString(), runName, sample, filesInGroup)
             }
         } else {
             for (int i = 0; i < sortedFiles.size() - 1; i++) {
@@ -78,27 +82,31 @@ class QCPipelineScriptFileServiceHelper {
                     i++;
                     String[] blocks0 = f0.split("_").reverse();
                     String[] blocks1 = f1.split("_").reverse(); //Rightmost non unique block is the indexFile
-                    String index0 = "";
-                    String index1 = "";
+                    IndexID index0 = new IndexID("");
+                    IndexID index1 = new IndexID("");
                     int indexOfIndex = blocks0.size() - 1;
                     for (int b = 0; b < blocks0.size(); b++) {
                         indexOfIndex--;
                         if (blocks0[b] == blocks1[b]) continue;
-                        index0 = blocks0[b];
-                        index1 = blocks1[b];
+                        index0 = new IndexID(blocks0[b]);
+                        index1 = new IndexID(blocks1[b]);
                         break;
                     }
                     blocks0 = blocks0.reverse().toList()[0..indexOfIndex];
-                    String laneId = blocks0.join("_");
+                    LaneID laneId = new LaneID(blocks0.join("_"));
 
                     LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>();
 
                     JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
 
-                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(laneId, index0, 0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
-                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(laneId, index1, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
+                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context,
+                            new COFileStageSettings(laneId, index0, 0, new RunID(runName), new LibraryID(libraryID), sample, context.getDataSet(), COFileStage.INDEXEDLANE),
+                            result);
+                    filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context,
+                            new COFileStageSettings(laneId, index1, 1, new RunID(runName), new LibraryID(libraryID), sample, context.getDataSet(), COFileStage.INDEXEDLANE),
+                            result);
 
-                    fileGroups << new LaneFileGroup(context, laneId, runName, sample, filesInGroup)
+                    fileGroups << new LaneFileGroup(context, laneId.toString(), runName, sample, filesInGroup)
                 }
             }
         }

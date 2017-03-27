@@ -133,7 +133,7 @@ class AlignmentAndQCConfig extends COConfig {
     }
 
     public File getFingerprintingSitesFile() {
-        return new File (configValues.getString(CVALUE_FINGERPRINTING_SITES_FILE))
+        return new File(configValues.getString(CVALUE_FINGERPRINTING_SITES_FILE))
     }
 
     public String getDirExecution() {
