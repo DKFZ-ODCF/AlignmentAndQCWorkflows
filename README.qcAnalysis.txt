@@ -18,9 +18,34 @@ runSlimWorkflow             false   Use a full workflow with a lot of separate s
 
 == Changelist
 
+* Version update to UPCOMING
+
+- ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
+- fingerprinting for WGBS
+- turned off faulty fingerprinting on Conveys
+- classify FASTQs as QC-passed or QC-failed based on FASTQC output
+
+* Version update to 1.1.73
+
+- fingerprinting for WES and WGS (runFingerprinting:Boolean, fingerprintingSitesFile)
+- tuned parameters for sambamba support and extracted BAM compression into separate step for performance reasons
+
+* Version update to 1.1.51
+
+- sambamba support
+- use local scratch on nodes ()
+- resource size 't' for testing purposes
+- fixed off-by-one error in moabs output
+
+* AlignmentAndQCWorkflows-1.1.2
+
 - Renamed plugin to AlignmentAndQCWorkflows.
 
 * Version update to 1.0.186
+
+- sambamba support for duplication marking
+- resource size 't' for testing purposes
+- support for samtools 1.0+ and sambamba 0.5.9 (supplementary reads)
 
 * Version update to 1.0.182
 

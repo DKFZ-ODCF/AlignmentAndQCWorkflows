@@ -1,4 +1,4 @@
-# Quality control workflows collection for Roddy
+# Alignment and Quality Control Plugin for Roddy
 
 This plugins contains a series of alignment and quality control related workflows:
 - PanCancer alignment workflow for whole genome and exome
