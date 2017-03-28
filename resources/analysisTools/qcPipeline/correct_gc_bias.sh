@@ -19,9 +19,9 @@ ${RSCRIPT_BINARY} "$TOOL_CORRECT_GC_BIAS_R" \
 	--qcTab		"$corrected_table_slim" \
 	--gcFile	"$GC_CONTENT_FILE_ALN" \
 	--outDir	"$aceseqOutputDirectory" \
-	--lowess_f	"$LOWESS_F" \
-	--scaleFactor	"$SCALE_FACTOR" \
-	--coverageYlims "$COVERAGEPLOT_YLIMS"
+	--lowess_f	"$LOWESS_F_ALN" \
+	--scaleFactor	"$SCALE_FACTOR_ALN" \
+	--coverageYlims "$COVERAGEPLOT_YLIMS_ALN"
 
 
 if [[ $? != 0 ]]
@@ -38,7 +38,7 @@ ${PYTHON_BINARY} "$TOOL_CONVERT_TO_JSON" \
 	--file 	"$corrected_table_slim" \
 	--id 	"$pid" \
 	--out 	"$tmp_qc_value_file" \
-	--key	"$GC_bias_json_key"
+	--key	"$GC_bias_json_key_ALN"
 
 if [[ $? != 0 ]]
 then
