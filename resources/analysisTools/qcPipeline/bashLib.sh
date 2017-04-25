@@ -93,7 +93,7 @@ printInfo () {
 assertNonEmpty () {
     local value="$1"
     if [[ "$value" == "" ]]; then
-        throw_empty_value "$message" || return $?
+        throw_empty_value || return $?
     fi
 }
 

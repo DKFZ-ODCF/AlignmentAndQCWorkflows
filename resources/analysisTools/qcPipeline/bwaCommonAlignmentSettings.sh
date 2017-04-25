@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIR_SCRATCH=$PBS_SCRATCH_DIR/$PBS_JOBID
+DIR_SCRATCH="${RODDY_SCRATCH}"
 
 
 #otherError="0"
@@ -39,9 +39,9 @@ u2=""
 
 if [[ $useAdaptorTrimming == true ]]
 then
-    i1=$DIR_SCRATCH/at_i1
-    i2=$DIR_SCRATCH/at_i2
-    o1=$DIR_SCRATCH/at_o1
+    i1=$RODDY_SCRATCH/at_i1
+    i2=$RODDY_SCRATCH/at_i2
+    o1=$RODDY_SCRATCH/at_o1
     o2=/dev/null
     u1=/dev/null
     u2=/dev/null

@@ -38,7 +38,7 @@ mbuf () {
 
 
 runningOnConvey () {
-    if [[ "$PBS_QUEUE" == convey* ]]; then
+    if [[ "${PBS_QUEUE:-none}" == convey* ]]; then
     	echo "true"
     else
     	echo "false"
@@ -128,14 +128,12 @@ matchPrefixInArray () {
 
 isControlSample () {
     assertNonEmpty "$1" "isControlSample expects sample type name as single parameter" || return $?
-    assertNonEmpty "$possibleControlSampleNamePrefixes" "Undefined/empty possibleControlSampleNamePrefixes" || return $?
     declare -la prefixes="${possibleControlSampleNamePrefixes[@]}"
     matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
 isTumorSample () {
     assertNonEmpty "$1" "isTumorSample expects sample type name as single parameter" || return $?
-    assertNonEmpty "$possibleTumorSampleNamePrefixes" "Undefined/empty possibleTumorSampleNamePrefixes" || return $?
     declare -la prefixes="${possibleTumorSampleNamePrefixes[@]}"
     matchPrefixInArray "$1" "${prefixes[@]}"
 }

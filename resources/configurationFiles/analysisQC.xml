@@ -24,7 +24,8 @@
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
 
         <!-- Configuration options -->
-        <cvalue name='useRoddyScratchAsBigFileScratch' value='true' type='boolean'
+        <cvalue name="runSlimWorkflow" value="true" type="boolean"/>
+        <cvalue name='useRoddyScratchAsBigFileScratch' value='false' type='boolean'
                 description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
