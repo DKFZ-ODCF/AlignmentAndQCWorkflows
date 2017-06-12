@@ -13,7 +13,7 @@ use Pod::Usage;
 use Test::Simple;
 use Test::More;
 use constant { INDENT_INCREMENT => 2 };
-use Data::Dumper;
+# use Data::Dumper;
 
 
 sub runTests () {

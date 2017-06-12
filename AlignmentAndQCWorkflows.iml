@@ -24,6 +24,8 @@
     <orderEntry type="module" module-name="PluginBase" />
     <orderEntry type="module" module-name="Roddy" />
     <orderEntry type="module" module-name="RoddyToolLib" />
+    <orderEntry type="library" name="R User Library" level="project" />
+    <orderEntry type="library" name="R Skeletons" level="application" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />
