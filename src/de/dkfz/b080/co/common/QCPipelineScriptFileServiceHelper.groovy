@@ -22,7 +22,7 @@ class QCPipelineScriptFileServiceHelper {
      * @return
      */
     static List<LaneFileGroup>  sortAndPairLaneFilesToGroupsForSampleAndRun(ExecutionContext context, Sample sample, String libraryID, String runName, List<File> files) {
-        COConfig config = new COConfig(context)
+        AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
         LibraryID libId = libraryID == null ? new LibraryID(config.defaultLibraryName) : new LibraryID(libraryID)
 
         List<File> sortedFiles = [];

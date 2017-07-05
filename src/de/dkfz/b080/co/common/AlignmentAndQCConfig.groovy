@@ -31,6 +31,7 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_CYTOSINE_POSITIONS_INDEX = "CYTOSINE_POSITIONS_INDEX"
     public static final String CVALUE_RUN_FINGERPRINTING = "runFingerprinting"
     public static final String CVALUE_FINGERPRINTING_SITES_FILE="fingerprintingSitesFile"
+    public static final String CVALUE_DEFAULT_LIBRARY_NAME = "defaultLibraryName"
 
     public AlignmentAndQCConfig(ExecutionContext context) {
         super(context)
@@ -174,6 +175,10 @@ class AlignmentAndQCConfig extends COConfig {
 
     public boolean getUseExistingPairedBams() {
         return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false)
+    }
+
+    public String getDefaultLibraryName() {
+        return configValues. getString(CVALUE_DEFAULT_LIBRARY_NAME, "null")
     }
 
 }
