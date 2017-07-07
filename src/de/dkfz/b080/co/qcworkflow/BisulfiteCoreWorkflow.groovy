@@ -29,7 +29,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
 
@@ -117,7 +117,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         for (LaneFileGroup lfg : laneFileGroups) {
             List<LaneFile> copyOfFiles = new LinkedList<>();
             for (LaneFile lf : lfg.getFilesInGroup()) {
-                LaneFile copyOfFile = new LaneFile(lf.getPath(), context, lf.getCreatingJobsResult(), lf.getParentFiles(), lf.getFileStage());
+                LaneFile copyOfFile = new LaneFile(lf, context)
                 copyOfFiles.add(copyOfFile);
             }
             copyOfLaneFileGroups.add(new LaneFileGroup(context, lfg.getId(), lfg.getRun(), sample, copyOfFiles));
@@ -127,7 +127,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
     @Override
     public boolean checkExecutability(ExecutionContext context) {
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
             return false;

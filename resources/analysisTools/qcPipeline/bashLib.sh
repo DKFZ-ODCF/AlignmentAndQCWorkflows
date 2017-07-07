@@ -28,3 +28,29 @@ function runningOnConvey {
     	echo "false"
     fi
 }
+toMinusIEqualsList () {
+    declare -la inputFiles=($@)
+    for inFile in ${inputFiles[@]}; do
+            echo -n "I=$inFile "
+    done
+    echo
+}
+
+
+stringJoin () {
+    local separator="$1"
+    shift
+    assertNonEmpty "$separator" "Undefined separator" || return $?
+    declare -la values=($@)
+    local result=""
+    local first=true
+    for value in ${values[@]}; do
+        if [[ $first == true ]]; then
+            result="$value"
+            first=false
+        else
+            result="$result$separator$value"
+        fi
+    done
+    echo "$result"
+}

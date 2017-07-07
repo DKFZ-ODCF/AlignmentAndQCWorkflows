@@ -15,6 +15,8 @@ WARNING_FILE=${DIR_SNPCOMP}/${LANE}_vs_controlSNP_${snpCnt0}x${snpCnt1}_WARNING
 
 echo "$OUTFILE, $WARNING_FILE" >> $TESTFILE
 
+declare -a CHROMOSOME_INDICES=${CHROMOSOME_INDICES}
+
 for chridx in ${CHROMOSOME_INDICES[@]}
 do
 	chrom=${CHR_PREFIX}$chridx

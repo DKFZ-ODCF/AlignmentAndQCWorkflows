@@ -19,6 +19,17 @@
     <orderEntry type="library" name="PluginBase" level="application" />
     <orderEntry type="library" name="DefaultPlugin" level="application" />
     <orderEntry type="library" name="roddyBundledLibraries" level="project" />
-    <orderEntry type="module" module-name="RoddyCore" />
+    <orderEntry type="module" module-name="BatchEuphoria" />
+    <orderEntry type="module" module-name="Roddy" />
+    <orderEntry type="module" module-name="RoddyToolLib" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../Roddy/dist/plugins/PluginBase_1.0.24-1/PluginBase.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>

@@ -30,6 +30,7 @@ NP_MD5_IN=${localScratchDirectory}/np_md5_in
 returnCodeMarkDuplicatesFile=${tempDirectory}/rcMarkDup.txt
 bamname=`basename ${FILENAME}`
 
+declare -a INPUT_FILES="$INPUT_FILES"
 # Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
 if [[ -v bam && ! -z "$bam" ]]; then
     EXISTING_BAM="$bam"
@@ -45,17 +46,11 @@ if [[ -f ${FILENAME} && -s ${FILENAME} ]]; then
     fi
 fi
 
-# Convert Roddy input array to colon separated array.
-strlen=`expr ${#INPUT_FILES} - 2`
-tempInputFiles=""
-for inFile in ${INPUT_FILES:1:$strlen}; do tempInputFiles=${tempInputFiles}":"${inFile}; done
-INPUT_FILES=${tempInputFiles:1}
-
 if [[ -v EXISTING_BAM ]]; then
         singlebams=`${SAMTOOLS_BINARY} view -H ${EXISTING_BAM} | grep "^@RG"`
         [[ -z "$singlebams" ]] && echo "could not detect single lane BAM files in ${EXISTING_BAM}, stopping here" && exit 23
 
-        notyetmerged=`perl ${TOOL_CHECK_ALREADY_MERGED_LANES} ${INPUT_FILES} "$singlebams" ${pairedBamSuffix} $SAMPLE`
+        notyetmerged=`perl ${TOOL_CHECK_ALREADY_MERGED_LANES} $(stringJoin ":" ${INPUT_FILES[@]}) "$singlebams" ${pairedBamSuffix} $SAMPLE`
         [[ "$?" != 0 ]] && echo "something went wrong with the detection of merged files in ${EXISTING_BAM}, stopping here" && exit 24
 
         # the Perl script returns BAM names separated by :, ending with :
@@ -66,7 +61,7 @@ if [[ -v EXISTING_BAM ]]; then
         else	# new lane(s) need to be merged to the BAM
 		    mkdir -p $tempDirectory
             # input files is now the merged file and the new file(s)
-            INPUT_FILES=${EXISTING_BAM}":"$notyetmerged
+            declare -a INPUT_FILES=("$FILENAME" $(echo $notyetmerged | sed -re 's/:/ /g'))
             # keep the old metrics file for comparison. For an externally provided BAM (via cvalue 'bam')
             # that file may not exist in the target directory.
             if [[ -f $FILENAME_METRICS ]]; then
@@ -81,10 +76,6 @@ fi
 mkfifo ${NP_PIC_OUT} ${NP_SAM_IN} ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_MD5_IN}
 
 mergeINPUT=''
-
-oIFS=${IFS}; IFS=":"
-for bamfile in ${INPUT_FILES}; do mergeINPUT=${mergeINPUT}' I='$bamfile; done
-IFS=${oIFS}
 
 MBUF_100M="${MBUFFER_BINARY} -m 100m -q -l /dev/null"
 MBUF_2G="${MBUFFER_BINARY} -m 2g -q -l /dev/null"
@@ -110,7 +101,7 @@ if [[ ${useBioBamBamMarkDuplicates} == false ]]; then
 
     # make picard write SAM output that is later compressed more efficiently with samtools
     if [[ ${bamFileExists} == false ]]; then
-        (JAVA_OPTIONS="-Xms64G -Xmx64G" $PICARD_BINARY MarkDuplicates ${mergeINPUT} OUTPUT=${NP_PIC_OUT} METRICS_FILE=${FILENAME_METRICS}.tmp MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${FILEHANDLES} TMP_DIR=${tempDirectory} COMPRESSION_LEVEL=0 VALIDATION_STRINGENCY=SILENT ${mergeAndRemoveDuplicates_argumentList} ASSUME_SORTED=TRUE CREATE_INDEX=FALSE MAX_RECORDS_IN_RAM=12500000; echo $? > ${returnCodeMarkDuplicatesFile}) & procIDPicard=$!
+        (JAVA_OPTIONS="-Xms64G -Xmx64G" $PICARD_BINARY MarkDuplicates $(toMinusIEqualsList ${INPUT_FILES[@]}) OUTPUT=${NP_PIC_OUT} METRICS_FILE=${FILENAME_METRICS}.tmp MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${FILEHANDLES} TMP_DIR=${tempDirectory} COMPRESSION_LEVEL=0 VALIDATION_STRINGENCY=SILENT ${mergeAndRemoveDuplicates_argumentList} ASSUME_SORTED=TRUE CREATE_INDEX=FALSE MAX_RECORDS_IN_RAM=12500000; echo $? > ${returnCodeMarkDuplicatesFile}) & procIDPicard=$!
 
         # provide named pipes of SAM type
         (cat ${NP_PIC_OUT} | ${MBUF_2G} | tee ${NP_SAM_IN} ${NP_COMBINEDANALYSIS_IN} > /dev/null) & procIDPicardOutPipe=$!
@@ -144,7 +135,7 @@ else
             level=9 \
             index=1 \
             indexfilename=$tempIndexFile \
-            ${mergeINPUT} \
+            $(toMinusIEqualsList ${INPUT_FILES[@]}) \
             O=${NP_PIC_OUT}; echo $? > ${returnCodeMarkDuplicatesFile}) & procIDBBB=$!
 
         # TODO: The NP readers processes need to be started *before* the pipe-writing process. ^^ Move up!

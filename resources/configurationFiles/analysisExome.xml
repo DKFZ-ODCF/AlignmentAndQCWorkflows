@@ -2,6 +2,7 @@
                configurationType='analysis'
                class='de.dkfz.roddy.core.Analysis'
                workflowClass='de.dkfz.b080.co.qcworkflow.QCPipeline'
+               runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
                imports='qcAnalysis'
                canCreateTestdata='true'
                listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,readBinsCoverage,qcSummary,onTargetCoverage,onTargetCoveragePlotter,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff,targetExtractCoverageSlim"
@@ -43,7 +44,7 @@
                 <rset size="s" memory="6" cores="2" nodes="1" walltime="2"/>
                 <rset size="m" memory="7" cores="2" nodes="1" walltime="4"/>
                 <rset size="l" memory="8" cores="2" nodes="1" walltime="6"/>
-                <rset size="xl" memory="9" cores="2" nodes="1" walltime="8"/>
+                <rset size="xl" memory="9" cores="2" nodes="1" walltime="24"/>
             </resourcesets>
             <!-- The first input object will be obsolete at some point, currently, filegroups cannot be the first object. -->
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_PARENTBAM" />

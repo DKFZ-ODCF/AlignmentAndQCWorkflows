@@ -5,7 +5,7 @@ import de.dkfz.b080.co.common.*;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
 import de.dkfz.roddy.core.*
-import de.dkfz.roddy.execution.io.fs.FileSystemInfoProvider;
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper;
 import groovy.transform.CompileStatic;
 import java.util.*;
@@ -36,7 +36,7 @@ public class QCPipeline extends Workflow {
         final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         if (samples.size() == 0)
@@ -127,7 +127,7 @@ public class QCPipeline extends Workflow {
         for (LaneFileGroup lfg : laneFileGroups) {
             List<LaneFile> copyOfFiles = new LinkedList<>();
             for (LaneFile lf : lfg.getFilesInGroup()) {
-                LaneFile copyOfFile = new LaneFile(lf.getPath(), context, lf.getCreatingJobsResult(), lf.getParentFiles(), lf.getFileStage());
+                LaneFile copyOfFile = new LaneFile(lf, context);
                 copyOfFiles.add(copyOfFile);
             }
             copyOfLaneFileGroups.add(new LaneFileGroup(context, lfg.getId(), lfg.getRun(), sample, copyOfFiles));
@@ -226,7 +226,7 @@ public class QCPipeline extends Workflow {
             returnValue &= false
         }
 
-        FileSystemInfoProvider accessProvider = FileSystemInfoProvider.getInstance();
+        FileSystemAccessProvider accessProvider = FileSystemAccessProvider.getInstance();
         File bamFile = new File(singleBamParameter);
         if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable."));
@@ -279,7 +279,7 @@ public class QCPipeline extends Workflow {
     @Override
     public boolean createTestdata(ExecutionContext context) {
         boolean allOk = true;
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getProject().getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         for (Sample sample : samples) {
