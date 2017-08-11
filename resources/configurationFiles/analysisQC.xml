@@ -89,13 +89,6 @@
         <cvalue name='markDuplicatesVariant' value='' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
 
-        <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.4.6" type="string"
-                description="The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort."/>
-        <cvalue name="SAMBAMBA_FLAGSTATS_BINARY" value="sambamba_v0.4.6" type="string"
-                description="The sambamba version used only for making flagstats."/>
-        <!-- Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats. -->
-        <cvalue name="SAMBAMBA_MARKDUP_BINARY" value="sambamba_v0.5.9" type="string"
-                description="The sambamba version used only for duplication marking and merging."/>
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'
                 description="Please use -l 0, the workflow unpacks the BAM directly with samtools. Compression is faster and more stable with samtools."/>
 
