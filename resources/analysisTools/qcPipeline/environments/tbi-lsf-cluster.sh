@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+SAMBAMBA_VERSION=0.5.9
+SAMBAMBA_FLAGSTAT_VERSION=0.4.6
+SAMBAMBA_MARKDUP_VERSION=0.5.9
 module load R/3.0.0
 module load bwa/"${BWA_VERSION:-0.7.8}"      # select version!
 module load java/1.8.0_131
@@ -9,10 +12,6 @@ module load python/2.7.9
 module load samtools/0.1.19
 module load htslib/0.2.5
 module load bedtools/2.16.2
-
-# Also used for duplication marking.
-module load sambamba/0.5.9
-
 
 if markWithBiobambam; then
     module load libmaus/0.0.130
@@ -28,14 +27,26 @@ if [[ "WGBS" ]]; then
 fi
 
 # The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort.
+sambamba_sort_view() {
+    module load "sambamba/$SAMBAMBA_VERSION"
+    sambamba "$@"
+}
 export SAMBAMBA_BINARY=sambamba
 
 # The sambamba version used only for making flagstats.
-export SAMBAMBA_FLAGSTATS_BINARY=sambamba
 # Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats.
+sambamba_flagstat() {
+    module load "sambamba/$SAMBAMBA_FLAGSTAT_VERSION"
+    sambamba "$@"
+}
+export SAMBAMBA_FLAGSTATS_BINARY=sambamba_flagstat
 
 # The sambamba version used only for duplication marking and merging. Use the bash function here!
-export SAMBAMBA_MARKDUP_BINARY=sambamba
+sambamba_markdup() {
+    module load "sambamba/$SAMBAMBA_MARKDUP_VERSION"
+    sambamba "$@"
+}
+export SAMBAMBA_MARKDUP_BINARY=sambamba_markdup
 
 export PICARD_BINARY=picard.sh
 export FASTQC_BINARY=fastqc
@@ -68,7 +79,7 @@ export COVERAGEBED_BINARY=coverageBed
 if [[ WGBS ]]; then
     export BWA_BINARY=bwa-0.7.8-bisulfite
 else
-    export BWA_BINARY=bwa-0.7.8
+    export BWA_BINARY=bwa
     export BWA_ACCELERATED_BINARY=/opt/bb/bwa-0.7.8-r2.05/bin/bwa-bb
 fi
 
