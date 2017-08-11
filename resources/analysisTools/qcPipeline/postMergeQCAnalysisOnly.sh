@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source ${CONFIG_FILE}
-
 set -o pipefail
 set -u
 #~ today=`date +'%Y-%m-%d_%Hh%M'`

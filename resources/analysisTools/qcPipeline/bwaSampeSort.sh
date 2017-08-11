@@ -5,7 +5,6 @@
 #PBS -l mem=52g
 #PBS -m a
 
-source ${CONFIG_FILE}
 source "$TOOL_WORKFLOW_LIB"
 
 set -o pipefail

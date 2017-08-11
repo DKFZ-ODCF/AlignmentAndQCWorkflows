@@ -4,7 +4,6 @@
 #PBS -l nodes=1
 #PBS -m a
 
-source ${CONFIG_FILE}
 source "$TOOL_WORKFLOW_LIB"
 printInfo
 

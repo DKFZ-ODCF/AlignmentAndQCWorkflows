@@ -19,13 +19,14 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="COWorkflows" />
     <orderEntry type="library" name="roddyBundledLibraries" level="project" />
-    <orderEntry type="module" module-name="PluginBase" />
     <orderEntry type="module" module-name="Roddy" />
-    <orderEntry type="module" module-name="RoddyToolLib" />
     <orderEntry type="library" name="R User Library" level="project" />
     <orderEntry type="library" name="R Skeletons" level="application" />
+    <orderEntry type="module" module-name="COWorkflows" />
+    <orderEntry type="module" module-name="PluginBase" />
+    <orderEntry type="module" module-name="RoddyToolLib" />
+    <orderEntry type="module" module-name="BatchEuphoria_main" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />

@@ -1,4 +1,3 @@
-source ${CONFIG_FILE}
 
 TESTFILE=${DIR_SNPCOMP}/snpout_${LANE}_${PBS_ARRAYID}.txt
 

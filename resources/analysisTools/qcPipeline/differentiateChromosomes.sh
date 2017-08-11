@@ -5,8 +5,6 @@
 #PBS -l mem=1g
 #PBS -m a
 
-source ${CONFIG_FILE}
-
 filenameTemp=${FILENAMED}_tmp
 ${PYTHON_BINARY} ${TOOL_PAIRED_END_READ_ABERRATIONS_SCRIPT} --alignmentFile=${FILENAME} --outputFile=${filenameTemp} --printSummaryToStdOut --plotDistribution --Rpath=`dirname ${TOOL_PAIRED_END_READ_ABERRATIONS_SCRIPT}`
 

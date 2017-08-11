@@ -5,8 +5,6 @@
 #PBS -l mem=50g
 #PBS -m a
 
-source ${CONFIG_FILE}
-
 set -o pipefail
 
 today=`date +'%Y-%m-%d_%Hh%M'`

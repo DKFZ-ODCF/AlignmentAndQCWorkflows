@@ -5,8 +5,6 @@
 #PBS -l walltime=00:10:00
 #PBS -m a
 
-source ${CONFIG_FILE}
-
 ## the outfile name structure is necessary for the R script: sample_pid_readCoverage_${WINDOW_SIZE}kb_windows.txt
 #OUTFILENAME=$DIR_COVERAGE/tumor_AvD_59208_readCoverage_${WINDOW_SIZE}kb_windows.txt
 

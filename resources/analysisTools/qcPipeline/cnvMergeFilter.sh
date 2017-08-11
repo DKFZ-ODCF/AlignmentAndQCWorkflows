@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -o pipefail
-source "$CONFIG_FILE"
 set -x
 
 ${PYTHON_BINARY} "${TOOL_MERGE_FILTER_CNV}" \

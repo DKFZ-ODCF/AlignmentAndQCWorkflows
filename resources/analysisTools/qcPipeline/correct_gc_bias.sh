@@ -1,7 +1,6 @@
 #!/usr/bin/sh
 
 set -o pipefail
-source "$CONFIG_FILE"
 source "$TOOL_WORKFLOW_LIB"
 set -x
 

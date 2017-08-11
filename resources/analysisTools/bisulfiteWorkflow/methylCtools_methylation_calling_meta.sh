@@ -1,6 +1,5 @@
 #!/bin/bash
 
-source $CONFIG_FILE
 source $TOOL_BASH_LIB
 
 set -xuv
