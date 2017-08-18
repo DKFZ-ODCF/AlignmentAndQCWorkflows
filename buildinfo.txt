@@ -1,4 +1,3 @@
-dependson=PluginBase:1.0.28
 dependson=COWorkflows:current
 JDKVersion=1.8
 GroovyVersion=2.4

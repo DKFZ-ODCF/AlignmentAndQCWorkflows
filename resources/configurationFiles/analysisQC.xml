@@ -8,20 +8,13 @@
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
-        <!-- Directories -->
-        <cvalue name="sharedFilesBaseDirectory" value="/icgc/ngs_share" type="path"/>
-        <cvalue name="assembliesBaseDirectory" value="${sharedFilesBaseDirectory}/assemblies" type="path"/>
-        <cvalue name="assembliesHG191000GenomesDirectory" value="${assembliesBaseDirectory}/hg19_GRCh37_1000genomes" type="path"/>
-        <cvalue name="chromosomeSizesBaseDirectory_human" value="${assembliesHG191000GenomesDirectory}/stats" type="path"/>
-        <cvalue name="hg19DatabasesDirectory" value="${assembliesHG191000GenomesDirectory}/databases" type="path"/>
-        <cvalue name='hg19DatabaseUCSCDirectory' value='${hg19DatabasesDirectory}/UCSC' type="path"/>
-        <cvalue name='hg19DatabaseENCODEDirectory' value='${hg19DatabasesDirectory}/ENCODE' type="path"/>
-
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
 
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
+
+        <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
 
         <!-- Configuration options -->
         <cvalue name="runSlimWorkflow" value="true" type="boolean"/>
@@ -40,9 +33,10 @@
         <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
         <cvalue name='runFingerprinting' value='false' type='boolean'
                 description='Fingerprint the individuals using a set of reference positions.'/>
-        <cvalue name="fingerprintingSitesFile_hs37" value="${hg19DatabasesDirectory}/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
+        <cvalue name="fingerprintingSitesFile_hs37"
+                value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes/databases/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
         <cvalue name="fingerprintingSitesFile" value="${fingerprintingSitesFile_hs37}" type="path"
-                description='BED file with the reference positions used for fingerprinting. Used by alignment workflow for fingerprinting individuals to discover swaps. Use runFingerprinting=true/false to toggle fingerprinting.'/>
+                description='BED file with the reference positions used for fingerprinting. Used for to discover sample swaps'/>
 
         <!-- Former ACEseq QC configurations. -->
         <cvalue name='runACEseqQc' value='true' type='boolean'
@@ -53,10 +47,11 @@
 
 
         <!-- For ACEseq QC in the alignment plugin -->
-        <cvalue name="gcContentFile_hg19_10kb" value="${chromosomeSizesBaseDirectory_human}/hg19_GRch37_100genomes_gc_content_10kb.txt" type="path"/>
+        <cvalue name="assembliesHG191000GenomesDirectory" value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes" type="path"/>
+        <cvalue name="gcContentFile_hg19_10kb" value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_10kb.txt" type="path"/>
         <cvalue name="gcContentFile_hg19_1kb"  value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_1kb.txt" type="path"/>
-        <cvalue name="mappabilityFile_hg19" value="${hg19DatabaseUCSCDirectory}/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz" type="path"/>
-        <cvalue name="replicationTimingFile_hg19_10kb" value="${hg19DatabaseENCODEDirectory}/ReplicationTime_10cellines_mean_10KB.Rda" type="path"/>
+        <cvalue name="mappabilityFile_hg19" value="${assembliesHG191000GenomesDirectory}/databases/UCSC/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz" type="path"/>
+        <cvalue name="replicationTimingFile_hg19_10kb" value="${assembliesHG191000GenomesDirectory}/databases/ENCODE/ReplicationTime_10cellines_mean_10KB.Rda" type="path"/>
         <cvalue name="chromosomeLengthFile_hg19" value="${assembliesHG191000GenomesDirectory}/stats/chrlengths.txt" type="path"/>
 
         <cvalue name="GC_CONTENT_FILE_ALN" value="${gcContentFile_hg19_10kb}" type="path"
