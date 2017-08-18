@@ -23,19 +23,22 @@ hm = "\n\
     usage     methylCtools <command> [options]\n\
 \n\
 \n\
-    command       in            out           function\n\
+    command            in            out           function\n\
     -----------------------------------------------------------------------------\n\
-    faconv        fa            fa            convert reference CtoT and GtoA\n\
-    fapos         fa            pos           generate positions index\n\
+    faconv             fa            fa            convert reference CtoT and GtoA\n\
+    fapos              fa            pos           generate positions index\n\
 \n\
-    fqconv        fq            fq            convert reads CtoT or GtoA\n\
-    fqsplit       fq            fq            split reads into multiple files\n\
+    fqconv             fq            fq            convert reads CtoT or GtoA\n\
+                                                   encode conversions in FASTQ identifier\n\
+    fqconv_samcomment  fq            fq            convert reads CtoT or GtoA\n\
+                                                   encode conversions in SAM comments\n\
+    fqsplit            fq            fq            split reads into multiple files\n\
 \n\
-    bconv         bam           bam           re-convert reads, filter alignments\n\
-    bcall         bam, pos      tab           call methylation status\n\
-    bfq           bam           fq            extract fastq from alignment\n\
-    bsnp          bam           tab           infer simple SNP genotype\n\
-    bspike        bam           tab           extract spike information\n"
+    bconv              bam           bam           re-convert reads, filter alignments\n\
+    bcall              bam, pos      tab           call methylation status\n\
+    bfq          	   bam           fq            extract fastq from alignment\n\
+    bsnp               bam           tab           infer simple SNP genotype\n\
+    bspike             bam           tab           extract spike information\n"
 
 
 #######################################
@@ -54,6 +57,10 @@ try:
 		elif "fqconv" in sys.argv:
 			from fqconv import mod_fqconv
 			mod_fqconv(sys.argv[sys.argv.index("fqconv")+1:])
+
+		elif "fqconv_samcomment" in sys.argv:
+			from fqconv_samcomment import mod_fqconv_samcomment
+			mod_fqconv_samcomment(sys.argv[sys.argv.index("fqconv_samcomment")+1:])
 
 		elif "fqsplit" in sys.argv:
 			from fqsplit import mod_fqsplit
