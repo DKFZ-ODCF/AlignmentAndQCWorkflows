@@ -205,6 +205,8 @@ wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomeCoverage 
 wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 16
 wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 17
 
+checkBamIsComplete "$FILENAME_SORTED_BAM"
+
 # rename QC files
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
 mv ${FILENAME_ISIZES_MATRIX}.tmp ${FILENAME_ISIZES_MATRIX} || throw 29 "Could not move file"

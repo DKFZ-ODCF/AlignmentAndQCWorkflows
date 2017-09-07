@@ -213,6 +213,8 @@ if [[ ${bamFileExists} == false ]]; then
     wait $procID_fqconv_r2 || throw 19 "Error in FQCONV (read 2)"
 fi
 
+checkBamIsComplete "$FILENAME_SORTED_BAM"
+
 # rename QC files
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
 mv ${FILENAME_ISIZES_MATRIX}.tmp ${FILENAME_ISIZES_MATRIX} || throw 29 "Could not move file"

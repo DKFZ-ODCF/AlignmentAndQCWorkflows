@@ -320,6 +320,8 @@ wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && e
 wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 12
 wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 13
 
+checkBamIsComplete "$FILENAME_SORTED_BAM"
+
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
 mv ${FILENAME_ISIZES_MATRIX}.tmp ${FILENAME_ISIZES_MATRIX} || throw 29 "Could not move file"
 mv ${FILENAME_EXTENDED_FLAGSTATS}.tmp ${FILENAME_EXTENDED_FLAGSTATS} || throw 30 "Could not move file"
