@@ -3,7 +3,6 @@ package de.dkfz.b080.co.common
 
 import de.dkfz.b080.co.files.*;
 import de.dkfz.roddy.core.ExecutionContext
-import de.dkfz.roddy.execution.jobs.JobDependencyID
 import de.dkfz.roddy.execution.jobs.JobResult
 import de.dkfz.roddy.knowledge.files.BaseFile
 import de.dkfz.roddy.tools.LoggerWrapper
@@ -48,7 +47,7 @@ class QCPipelineScriptFileServiceHelper {
                 String id = String.format("%s_%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), libraryID, runName, lane, index);
 
 
-                JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
+                JobResult result = JobResult.getFileExistedFakeJobResult(context)
                 LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>(Arrays.asList(
                         (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index,  0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result),
                         (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index2, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result)
@@ -93,7 +92,7 @@ class QCPipelineScriptFileServiceHelper {
 
                     LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>();
 
-                    JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
+                    JobResult result = JobResult.getFileExistedFakeJobResult(context)
 
                     filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index0, 0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
                     filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index1, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
