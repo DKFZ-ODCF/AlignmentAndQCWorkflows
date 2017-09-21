@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-SAMBAMBA_VERSION=0.5.9
-SAMBAMBA_FLAGSTAT_VERSION=0.4.6
-SAMBAMBA_MARKDUP_VERSION=0.5.9
+export SAMBAMBA_VERSION=0.5.9
+export SAMBAMBA_FLAGSTAT_VERSION=0.4.6
+export SAMBAMBA_MARKDUP_VERSION=0.5.9
 module load R/3.0.0
 module load bwa/"${BWA_VERSION:-0.7.8}"      # select version!
 module load java/1.8.0_131
@@ -28,23 +28,26 @@ fi
 
 # The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort.
 sambamba_sort_view() {
-    module load "sambamba/$SAMBAMBA_VERSION"
+    module load   "sambamba/$SAMBAMBA_VERSION"
     sambamba "$@"
+    module unload "sambamba/$SAMBAMBA_VERSION"
 }
 export SAMBAMBA_BINARY=sambamba
 
 # The sambamba version used only for making flagstats.
 # Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats.
 sambamba_flagstat() {
-    module load "sambamba/$SAMBAMBA_FLAGSTAT_VERSION"
+    module load   "sambamba/$SAMBAMBA_FLAGSTAT_VERSION"
     sambamba "$@"
+    module unload "sambamba/$SAMBAMBA_FLAGSTAT_VERSION"
 }
 export SAMBAMBA_FLAGSTATS_BINARY=sambamba_flagstat
 
 # The sambamba version used only for duplication marking and merging. Use the bash function here!
 sambamba_markdup() {
-    module load "sambamba/$SAMBAMBA_MARKDUP_VERSION"
+    module load   "sambamba/$SAMBAMBA_MARKDUP_VERSION"
     sambamba "$@"
+    module unload "sambamba/$SAMBAMBA_MARKDUP_VERSION"
 }
 export SAMBAMBA_MARKDUP_BINARY=sambamba_markdup
 

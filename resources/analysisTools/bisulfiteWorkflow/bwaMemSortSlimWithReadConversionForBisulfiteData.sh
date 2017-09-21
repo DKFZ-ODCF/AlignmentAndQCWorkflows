@@ -57,6 +57,7 @@ bamFileExists=false
 # in case the BAM already exists, but QC files are missing, create these only
 if [[ -f ${FILENAME_SORTED_BAM} ]] && [[ -s ${FILENAME_SORTED_BAM} ]]
 then
+    checkBamIsComplete "$FILENAME_SORTED_BAM"
 	bamFileExists=true
 fi
 
@@ -193,6 +194,7 @@ else	# make sure to rename BAM file when it has been produced correctly
 	rm $FNPIPE2
 	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
 	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
 	if [[ -f ${tempBamIndexFile} ]]; then
@@ -212,8 +214,6 @@ if [[ ${bamFileExists} == false ]]; then
     wait $procID_fqconv_r1 || throw 18 "Error in FQCONV (read 1)"
     wait $procID_fqconv_r2 || throw 19 "Error in FQCONV (read 2)"
 fi
-
-checkBamIsComplete "$FILENAME_SORTED_BAM"
 
 # rename QC files
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"

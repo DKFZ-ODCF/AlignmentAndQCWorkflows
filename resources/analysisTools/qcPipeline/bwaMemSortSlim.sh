@@ -56,6 +56,7 @@ bamFileExists=false
 # in case the BAM already exists, but QC files are missing, create these only
 if [[ -f ${FILENAME_SORTED_BAM} ]] && [[ -s ${FILENAME_SORTED_BAM} ]]
 then
+    checkBamIsComplete "$FILENAME_SORTED_BAM"
 	bamFileExists=true
 fi
 
@@ -189,6 +190,7 @@ else	# make sure to rename BAM file when it has been produced correctly
 	rm $FNPIPE2
 	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
 	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
 	if [[ -f ${tempBamIndexFile} ]]; then
@@ -204,8 +206,6 @@ wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && 
 wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomeCoverage read bins" && exit 15
 wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 16
 wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 17
-
-checkBamIsComplete "$FILENAME_SORTED_BAM"
 
 # rename QC files
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
