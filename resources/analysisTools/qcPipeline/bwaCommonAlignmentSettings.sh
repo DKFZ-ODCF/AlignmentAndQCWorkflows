@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIR_SCRATCH=$PBS_SCRATCH_DIR/$PBS_JOBID
+DIR_SCRATCH=$RODDY_SCRATCH
 
 
 #otherError="0"

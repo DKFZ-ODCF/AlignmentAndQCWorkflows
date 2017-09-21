@@ -13,7 +13,7 @@ set -o pipefail
 ON_CONVEY=$(runningOnConvey)
 
 # use scratch dir for temp files: samtools sort uses the current working directory for them
-LCLSCRATCH=${PBS_SCRATCH_DIR}/${PBS_JOBID}
+LCLSCRATCH=${RODDY_SCRATCH}
 cd $LCLSCRATCH
 
 FNPIPE1=$LCLSCRATCH/NAMED_PIPE1
