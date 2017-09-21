@@ -11,6 +11,7 @@
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
         <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
+        <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
 
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
@@ -20,10 +21,13 @@
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
+
         <cvalue name='runFingerprinting' value='false' type='boolean'
                 description='Fingerprint the individuals using a set of reference positions.'/>
-        <cvalue name='fingerprintingSitesFile' value='' type='file'
-                description='BED file with the reference positions used for fingerprinting.'/>
+        <cvalue name="fingerprintingSitesFile_hs37"
+                value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes/databases/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
+        <cvalue name="fingerprintingSitesFile" value="${fingerprintingSitesFile_hs37}" type="path"
+                description='BED file with the reference positions used for fingerprinting. Used for to discover sample swaps'/>
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer" description="Threads for bwa mem."/>

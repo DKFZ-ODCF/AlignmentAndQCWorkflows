@@ -5,13 +5,12 @@
 #PBS -l mem=50g
 #PBS -m a
 
-source ${CONFIG_FILE}
 
 set -o pipefail
 
 today=`date +'%Y-%m-%d_%Hh%M'`
-WORKDIR=${DIR_TEMP}/${PBS_JOBID}
-LCLSCRATCH=${PBS_SCRATCH_DIR}/${PBS_JOBID}
+WORKDIR=${DIR_TEMP}/${RODDY_JOBID}
+LCLSCRATCH=${RODDY_SCRATCH}
 TMP_DIR=${FILENAME}_PICARDTEMP/
 mkdir $TMP_DIR
 mkdir -p $WORKDIR

@@ -2,8 +2,6 @@
 
 # Slim version of sampe sort
 
-source ${CONFIG_FILE}
-
 set -o pipefail
 
 ID=${RUN}_${LANE}

@@ -2,7 +2,6 @@
 
 #PBS -l walltime=2:00:00,nodes=1:ppn=1
 
-source ${CONFIG_FILE}
 
 TESTFILE=${DIR_SNPCOMP}/snpout_${LANE}.txt
 

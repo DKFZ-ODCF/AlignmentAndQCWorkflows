@@ -5,8 +5,6 @@
 #PBS -l walltime=12:00:00
 #PBS -m a
 
-source ${CONFIG_FILE}
-
 set -o pipefail
 
 #WINDOW_SIZE=1

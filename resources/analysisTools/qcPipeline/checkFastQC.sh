@@ -4,8 +4,6 @@
 #PBS -l nodes=1
 #PBS -m a
 
-source ${CONFIG_FILE}
-
 # Check for single lane processing.
 # For single lanes an empty fastqc file is created
 [[ -z "${useSingleEndProcessing+x}" && ! -f ${RAW_SEQ} ]] && touch ${FILENAME_FASTQC} && exit 0
@@ -14,7 +12,7 @@ source ${CONFIG_FILE}
 
 DIRNAME_FASTQC=`dirname $FILENAME_FASTQC`
 
-TMP_DIR=$DIRNAME_FASTQC/$PBS_JOBID
+TMP_DIR=$DIRNAME_FASTQC/$RODDY_JOBID
 mkdir $TMP_DIR
 
 ${FASTQC_BINARY} ${RAW_SEQ} --noextract -o $TMP_DIR

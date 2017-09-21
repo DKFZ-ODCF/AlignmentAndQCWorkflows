@@ -4,8 +4,6 @@
 #PBS -l walltime=5:00:00
 #PBS -m n
 
-source ${CONFIG_FILE}
-
 attachement=""
 if [[ ${FILENAME} == *targetExtract* ]] && [[ -n ${TARGETSIZE} ]]
 then
