@@ -54,3 +54,8 @@ stringJoin () {
     done
     echo "$result"
 }
+
+checkBamIsComplete () {
+    local bamFile="${1:?No BAM file given}"
+    "$TOOL_BAM_IS_COMPLETE" "$bamFile" || throw 40 "BAM is incomplete: $bamFile"
+}

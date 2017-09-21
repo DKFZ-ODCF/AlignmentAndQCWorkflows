@@ -60,7 +60,8 @@ bamFileExists=false
 # in case the BAM already exists, but QC files are missing, create these only
 if [[ -f ${FILENAME_SORTED_BAM} ]] && [[ -s ${FILENAME_SORTED_BAM} ]]
 then
-	bamFileExists=true
+    checkBamIsComplete "$FILENAME_SORTED_BAM"
+    bamFileExists=true
 fi
 
 # test if one of the fastq files is a fake fastq file to simulate paired end sequencing in PIDs with mixed sequencing (single and paired end)
@@ -187,6 +188,7 @@ else	# make sure to rename BAM file when it has been produced correctly
 	rm $FNPIPE2
 	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
 	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
 	if [[ -f ${tempBamIndexFile} ]]; then

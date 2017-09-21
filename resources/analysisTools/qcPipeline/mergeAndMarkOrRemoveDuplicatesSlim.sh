@@ -33,10 +33,12 @@ bamname=`basename ${FILENAME}`
 declare -a INPUT_FILES="$INPUT_FILES"
 # Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
 if [[ -v bam && ! -z "$bam" ]]; then
+    checkBamIsComplete "$bam"
     EXISTING_BAM="$bam"
 fi
 # Handle existing merged BAM at target location.
 if [[ -f ${FILENAME} && -s ${FILENAME} ]]; then
+    checkBamIsComplete "$FILENAME"
     if [[ -v EXISTING_BAM ]]; then
         echo "Input BAM provided via 'bam' option has precedence over existing merged BAM. Rescuing merged BAM."
         mv "$FILENAME" "${FILENAME}_before_${today}" || throw 50 "Could not move $FILENAME"
@@ -183,6 +185,7 @@ if [[ ${useBioBamBamMarkDuplicates} == false ]]; then
     if [[ ${bamFileExists} == false ]]; then
 	    wait $procIDPicard
 	    [[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Picard returned an exit code and the job will die now." && exit 100
+	    checkBamIsComplete "$tempBamFile"
         mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
         mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 39 "Could not move file"
         mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
@@ -199,6 +202,7 @@ else
     if [[ ${bamFileExists} == false ]]; then
     	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Biobambam returned an exit code and the job will die now." && exit 100
     	# always rename BAM, even if other jobs might have failed
+    	checkBamIsComplete "$tempBamFile"
     	mv ${tempBamFile} ${FILENAME} || throw 40 "Could not move file"
     	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
         mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 42 "Could not move file"
