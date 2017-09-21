@@ -37,10 +37,12 @@ declare -a INPUT_FILES="$INPUT_FILES"
 
 # Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
 if [[ -v bam && ! -z "$bam" ]]; then
+    checkBamIsComplete "$bam"
     EXISTING_BAM="$bam"
 fi
 # Handle existing merged BAM at target location.
 if [[ -f ${FILENAME} && -s ${FILENAME} ]]; then
+    checkBamIsComplete "$FILENAME"
     if [[ -v EXISTING_BAM ]]; then
         echo "Input BAM provided via 'bam' option takes precendence over existing merged BAM. Rescuing merged BAM."
         mv "$FILENAME" "${FILENAME}_before_${today}" || throw 50 "Could not move $FILENAME"
@@ -270,6 +272,7 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
     if [[ ${bamFileExists} == false ]]; then
     	wait $procIDMarkdup
     	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Picard returned an exit code and the job will die now." && exit 100
+    	checkBamIsComplete "$tempBamFile"
         mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
     	if [[ "$mergeOnly" == false ]]; then
 	    	mv "$tempFilenameMetrics" "$FILENAME_METRICS" || throw 39 "Could not move file"
@@ -291,6 +294,7 @@ elif markWithSambamba; then
     	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Sambamba returned an exit code and the job will die now." && exit 100
         waitAndMaybeExit $procBamCompress "Error during BAM compression"
         waitAndMaybeExit $procIDFakeMetrics "Error from sambamba fake metrics" 5
+        checkBamIsComplete "$tempBamFile"
         mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
         mv "$tempFilenameMetrics" "$FILENAME_METRICS" || throw 39 "Could not move file"
       	waitAndMaybeExit $procIDMd5 "Error from MD5" 15
@@ -304,6 +308,7 @@ elif markWithBiobambam; then
         wait $procIDMarkdup
 	    [[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Biobambam returned an exit code and the job will die now." && exit 100
 	    # always rename BAM, even if other jobs might have failed
+	    checkBamIsComplete "$tempBamFile"
 	    mv ${tempBamFile} ${FILENAME} || throw 40 "Could not move file"
 	    mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
         mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 42 "Could not move file"
