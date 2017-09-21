@@ -21,7 +21,7 @@ TARGETS_PLOT=`dirname ${FILENAME_TARGETS_WITH_COVERAGE_TEXT}`"/${SAMPLE}_${PID}_
 
 MBUF_1G="${MBUFFER_BINARY} -m 1g -q -l /dev/null"
 
-localScratchDirectory=${PBS_SCRATCH_DIR}/${PBS_JOBID}
+localScratchDirectory=${RODDY_SCRATCH}
 NP_COMP_IN=${localScratchDirectory}/np_compression_in
 NP_FLAGSTATS_IN=${localScratchDirectory}/np_flagstats_in
 NP_COVERAGEQC_IN=${localScratchDirectory}/np_coverageqc_in
