@@ -20,6 +20,8 @@
     <orderEntry type="module" module-name="RoddyCore" />
     <orderEntry type="module" module-name="BatchEuphoria_main" />
     <orderEntry type="module" module-name="RoddyToolLib_main" />
+    <orderEntry type="library" name="R User Library" level="project" />
+    <orderEntry type="library" name="R Skeletons" level="application" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />

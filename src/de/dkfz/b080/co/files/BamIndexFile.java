@@ -1,7 +1,5 @@
 package de.dkfz.b080.co.files;
 
-import de.dkfz.roddy.execution.jobs.JobResult;
-
 /**
  *
  * @author michael

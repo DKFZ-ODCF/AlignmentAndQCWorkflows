@@ -6,7 +6,7 @@ import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
 import de.dkfz.roddy.execution.jobs.Job;
-import de.dkfz.roddy.execution.jobs.JobResult;
+import de.dkfz.roddy.execution.jobs.BEJobResult;
 import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.knowledge.files.FileGroup;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
@@ -167,7 +167,7 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
         List<BaseFile> parentFiles = new LinkedList<>();
         parentFiles.addAll(filesInGroup);
         Job job = new Job(run, run.createJobName(parentFiles.get(0), TOOL, true), TOOL, null, parameters, parentFiles, Arrays.asList((BaseFile) bamFile, flagstatsFile));
-        JobResult jobResult = job.run();
+        BEJobResult jobResult = job.run();
         flagstatsFile.setCreatingJobsResult(jobResult);
         if (indexCreated) bamIndexFile.setCreatingJobsResult(jobResult);
         if (indexCreated) bamFile.setIndexFile(bamIndexFile);
