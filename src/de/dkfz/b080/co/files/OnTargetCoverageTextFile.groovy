@@ -1,7 +1,8 @@
 package de.dkfz.b080.co.files
 
 import de.dkfz.b080.co.methods.Samtools
-import de.dkfz.roddy.knowledge.files.BaseFile.ConstructionHelperForManualCreation;
+import de.dkfz.roddy.knowledge.files.BaseFile
+import groovy.transform.CompileStatic
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,27 +11,24 @@ import de.dkfz.roddy.knowledge.files.BaseFile.ConstructionHelperForManualCreatio
  * Time: 10:39
  * To change this template use File | Settings | File Templates.
  */
-@groovy.transform.CompileStatic
-public class OnTargetCoverageTextFile extends COBaseFile {
+@CompileStatic
+class OnTargetCoverageTextFile extends COBaseFile {
 
-    private de.dkfz.b080.co.files.OnTargetCoveragePlotFile plotFile;
+    private OnTargetCoveragePlotFile plotFile
 
-    public OnTargetCoverageTextFile(BamFile parentFile) {
-        super(new ConstructionHelperForManualCreation(parentFile, null, null,null,null,null,null,null));
-    }
-//    OnTargetCoverageTextFile(File path, ExecutionContext executionContext, JobResult creatingJobsResult, List<BaseFile> parentFiles, FileStageSettings settings) {
-//        super(path, executionContext, creatingJobsResult, parentFiles, settings)
-//    }
-
-    public boolean hasPlotFile() {
-        return plotFile != null;
+    OnTargetCoverageTextFile(BamFile parentFile) {
+        super(new BaseFile.ConstructionHelperForManualCreation(parentFile, null, null,null,null,null,null,null))
     }
 
-    public de.dkfz.b080.co.files.OnTargetCoveragePlotFile getPlotFile() {
+    boolean hasPlotFile() {
+        return plotFile != null
+    }
+
+    OnTargetCoveragePlotFile getPlotFile() {
         return plotFile
     }
 
-    public de.dkfz.b080.co.files.OnTargetCoveragePlotFile createPlotFile() {
-        return Samtools.createOnTargetCoveragePlot(executionContext, this);
+    OnTargetCoveragePlotFile createPlotFile() {
+        return Samtools.createOnTargetCoveragePlot(executionContext, this)
     }
 }

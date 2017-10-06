@@ -3,7 +3,7 @@ package de.dkfz.b080.co.files;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.jobs.Job;
-import de.dkfz.roddy.execution.jobs.JobResult;
+import de.dkfz.roddy.execution.jobs.BEJobResult;
 import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.knowledge.files.FileGroup;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
@@ -91,7 +91,7 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
         List<BaseFile> parentFiles = new LinkedList<BaseFile>();
         parentFiles.addAll(filesInGroup);
         Job job = new Job(context, context.createJobName(parentFiles.get(0), COConstants.TOOL_SAMPESORT, true), COConstants.TOOL_SAMPESORT, null, parameters, parentFiles, Arrays.asList((BaseFile)bamFile, indexFile, flagstatsFile));
-        JobResult jobResult = job.run();
+        BEJobResult jobResult = job.run();
 
         flagstatsFile.setCreatingJobsResult(jobResult);
         indexFile.setCreatingJobsResult(jobResult);

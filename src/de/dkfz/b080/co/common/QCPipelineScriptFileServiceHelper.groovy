@@ -1,9 +1,11 @@
 
 package de.dkfz.b080.co.common
 
-import de.dkfz.b080.co.files.*;
+import de.dkfz.b080.co.files.*
 import de.dkfz.roddy.core.ExecutionContext
-import de.dkfz.roddy.execution.jobs.JobResult
+import de.dkfz.roddy.execution.jobs.BEFakeJobID
+import de.dkfz.roddy.execution.jobs.BEJobResult
+import de.dkfz.roddy.execution.jobs.FakeBEJob
 import de.dkfz.roddy.knowledge.files.BaseFile
 import de.dkfz.roddy.tools.LoggerWrapper
 
@@ -47,7 +49,7 @@ class QCPipelineScriptFileServiceHelper {
                 String id = String.format("%s_%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), libraryID, runName, lane, index);
 
 
-                JobResult result = JobResult.getFileExistedFakeJobResult(context)
+                BEJobResult result = getFileExistedFakeJobResult()
                 LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>(Arrays.asList(
                         (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index,  0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result),
                         (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index2, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result)
@@ -92,7 +94,7 @@ class QCPipelineScriptFileServiceHelper {
 
                     LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>();
 
-                    JobResult result = JobResult.getFileExistedFakeJobResult(context)
+                    BEJobResult result = getFileExistedFakeJobResult()
 
                     filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context, new COFileStageSettings(id, index0, 0, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
                     filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context, new COFileStageSettings(id, index1, 1, runName, libraryID, sample, context.getDataSet(), COFileStage.INDEXEDLANE), result);
@@ -105,5 +107,9 @@ class QCPipelineScriptFileServiceHelper {
             logger.postAlwaysInfo("There were no files for sample ${sample.getName()} and run ${runName}" )
         }
         return fileGroups;
+    }
+
+    static BEJobResult getFileExistedFakeJobResult() {
+        return new BEJobResult(null, new FakeBEJob(new BEFakeJobID(BEFakeJobID.FakeJobReason.FILE_EXISTED)), null, null, null, null)
     }
 }
