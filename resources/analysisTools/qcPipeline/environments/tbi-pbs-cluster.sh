@@ -16,7 +16,7 @@ export SAMTOOLS_BINARY=samtools-0.1.19
 
 # biobambam
 export BAMSORT_BINARY=bamsort-0.0.148
-export MARKDUPLICATES_BINARY=bammarkduplicates-0.0.148
+export BAMMARKDUPLICATES_BINARY=bammarkduplicates-0.0.148
 
 export JAVA_BINARY=java8
 

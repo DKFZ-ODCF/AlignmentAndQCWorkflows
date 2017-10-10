@@ -1,10 +1,11 @@
 
 package de.dkfz.b080.co.common
 
-import de.dkfz.b080.co.files.*;
+import de.dkfz.b080.co.files.*
 import de.dkfz.roddy.core.ExecutionContext
-import de.dkfz.roddy.execution.jobs.JobDependencyID
-import de.dkfz.roddy.execution.jobs.JobResult
+import de.dkfz.roddy.execution.jobs.BEFakeJobID
+import de.dkfz.roddy.execution.jobs.BEJobResult
+import de.dkfz.roddy.execution.jobs.FakeBEJob
 import de.dkfz.roddy.knowledge.files.BaseFile
 import de.dkfz.roddy.tools.LoggerWrapper
 
@@ -51,7 +52,7 @@ class QCPipelineScriptFileServiceHelper {
                 LaneID laneId = new LaneID(String.format("%s_%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), libId, runName, lane, index));
 
 
-                JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
+                BEJobResult result = getFileExistedFakeJobResult()
                 LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>(Arrays.asList(
                         (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context,
                                 new COFileStageSettings(laneId, index,  0, new RunID(runName), libId, sample, context.getDataSet(), COFileStage.INDEXEDLANE),
@@ -100,7 +101,7 @@ class QCPipelineScriptFileServiceHelper {
 
                     LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>();
 
-                    JobResult result = new JobResult(context, null, JobDependencyID.getFileExistedFakeJob(context), false, null, null, null);
+                    BEJobResult result = getFileExistedFakeJobResult()
 
                     filesInGroup << (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context,
                             new COFileStageSettings(laneId, index0, 0, new RunID(runName), libId, sample, context.getDataSet(), COFileStage.INDEXEDLANE),
@@ -117,5 +118,9 @@ class QCPipelineScriptFileServiceHelper {
             logger.postAlwaysInfo("There were no files for sample ${sample.getName()} and run ${runName}" )
         }
         return fileGroups;
+    }
+
+    static BEJobResult getFileExistedFakeJobResult() {
+        return new BEJobResult(null, new FakeBEJob(new BEFakeJobID(BEFakeJobID.FakeJobReason.FILE_EXISTED)), null, null, null, null)
     }
 }

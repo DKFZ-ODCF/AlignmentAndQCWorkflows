@@ -2,7 +2,7 @@ package de.dkfz.b080.co.methods
 import de.dkfz.b080.co.files.*
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.execution.jobs.Job
-import de.dkfz.roddy.execution.jobs.JobResult
+import de.dkfz.roddy.execution.jobs.BEJobResult
 import de.dkfz.roddy.execution.jobs.ScriptCallingMethod
 import de.dkfz.roddy.execution.jobs.StaticScriptProviderClass
 import de.dkfz.roddy.knowledge.files.BaseFile
@@ -43,7 +43,7 @@ class Common {
         ]);
         List<BaseFile> pFiles = [(BaseFile) bamFile.getIndexFile()];
 
-        JobResult jobResult = new Job(run, run.createJobName(pFiles[0], CHROMOSOMEDIFF), CHROMOSOMEDIFF, parameters, pFiles).run();
+        BEJobResult jobResult = new Job(run, run.createJobName(pFiles[0], CHROMOSOMEDIFF), CHROMOSOMEDIFF, parameters, pFiles).run();
         tFile.setCreatingJobsResult(jobResult);
         pFile.setCreatingJobsResult(jobResult);
         ChromosomeDiffFileGroup fGroup = new ChromosomeDiffFileGroup([tFile, pFile] as List<BaseFile>);
@@ -114,7 +114,7 @@ class Common {
                 }
         }
 
-        JobResult jobResult = new Job(run, run.createJobName(files[0], QCSUMMARY), QCSUMMARY, parameters, new LinkedList<BaseFile>(files), [(COBaseFile) qcSummaryFile] as List<BaseFile>).run();
+        BEJobResult jobResult = new Job(run, run.createJobName(files[0], QCSUMMARY), QCSUMMARY, parameters, new LinkedList<BaseFile>(files), [(COBaseFile) qcSummaryFile] as List<BaseFile>).run();
         qcSummaryFile.setCreatingJobsResult(jobResult);
         return qcSummaryFile;
     }

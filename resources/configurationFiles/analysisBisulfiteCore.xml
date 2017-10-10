@@ -9,6 +9,10 @@
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
+
+        <cvalue name="MOABS_VERSION" value="1.3.0" type="string"/>
+        <cvalue name="BWA_BISULPHITE_VERSION" value="0.7.8-bisulfite" type="string"/>
+
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${library}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
 

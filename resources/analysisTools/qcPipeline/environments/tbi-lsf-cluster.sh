@@ -1,88 +1,118 @@
 #!/usr/bin/env bash
 
-export SAMBAMBA_VERSION=0.5.9
-export SAMBAMBA_FLAGSTAT_VERSION=0.4.6
-export SAMBAMBA_MARKDUP_VERSION=0.5.9
-module load R/3.0.0
-module load bwa/"${BWA_VERSION:-0.7.8}"      # select version!
-module load java/1.8.0_131
-module load fastqc/1.11.3
-module load perl/5.20.2
-module load python/2.7.9
-module load samtools/0.1.19
-module load htslib/0.2.5
-module load bedtools/2.16.2
+set -vex
 
-if markWithBiobambam; then
-    module load libmaus/0.0.130
-    module load biobambam/0.0.148
-elif markWithPicard; then
-    module load picard/1.125
-else
-    echo "Oops" > /dev/stderr
-fi
+# Load a module with $name and using the version given by the $versionVariable.
+# If the version is not given, take the name, put it into upper case and append _VERSION
+versionVariable () {
+    local versionVariable="$1"
+    if [[ -z "$versionVariable" ]]; then
+        eche $(echo "$name" | tr [a-z] [A-Z])"_VERSION"
+    else
+        echo "$versionVariable"
+    fi
+}
+moduleLoad() {
+    local name="${1:?No module name given}"
+    local versionVariable=$(versionVariable "$2")
+    module load "${name}/${!versionVariable}" || exit 200
+}
+moduleUnload() {
+    local name="${1:?No module name given}"
+    local versionVariable=$(versionVariable "$2")
+    module unload "${name}/${!versionVariable}" || exit 200
+}
 
-if [[ "WGBS" ]]; then
-    module load moabs/1.3.0
-fi
+moduleLoad htslib
+export BGZIP_BINARY=bgzip
+export TABIX_BINARY=tabix
 
-# The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort.
+moduleLoad R
+export RSCRIPT_BINARY=Rscript
+
+moduleLoad java
+export JAVA_BINARY=java
+
+moduleLoad fastqc
+export FASTQC_BINARY=fastqc
+
+moduleLoad perl
+export PERL_BINARY=perl
+
+moduleLoad python
+export PYTHON_BINARY=python
+
+moduleLoad pypy
+export PYPY_BINARY=pypy-c
+
+moduleLoad samtools
+export SAMTOOLS_BINARY=samtools
+export BCFTOOLS_BINARY=bcftools
+
+moduleLoad bedtools
+export INTERSECTBED_BINARY=intersectBed
+export COVERAGEBED_BINARY=coverageBed
+export FASTAFROMBED_BINARY=fastaFromBed
+
+moduleLoad libmaus
+moduleLoad biobambam
+export BAMSORT_BINARY=bamsort
+export BAMMARKDUPLICATES_BINARY=bammarkduplicates
+
+moduleLoad picard
+export PICARD_BINARY=picard.sh
+
+moduleLoad vcftools
+export VCFTOOLS_SORT_BINARY=vcf-sort
+
+# There are different sambamba versions used for different tasks. The reason has something to do with performance and differences in the versions.
+# We define functions here that take the same parameters as the original sambamba, but apply them to the appropriate version by first loading
+# the correct version and after the call unloading the version. The _BINARY variables are set to the functions.
+
+# The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on Convey during view or sort.
 sambamba_sort_view() {
-    module load   "sambamba/$SAMBAMBA_VERSION"
+    moduleLoad sambamba
     sambamba "$@"
-    module unload "sambamba/$SAMBAMBA_VERSION"
+    moduleUnload sambamba
 }
 export SAMBAMBA_BINARY=sambamba
 
-# The sambamba version used only for making flagstats.
+# The sambamba version used only for flagstats. For the flagstats sambamba 0.4.6 used is equivalent to samtools 0.1.19 flagstats. Newer versions
+# use the new way of counting in samtools (accounting for supplementary reads).
 # Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats.
 sambamba_flagstat() {
-    module load   "sambamba/$SAMBAMBA_FLAGSTAT_VERSION"
+    moduleLoad sambamba SAMBAMBA_FLAGSTAT_VERSION
     sambamba "$@"
-    module unload "sambamba/$SAMBAMBA_FLAGSTAT_VERSION"
+    moduleUnload sambamba SAMBAMBA_FLAGSTAT_VERSION
 }
 export SAMBAMBA_FLAGSTATS_BINARY=sambamba_flagstat
 
 # The sambamba version used only for duplication marking and merging. Use the bash function here!
+# Should be changeable independently also for performance and stability reasons.
 sambamba_markdup() {
-    module load   "sambamba/$SAMBAMBA_MARKDUP_VERSION"
+    moduleLoad sambamba SAMBAMBA_MARKDUP_VERSION
     sambamba "$@"
-    module unload "sambamba/$SAMBAMBA_MARKDUP_VERSION"
+    moduleUnload sambamba SAMBAMBA_MARKDUP_VERSION
 }
 export SAMBAMBA_MARKDUP_BINARY=sambamba_markdup
 
-export PICARD_BINARY=picard.sh
-export FASTQC_BINARY=fastqc
-export SAMTOOLS_BINARY=samtools
-
-# biobambam
-export BAMSORT_BINARY=bamsort
-export MARKDUPLICATES_BINARY=bammarkduplicates
-
-export JAVA_BINARY=java
-
-# htslib/0.2.5
-export BGZIP_BINARY=bgzip
-export TABIX_BINARY=tabix
-
-export PERL_BINARY=perl
-export PYTHON_BINARY=python
-export PYPY_BINARY=pypy-c
-export RSCRIPT_BINARY=Rscript
-export MBUFFER_BINARY=mbuffer
-
-#export FASTAFROMBED_BINARY=fastaFromBed-2.16.2
-#export BCFTOOLS_BINARY=bcftools-0.1.19
-#export VCFTOOLS_SORT_BINARY=vcf-sort-0.1.10
-
-# WES only
-export INTERSECTBED_BINARY=intersectBed
-export COVERAGEBED_BINARY=coverageBed
-
-if [[ WGBS ]]; then
-    export BWA_BINARY=bwa-0.7.8-bisulfite
-else
+# Dependent on whether alignments are done on the FPGA or whether WGBS data are processed different BWA versions need to be loaded.
+if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
+    # This is actually only a lightly patched version that does not check for read numbers in identifiers.
+    moduleLoad bwa BWA_BISULPHITE_VERSION
     export BWA_BINARY=bwa
-    export BWA_ACCELERATED_BINARY=/opt/bb/bwa-0.7.8-r2.05/bin/bwa-bb
+else
+    if [[ ACCELERATED OR FPGA && FPGA-Node? ]]; then
+        moduleLoad bwa-bb BWA_VERSION
+        export BWA_ACCELERATED_BINARY=bwa-bb
+        export BWA_BINARY=bwa-bb
+    else
+        moduleLoad bwa
+        export BWA_BINARY=bwa
+    fi
+
 fi
 
+# Unversioned binaries.
+export MBUFFER_BINARY=mbuffer
+export CHECKSUM_BINARY=md5sum
