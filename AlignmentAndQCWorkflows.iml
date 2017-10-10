@@ -23,12 +23,12 @@
     <orderEntry type="library" name="roddyBundledLibraries" level="project" />
     <orderEntry type="library" name="R User Library" level="project" />
     <orderEntry type="library" name="R Skeletons" level="application" />
-    <orderEntry type="module" module-name="PluginBase" />
     <orderEntry type="module" module-name="BatchEuphoria_main" />
     <orderEntry type="module" module-name="RoddyCore" />
     <orderEntry type="module" module-name="RoddyToolLib_main" />
     <orderEntry type="module" module-name="BatchEuphoria" />
     <orderEntry type="module" module-name="COWorkflowsBasePlugin" />
+    <orderEntry type="module" module-name="PluginBase" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />
