@@ -1,27 +1,102 @@
 #!/usr/bin/env bash
 
-set -vex
+set -xv
 
-# Load a module with $name and using the version given by the $versionVariable.
-# If the version is not given, take the name, put it into upper case and append _VERSION
+
+## From http://unix.stackexchange.com/questions/26676/how-to-check-if-a-shell-is-login-interactive-batch
+shellIsInteractive () {
+    case $- in
+        *i*) echo "true";;
+        *)   echo "false";;
+    esac
+}
+export -f shellIsInteractive
+
+
+## funname () ( set +exv; ...; ) may be better to get rid of too much output (mind the (...) subshell) but the exit won't work anymore.
+## Maybe set -E + trap "bla" ERR would work? http://fvue.nl/wiki/Bash:_Error_handling#Exit_on_error
+printStackTrace () {
+    frameNumber=0
+    while caller $frameNumber ;do
+      ((frameNumber++))
+    done
+}
+export -f printStackTrace
+
+
+errout () {
+    local exitCode="$1"
+    local message="$2"
+    env printf "Error(%d): %s\n" "$exitCode" "$message" >> /dev/stderr
+}
+export -f errout
+
+
+## This is to effectively debug on the command line. The exit is only called, in non-interactive sessions.
+## You can either put 'exitIfNonInteractive $code; return $?' at the end of functions, or you put
+## 'exitHere $code || return $?' in the middle of functions to end the control flow in the function and
+## return to the calling function.
+exitIfNonInteractive () {
+    local exitValue="$1"
+    if [[ $(shellIsInteractive) == false ]]; then
+      exit "$exitValue"
+    else
+      echo "In a non-interactive session, I would now do 'exit $exitValue'" >> /dev/stderr
+      return "$exitValue"
+    fi
+}
+export -f exitIfNonInteractive
+
+## throw [code [msg]]
+## Write message (Unspecified error) to STDERR and exit with code (default 1)
+throw () {
+  local lastCommandsExitCode=$?
+  local exitCode="${1-$UNSPECIFIED_ERROR_CODE}"
+  local msg="${2-$UNSPECIFIED_ERROR_MSG}"
+  if [[ $lastCommandsExitCode -ne 0 ]]; then
+    msg="$msg (last exit code: $lastCommandsExitCode)"
+  fi
+  errout "$exitCode" "$msg"
+  printStackTrace
+  exitIfNonInteractive "$exitCode" || return $?
+}
+export -f throw
+
+# Load/Unload a module with $name and using the version given by the $versionVariable.
+# If the version is not given, take the name, put it into upper case and append _VERSION.
 versionVariable () {
-    local versionVariable="$1"
+    local name="${1:-No binary name given}"
+    local versionVariable="$2"
     if [[ -z "$versionVariable" ]]; then
-        eche $(echo "$name" | tr [a-z] [A-Z])"_VERSION"
+        local ucVersionVariable
+        ucVersionVariable=$(echo "$name" | tr '[a-z]' '[A-Z]')
+        echo "${ucVersionVariable}_VERSION"
     else
         echo "$versionVariable"
     fi
 }
+export -f versionVariable
+
 moduleLoad() {
     local name="${1:?No module name given}"
-    local versionVariable=$(versionVariable "$2")
+    local versionVariable
+    versionVariable=$(versionVariable "$name" $2)
+    if [[ -z "${!versionVariable}" ]]; then
+        throw 200 "$versionVariable is not set" > /dev/stderr
+    fi
     module load "${name}/${!versionVariable}" || exit 200
 }
+export -f moduleLoad
+
 moduleUnload() {
     local name="${1:?No module name given}"
-    local versionVariable=$(versionVariable "$2")
+    local versionVariable=$(versionVariable "$name" $2)
+    if [[ -z "${!versionVariable}" ]]; then
+        throw 200 "versionVariable for $name is not set" > /dev/stderr
+    fi
     module unload "${name}/${!versionVariable}" || exit 200
 }
+export -f moduleUnload
 
 moduleLoad htslib
 export BGZIP_BINARY=bgzip
@@ -75,16 +150,18 @@ sambamba_sort_view() {
     sambamba "$@"
     moduleUnload sambamba
 }
+export -f sambamba_sort_view
 export SAMBAMBA_BINARY=sambamba
 
 # The sambamba version used only for flagstats. For the flagstats sambamba 0.4.6 used is equivalent to samtools 0.1.19 flagstats. Newer versions
 # use the new way of counting in samtools (accounting for supplementary reads).
 # Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats.
 sambamba_flagstat() {
-    moduleLoad sambamba SAMBAMBA_FLAGSTAT_VERSION
+    moduleLoad sambamba SAMBAMBA_FLAGSTATS_VERSION
     sambamba "$@"
-    moduleUnload sambamba SAMBAMBA_FLAGSTAT_VERSION
+    moduleUnload sambamba SAMBAMBA_FLAGSTATS_VERSION
 }
+export -f sambamba_flagstat
 export SAMBAMBA_FLAGSTATS_BINARY=sambamba_flagstat
 
 # The sambamba version used only for duplication marking and merging. Use the bash function here!
@@ -94,24 +171,22 @@ sambamba_markdup() {
     sambamba "$@"
     moduleUnload sambamba SAMBAMBA_MARKDUP_VERSION
 }
+export -f sambamba_markdup
 export SAMBAMBA_MARKDUP_BINARY=sambamba_markdup
 
 # Dependent on whether alignments are done on the FPGA or whether WGBS data are processed different BWA versions need to be loaded.
-if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
-    # This is actually only a lightly patched version that does not check for read numbers in identifiers.
-    moduleLoad bwa BWA_BISULPHITE_VERSION
-    export BWA_BINARY=bwa
-else
-    if [[ ACCELERATED OR FPGA && FPGA-Node? ]]; then
-        moduleLoad bwa-bb BWA_VERSION
-        export BWA_ACCELERATED_BINARY=bwa-bb
-        export BWA_BINARY=bwa-bb
-    else
-        moduleLoad bwa
-        export BWA_BINARY=bwa
-    fi
+# This is actually only a minimally patched version that does not check for read numbers in identifiers.
+moduleLoad bwa BWA_VERSION
+export BWA_BINARY=bwa
 
-fi
+#    if [[ ACCELERATED OR FPGA && FPGA-Node? ]]; then
+#        moduleLoad bwa-bb BWA_VERSION
+#        export BWA_ACCELERATED_BINARY=bwa-bb
+#        export BWA_BINARY=bwa-bb
+#    else
+#        moduleLoad bwa
+#        export BWA_BINARY=bwa
+#    fi
 
 # Unversioned binaries.
 export MBUFFER_BINARY=mbuffer
