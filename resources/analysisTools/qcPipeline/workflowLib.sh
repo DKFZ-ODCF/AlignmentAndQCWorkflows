@@ -38,11 +38,7 @@ mbuf () {
 
 
 runningOnConvey () {
-    if [[ "${PBS_QUEUE:-none}" == convey* ]]; then
-    	echo "true"
-    else
-    	echo "false"
-    fi
+    echo "${useAcceleratedHardware:-false}"
 }
 
 ## The return the directory, to which big temporary files should be written, e.g. for sorting.

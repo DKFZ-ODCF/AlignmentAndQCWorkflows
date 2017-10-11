@@ -174,10 +174,29 @@ sambamba_markdup() {
 export -f sambamba_markdup
 export SAMBAMBA_MARKDUP_BINARY=sambamba_markdup
 
-# Dependent on whether alignments are done on the FPGA or whether WGBS data are processed different BWA versions need to be loaded.
-# This is actually only a minimally patched version that does not check for read numbers in identifiers.
-moduleLoad bwa BWA_VERSION
-export BWA_BINARY=bwa
+
+if [[ "$WORKFLOW_ID" == "bisulfiteWorkflow" ]]; then
+    ## For bisulfite alignment, we suffix the the value of BINARY_VERSION by '-bisulfite', because that's the name in LSF cluster.
+    export BWA_VERSION="${BWA_VERSION:?BWA_VERSION is not set}-bisulfite"
+    moduleLoad bwa
+    export BWA_BINARY=bwa
+
+    moduleLoad
+elif [[ "$WORKFLOW_ID" == "qcPipeline" || "$WORKFLOW_ID" == "exomePipeline" ]]; then
+    if [[ "${useAcceleratedHardware:-false}" == false ]]; then
+        moduleLoad bwa
+        export BWA_BINARY=bwa
+    elif [[ "${useAcceleratedHardware:-true}" == true ]]; then
+        moduleLoad bwa-bb BWA_VERSION
+        export BWA_ACCELERATED_BINARY=bwa-bb
+    else
+        throw 200 "Uninterpretable value for boolean 'useAcceleratedHardware': '$useAcceleratedHardware'"
+    fi
+else
+    throw 200 "Unknown workflow ID '$WORKFLOW_ID'"
+fi
+
+
 
 #    if [[ ACCELERATED OR FPGA && FPGA-Node? ]]; then
 #        moduleLoad bwa-bb BWA_VERSION

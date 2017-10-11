@@ -10,9 +10,6 @@
                cleanupScript="cleanupScript">
     <configurationvalues>
 
-        <cvalue name="MOABS_VERSION" value="1.3.0" type="string"/>
-        <cvalue name="BWA_BISULPHITE_VERSION" value="0.7.8-bisulfite" type="string"/>
-
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${library}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
 
@@ -34,9 +31,7 @@
                 description="none: Keep methylCtools output format. moabs: Convert to moabs format."/>
         <cvalue name='METH_CALL_PARAMETERS' value="-t -e 5 -x -z" type="string"
                 description="Parameter to methylationCallingScript (see tools below)."/>
-		<cvalue name="BWA_BINARY" value="${bwaBinary_bwa0712_bisulfit}"
-				description="Path to the bisulfite compatible bwa binary" />
-		<cvalue name="INDEX_PREFIX" value="${indexPrefix_bwa06_methylCtools_mm10_GRC}" type="path" 
+		<cvalue name="INDEX_PREFIX" value="${indexPrefix_bwa06_methylCtools_mm10_GRC}" type="path"
 				description="Absolute path to the in-silico bisulfite converted reference sequenced used for alignment." />
 		<cvalue name='CLIP_INDEX' value='$DIR_EXECUTION/analysisTools/qcPipelineTools/trimmomatic/adapters/tagmentationPlassGroup.fa' type="path"
 				description="Absolute path to the sequences to be trimmed before alignment." />

@@ -16,8 +16,12 @@ overrideBamFiles
 
 == Changelist
 
-* Version update to UPCOMING
+* Version update to 1.2.76
 
+- lifted to Roddy 2.4
+- support for loading environment modules (via DefaultPlugin 1.2.0)
+- removed references to PBS to allow running on LSF cluster
+- fixed FASTQC code
 - ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
 - fingerprinting for WGBS
 - turned off faulty fingerprinting on Conveys

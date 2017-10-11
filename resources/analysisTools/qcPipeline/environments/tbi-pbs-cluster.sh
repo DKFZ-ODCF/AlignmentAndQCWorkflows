@@ -40,7 +40,5 @@ else
     export BWA_ACCELERATED_BINARY="/opt/bb/bwa-${BWA_VERSION:?BWA_VERSION is not set}/bin/bwa-bb"
 fi
 
-
-
 export MBUFFER_BINARY=mbuffer
 
