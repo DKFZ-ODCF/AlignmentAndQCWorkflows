@@ -6,7 +6,6 @@
 #PBS -l mem=3600m
 #PBS -m a
 
-source ${CONFIG_FILE}
 source "$TOOL_BASH_LIB"
 
 printInfo

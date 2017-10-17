@@ -1,4 +1,4 @@
-source ${CONFIG_FILE}
+#!/usr/bin/env bash
 
 TESTFILE=${DIR_SNPCOMP}/snpout_${LANE}_${PBS_ARRAYID}.txt
 

@@ -8,6 +8,33 @@
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
+
+        <!--ENVIRONMENT SETUP -->
+        <cvalue name="HTSLIB_VERSION" value="0.2.5" type="string"/>
+        <cvalue name="PERL_VERSION" value="5.20.2" type="string"/>
+        <cvalue name="PYTHON_VERSION" value="2.7.9" type="string"/>
+        <cvalue name="R_VERSION" value="3.4.0" type="string"/>
+        <cvalue name='BEDTOOLS_VERSION' value='2.16.2' type='string'/>
+        <cvalue name="VCFTOOLS_VERSION" value="0.1.10" type="string"/>
+        <cvalue name="SAMTOOLS_VERSION" value="0.1.19" type="string"/>
+        <cvalue name="SAMBAMBA_VERSION" value="0.5.9" type="string"/>
+        description="Only used for 'view' and 'sort'."/>
+        <cvalue name="SAMBAMBA_FLAGSTATS_VERSION" value="0.4.6" type="string"
+                description="Version 0.4.6 of sambamba produces the old samtools 0.1.19 compatible counts."/>
+        <cvalue name="SAMBAMBA_MARKDUP_VERSION" value="0.5.9" type="string"
+                description="Only used for duplication marking."/>
+        <cvalue name="PICARD_VERSION" value="1.125" type="string"/>
+        <cvalue name="LIBMAUS_VERSION" value="0.0.131" type="string"/>
+        <cvalue name="BIOBAMBAM_VERSION" value="0.0.148" type="string"/>
+        <cvalue name="JAVA_VERSION" value="1.8.0_131" type="string"/>
+        <cvalue name="PYPY_VERSION" value="5.0.1" type="string"/>
+        <cvalue name="BWA_VERSION" value="0.7.8" type="string"
+                description="Use e.g. 0.7.8-r2.05 for a specific revision of bb-bwa. Suffix with -bisulfite to load a bisulfite patched version."/>
+        <cvalue name="FASTQC_VERSION" value="0.11.3" type="string"/>
+
+        <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
+
+
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
 

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-source ${CONFIG_FILE}
 source "$TOOL_BASH_LIB"
 printInfo
 
@@ -130,7 +129,7 @@ else
     # and they will never be deleted because the directory is different for another job ID - because do not use the scratch
     # so use $tempDirectory instead
     if [[ ${bamFileExists} == false ]]; then
-        (${MARKDUPLICATES_BINARY} \
+        (${BAMMARKDUPLICATES_BINARY} \
             M=${FILENAME_METRICS}.tmp \
             tmpfile=${tempDirectory}/biobambammerge.tmp \
             markthreads=8 \

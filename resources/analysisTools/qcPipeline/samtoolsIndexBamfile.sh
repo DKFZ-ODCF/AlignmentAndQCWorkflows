@@ -5,8 +5,6 @@
 #PBS -l mem=50m
 #PBS -m a
 
-source ${CONFIG_FILE}
-
 TMP_FILE=${FILENAME}_TMP
 LOG_FILE=${FILENAME}_ERRLOG
 IDX_FILE=${FILENAME}.bai
