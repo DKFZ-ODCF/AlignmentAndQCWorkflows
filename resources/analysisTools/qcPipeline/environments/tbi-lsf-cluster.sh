@@ -2,71 +2,11 @@
 
 set -xv
 
-
-## From http://unix.stackexchange.com/questions/26676/how-to-check-if-a-shell-is-login-interactive-batch
-shellIsInteractive () {
-    case $- in
-        *i*) echo "true";;
-        *)   echo "false";;
-    esac
-}
-export -f shellIsInteractive
-
-
-## funname () ( set +exv; ...; ) may be better to get rid of too much output (mind the (...) subshell) but the exit won't work anymore.
-## Maybe set -E + trap "bla" ERR would work? http://fvue.nl/wiki/Bash:_Error_handling#Exit_on_error
-printStackTrace () {
-    frameNumber=0
-    while caller $frameNumber ;do
-      ((frameNumber++))
-    done
-}
-export -f printStackTrace
-
-
-errout () {
-    local exitCode="$1"
-    local message="$2"
-    env printf "Error(%d): %s\n" "$exitCode" "$message" >> /dev/stderr
-}
-export -f errout
-
-
-## This is to effectively debug on the command line. The exit is only called, in non-interactive sessions.
-## You can either put 'exitIfNonInteractive $code; return $?' at the end of functions, or you put
-## 'exitHere $code || return $?' in the middle of functions to end the control flow in the function and
-## return to the calling function.
-exitIfNonInteractive () {
-    local exitValue="$1"
-    if [[ $(shellIsInteractive) == false ]]; then
-      exit "$exitValue"
-    else
-      echo "In a non-interactive session, I would now do 'exit $exitValue'" >> /dev/stderr
-      return "$exitValue"
-    fi
-}
-export -f exitIfNonInteractive
-
-## throw [code [msg]]
-## Write message (Unspecified error) to STDERR and exit with code (default 1)
-throw () {
-  local lastCommandsExitCode=$?
-  local exitCode="${1-$UNSPECIFIED_ERROR_CODE}"
-  local msg="${2-$UNSPECIFIED_ERROR_MSG}"
-  if [[ $lastCommandsExitCode -ne 0 ]]; then
-    msg="$msg (last exit code: $lastCommandsExitCode)"
-  fi
-  errout "$exitCode" "$msg"
-  printStackTrace
-  exitIfNonInteractive "$exitCode" || return $?
-}
-export -f throw
-
 # Load/Unload a module with $name and using the version given by the $versionVariable.
 # If the version is not given, take the name, put it into upper case and append _VERSION.
 versionVariable () {
-    local name="${1:-No binary name given}"
-    local versionVariable="$2"
+    local name="${1:?No binary name given}"
+    local versionVariable="${2:-}"
     if [[ -z "$versionVariable" ]]; then
         local ucVersionVariable
         ucVersionVariable=$(echo "$name" | tr '[a-z]' '[A-Z]')
@@ -79,8 +19,8 @@ export -f versionVariable
 
 moduleLoad() {
     local name="${1:?No module name given}"
-    local versionVariable
-    versionVariable=$(versionVariable "$name" $2)
+    local versionVariable="${2:-}"
+    versionVariable=$(versionVariable "$name" "$versionVariable")
     if [[ -z "${!versionVariable}" ]]; then
         throw 200 "$versionVariable is not set"
     fi
@@ -90,7 +30,8 @@ export -f moduleLoad
 
 moduleUnload() {
     local name="${1:?No module name given}"
-    local versionVariable=$(versionVariable "$name" $2)
+    local versionVariable="${2:-}"
+    local versionVariable=$(versionVariable "$name" "$versionVariable")
     if [[ -z "${!versionVariable}" ]]; then
         throw 200 "versionVariable for $name is not set"
     fi
@@ -181,7 +122,6 @@ if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
     moduleLoad bwa
     export BWA_BINARY=bwa
 
-    moduleLoad
 elif [[ "$WORKFLOW_ID" == "qcAnalysis" || "$WORKFLOW_ID" == "exomeAnalysis" ]]; then
     if [[ "${useAcceleratedHardware:-false}" == false ]]; then
         moduleLoad bwa
