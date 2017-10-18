@@ -182,7 +182,13 @@ removeRoddyBigScratch () {
 
 checkBamIsComplete () {
     local bamFile="${1:?No BAM file given}"
-    "$TOOL_BAM_IS_COMPLETE" "$bamFile" || throw 40 "BAM is incomplete: $bamFile"
+    local result
+    result=$("$TOOL_BAM_IS_COMPLETE" "$bamFile")
+    if [[ $? ]]; then
+        echo "BAM is terminated! $bamFile" >> /dev/stderr
+    else
+        throw 40 "BAM is not terminated! $bamFile"
+    fi
 }
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"

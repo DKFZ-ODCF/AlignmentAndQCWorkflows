@@ -82,9 +82,9 @@ moduleLoad() {
     local versionVariable
     versionVariable=$(versionVariable "$name" $2)
     if [[ -z "${!versionVariable}" ]]; then
-        throw 200 "$versionVariable is not set" > /dev/stderr
+        throw 200 "$versionVariable is not set"
     fi
-    module load "${name}/${!versionVariable}" || exit 200
+    module load "${name}/${!versionVariable}" || throw 200 "Could not load '${name}/${!versionVariable}'"
 }
 export -f moduleLoad
 
@@ -92,9 +92,9 @@ moduleUnload() {
     local name="${1:?No module name given}"
     local versionVariable=$(versionVariable "$name" $2)
     if [[ -z "${!versionVariable}" ]]; then
-        throw 200 "versionVariable for $name is not set" > /dev/stderr
+        throw 200 "versionVariable for $name is not set"
     fi
-    module unload "${name}/${!versionVariable}" || exit 200
+    module unload "${name}/${!versionVariable}" || throw 200 "Could not unload '${name}/${!versionVariable}'"
 }
 export -f moduleUnload
 
@@ -175,14 +175,14 @@ export -f sambamba_markdup
 export SAMBAMBA_MARKDUP_BINARY=sambamba_markdup
 
 
-if [[ "$WORKFLOW_ID" == "bisulfiteWorkflow" ]]; then
+if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
     ## For bisulfite alignment, we suffix the the value of BINARY_VERSION by '-bisulfite', because that's the name in LSF cluster.
     export BWA_VERSION="${BWA_VERSION:?BWA_VERSION is not set}-bisulfite"
     moduleLoad bwa
     export BWA_BINARY=bwa
 
     moduleLoad
-elif [[ "$WORKFLOW_ID" == "qcPipeline" || "$WORKFLOW_ID" == "exomePipeline" ]]; then
+elif [[ "$WORKFLOW_ID" == "qcAnalysis" || "$WORKFLOW_ID" == "exomeAnalysis" ]]; then
     if [[ "${useAcceleratedHardware:-false}" == false ]]; then
         moduleLoad bwa
         export BWA_BINARY=bwa
@@ -195,17 +195,6 @@ elif [[ "$WORKFLOW_ID" == "qcPipeline" || "$WORKFLOW_ID" == "exomePipeline" ]]; 
 else
     throw 200 "Unknown workflow ID '$WORKFLOW_ID'"
 fi
-
-
-
-#    if [[ ACCELERATED OR FPGA && FPGA-Node? ]]; then
-#        moduleLoad bwa-bb BWA_VERSION
-#        export BWA_ACCELERATED_BINARY=bwa-bb
-#        export BWA_BINARY=bwa-bb
-#    else
-#        moduleLoad bwa
-#        export BWA_BINARY=bwa
-#    fi
 
 # Unversioned binaries.
 export MBUFFER_BINARY=mbuffer

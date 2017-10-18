@@ -33,7 +33,7 @@ export RSCRIPT_BINARY="Rscript-${R_VERSION:?R_VERSION is not set}"
 export PYPY_BINARY="pypy-c"
 export JAVA_BINARY="java8"
 
-if [[ "$WORKFLOW_ID" == "bisulfiteWorkflow" ]]; then
+if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
     export BWA_BINARY="bwa-${BWA_VERSION:?BWA_VERSION is not set}-bisulfite"
 else
     export BWA_BINARY="bwa-${BWA_VERSION:?BWA_VERSION is not set}"
