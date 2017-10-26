@@ -74,7 +74,7 @@
         <tool name='alignAndPairSlim' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='bisulfiteWorkflow' >
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="50" cores="8" nodes="1" walltime="1"/>
+                <rset size="t" memory="50" cores="8" nodes="1" walltime="1" queue="devel"/>
                  <!-- ChIP-Seq -->
                 <rset size="s" memory="1" cores="8" nodes="1" walltime="2"/>
                 <!-- exome part lane -->

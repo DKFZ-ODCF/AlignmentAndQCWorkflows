@@ -559,7 +559,7 @@
 
         <tool name="annotateCovWindows" value="vcfAnno.sh" basepath="qcPipeline">
             <resourcesets>
-                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00"/>
+                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
                 <rset size="l" memory="0.2" cores="2" nodes="1" walltime="4"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS"/>
@@ -572,7 +572,7 @@
 
         <tool name="mergeAndFilterCovWindows" value="cnvMergeFilter.sh" basepath="qcPipeline">
             <resourcesets>
-                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00"/>
+                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
                 <rset size="l" memory="0.2" cores="2" nodes="1" walltime="5"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_ANNO"/>
@@ -581,7 +581,7 @@
 
         <tool name="correctGc" value="correct_gc_bias.sh" basepath="qcPipeline">
             <resourcesets>
-                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00"/>
+                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
                 <rset size="l" memory="2" cores="1" nodes="1" walltime="1"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_WG"/>
