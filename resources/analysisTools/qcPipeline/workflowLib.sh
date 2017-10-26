@@ -36,15 +36,6 @@ mbuf () {
 }
 
 
-runningOnConvey () {
-    if [[ "$PBS_QUEUE" == convey* ]]; then
-    	echo "true"
-    else
-    	echo "false"
-    fi
-}
-
-
 analysisType () {
     if [[  "${runExomeAnalysis-false}" = "true" ]]; then
         echo "exome"
@@ -84,7 +75,6 @@ fakeDupMarkMetrics () {
         > "$outputFile"
 }
 
-
 toIEqualsList () {
     declare -la inputFiles=($@)
     for inFile in ${inputFiles[@]}; do
@@ -93,9 +83,17 @@ toIEqualsList () {
     echo
 }
 
+
 checkBamIsComplete () {
     local bamFile="${1:?No BAM file given}"
-    "$TOOL_BAM_IS_COMPLETE" "$bamFile" || throw 40 "BAM is incomplete"
+    local result
+    result=$("$TOOL_BAM_IS_COMPLETE" "$bamFile")
+    if [[ $? ]]; then
+        echo "BAM is terminated! $bamFile" >> /dev/stderr
+    else
+        throw 40 "BAM is not terminated! $bamFile"
+    fi
 }
+
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"

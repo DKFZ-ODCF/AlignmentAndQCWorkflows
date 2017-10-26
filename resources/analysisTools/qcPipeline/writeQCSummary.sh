@@ -3,8 +3,6 @@
 #PBS -l nodes=1
 #PBS -m a
 
-source ${CONFIG_FILE}
-
 # Pipe in QC_summary.txt from analysis dir...
 
 ##job writeQCsummary_newFlagstat

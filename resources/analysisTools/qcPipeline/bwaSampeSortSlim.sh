@@ -2,8 +2,6 @@
 
 # Slim version of sampe sort
 
-source ${CONFIG_FILE}
-
 set -o pipefail
 
 ID=${RUN}_${LANE}
@@ -81,6 +79,7 @@ useSingleEndProcessing=${useSingleEndProcessing-false}
 if [[ ${bamFileExists} == true ]]
 then
 	echo "the BAM file already exists, re-creating other output files."
+	checkBamIsComplete "$FILENAME_SORTED_BAM"
 	# make all the pipes
 	(cat ${FILENAME_SORTED_BAM} | ${MBUF_2G} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS_IN} | ${MBUF_2G} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_2G} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 
@@ -121,7 +120,7 @@ else	# we have to make the BAM
 
 			if [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
 			then
-			eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+			eval "$JAVA_BINARY -jar ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
 			fi
 
 			cat $o1 ${TRIM_STEP} ${REVERSE_STEP} | $MBUF_4G > $FNPIPE1 &
@@ -147,6 +146,7 @@ then
 	rm $FNPIPE2
 	errorString="There was a non-zero exit code in the bwa sampe - samtools sort pipeline; exiting..." 
 	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM}
 fi
 

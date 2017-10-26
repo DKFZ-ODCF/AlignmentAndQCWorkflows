@@ -6,14 +6,13 @@
 #PBS -l mem=3600m
 #PBS -m a
 
-source ${CONFIG_FILE}
 source "$TOOL_WORKFLOW_LIB"
 
 printInfo
 
 set -o pipefail
 
-ON_CONVEY=$(runningOnConvey)
+ON_CONVEY=${useAcceleratedHardware:-false}
 
 TMP_FILE=${FILENAME_ALIGNMENT}_temp
 # error tracking because bwa never exits anything but 0
@@ -76,7 +75,7 @@ else
     then
         if [[ ${TOOL_ADAPTOR_TRIMMING} == *.jar ]]
         then
-            eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+            eval "$JAVA_BINARY -jar ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
         fi
 
     else
@@ -85,7 +84,7 @@ else
         # trimmomatic is therefore called with i2 i1 as the input. Also the output o1 and o2 are swapped to match the input.
         if [[ ${TOOL_ADAPTOR_TRIMMING} == *.jar ]]
         then
-            eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i2 $i1 $o2 $u1 $o1 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+            eval "$JAVA_BINARY -jar ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i2 $i1 $o2 $u1 $o1 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
         fi
 
     fi

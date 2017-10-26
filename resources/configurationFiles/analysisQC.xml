@@ -8,11 +8,40 @@
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
+
+        <!--ENVIRONMENT SETUP -->
+        <cvalue name="HTSLIB_VERSION" value="0.2.5" type="string"/>
+        <cvalue name="PERL_VERSION" value="5.20.2" type="string"/>
+        <cvalue name="PYTHON_VERSION" value="2.7.9" type="string"/>
+        <cvalue name="R_VERSION" value="3.4.0" type="string"/>
+        <cvalue name='BEDTOOLS_VERSION' value='2.16.2' type='string'/>
+        <cvalue name="VCFTOOLS_VERSION" value="0.1.10" type="string"/>
+        <cvalue name="SAMTOOLS_VERSION" value="0.1.19" type="string"/>
+        <cvalue name="SAMBAMBA_VERSION" value="0.4.6" type="string"/>
+        description="Only used for 'view' and 'sort'."/>
+        <cvalue name="SAMBAMBA_FLAGSTATS_VERSION" value="0.4.6" type="string"
+                description="Version 0.4.6 of sambamba produces the old samtools 0.1.19 compatible counts."/>
+        <cvalue name="SAMBAMBA_MARKDUP_VERSION" value="0.5.9" type="string"
+                description="Only used for duplication marking."/>
+        <cvalue name="PICARD_VERSION" value="1.125" type="string"/>
+        <cvalue name="LIBMAUS_VERSION" value="0.0.131" type="string"/>
+        <cvalue name="BIOBAMBAM_VERSION" value="0.0.148" type="string"/>
+        <cvalue name="JAVA_VERSION" value="1.8.0_131" type="string"/>
+        <cvalue name="PYPY_VERSION" value="5.0.1" type="string"/>
+        <cvalue name="BWA_VERSION" value="0.7.8" type="string"
+                description="Use e.g. 0.7.8-r2.05 for a specific revision of bb-bwa. Suffix with -bisulfite to load a bisulfite patched version."/>
+        <cvalue name="FASTQC_VERSION" value="0.11.3" type="string"/>
+
+        <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
+
+        <!-- Directories -->
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
 
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
+
+        <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
@@ -23,13 +52,6 @@
         <cvalue name='markDuplicatesVariant' value='' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
 
-        <cvalue name="SAMBAMBA_BINARY" value="sambamba_v0.4.6" type="string"
-                description="The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort."/>
-        <cvalue name="SAMBAMBA_FLAGSTATS_BINARY" value="sambamba_v0.4.6" type="string"
-                description="The sambamba version used only for making flagstats."/>
-        <!-- Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats. -->
-        <cvalue name="SAMBAMBA_MARKDUP_BINARY" value="sambamba_v0.5.9" type="string"
-                description="The sambamba version used only for duplication marking and merging."/>
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 6 -l 9 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'/>
 
     </configurationvalues>
@@ -42,6 +64,8 @@
     <!--</testdataoptions>-->
 
     <processingTools>
+        <tool name="workflowEnvironment_tbiLsf" value="tbi-lsf-cluster.sh" basepath="qcPipeline/environments"/>
+        <tool name="workflowEnvironment_tbiPbs" value="tbi-pbs-cluster.sh" basepath="qcPipeline/environments"/>
         <tool name="bashLib" value="bashLib.sh" basepath="qcPipeline"/>
         <tool name="workflowLib" value="workflowLib.sh" basepath="qcPipeline"/>
         <tool name="cleanupScript" value="cleanupScript.sh" basepath="qcPipeline" >
@@ -224,7 +248,7 @@
                 <rset size="l" memory="1" cores="1" nodes="1" walltime="5"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter='FILENAME'/>
-            <output type="file" typeof="de.dkfz.b080.co.files.BamIndexFile"/>
+            <output type="file" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="IDX_FILE"/>
         </tool>
         <tool name='collectBamMetrics' value='picardCollectMetrics.sh' basepath='qcPipeline'>
             <resourcesets>

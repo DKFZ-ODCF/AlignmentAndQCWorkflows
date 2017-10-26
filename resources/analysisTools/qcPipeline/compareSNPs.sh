@@ -1,5 +1,3 @@
-source ${CONFIG_FILE}
-
 TESTFILE=${DIR_SNPCOMP}/snpout_${LANE}_${PBS_ARRAYID}.txt
 
 OUTFILE=${DIR_SNPCOMP}/${LANE}_vs_controlSNP_${snpCnt0}x${snpCnt1}_#CHROM#.txt

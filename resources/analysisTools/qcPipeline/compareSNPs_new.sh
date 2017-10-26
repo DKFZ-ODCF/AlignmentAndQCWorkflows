@@ -2,8 +2,6 @@
 
 #PBS -l walltime=2:00:00,nodes=1:ppn=1
 
-source ${CONFIG_FILE}
-
 TESTFILE=${DIR_SNPCOMP}/snpout_${LANE}.txt
 
 # wie werden die Dateien genannt, und welche BAMs gehen ein?

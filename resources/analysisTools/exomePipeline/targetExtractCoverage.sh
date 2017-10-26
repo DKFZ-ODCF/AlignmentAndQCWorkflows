@@ -6,8 +6,6 @@
 #PBS -l mem=5g
 #PBS -j oe
 
-source ${CONFIG_FILE}
-
 set -o pipefail
 
 LCLSCRATCH=${RODDY_SCRATCH}

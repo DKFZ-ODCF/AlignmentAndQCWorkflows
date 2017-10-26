@@ -5,7 +5,6 @@
 #PBS -l mem=300m
 #PBS -m a
 
-source ${CONFIG_FILE}
 set -o pipefail
 FILENAMESHORT=`basename ${FILENAME}`
 FILEINFO=${FILENAMESHORT%_*}

@@ -6,6 +6,4 @@
 #PBS -l mem=4g
 #PBS -j oe
 
-source ${CONFIG_FILE}
-
 R -f ${TOOL_ON_TARGET_COVERAGE_PLOTTER_BINARY} --no-save --no-restore --args ${TARGETS_WITH_COVERAGE_TEXT} ${TARGETS_PLOT} "${FILENAME_PREFIX}"

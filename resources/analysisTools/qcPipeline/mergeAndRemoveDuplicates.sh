@@ -94,7 +94,7 @@ if [[ ${useBioBamBamMarkDuplicates} == false ]]; then
 else
 #        rewritebam=1 \
 #        rewritebamlevel=1 \
-    (${MARKDUPLICATES_BINARY} \
+    (${BAMMARKDUPLICATES_BINARY} \
         M=${FILENAME_METRICS} \
         tmpfile=${WORKDIR}/biobambammerge.tmp \
         markthreads=8 \

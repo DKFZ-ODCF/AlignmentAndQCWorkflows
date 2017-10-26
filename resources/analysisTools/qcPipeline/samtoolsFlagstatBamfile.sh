@@ -5,7 +5,6 @@
 #PBS -l mem=50m
 #PBS -m a
 
-source ${CONFIG_FILE}
 #[ $DEBUG = 'TRUE' ] && set -x && set -v
 
 TMP_FILE=${FILENAME_FLAGSTAT}_temp

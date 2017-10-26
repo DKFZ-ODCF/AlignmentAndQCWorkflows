@@ -1,6 +1,5 @@
 #!/bin/bash
 
-source ${CONFIG_FILE}
 source "$TOOL_WORKFLOW_LIB"
 printInfo
 
@@ -200,7 +199,7 @@ elif markWithBiobambam; then
     # and they will never be deleted because the directory is different for another job ID - because do not use the scratch
     # so use $tempDirectory instead
     if [[ ${bamFileExists} == false ]]; then
-        (${MARKDUPLICATES_BINARY} \
+        (${BAMMARKDUPLICATES_BINARY} \
             M=${tempFilenameMetrics} \
             tmpfile=${tempDirectory}/biobambammerge.tmp \
             markthreads=8 \

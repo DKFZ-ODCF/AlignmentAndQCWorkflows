@@ -5,8 +5,6 @@
 #PBS -l mem=3g
 #PBS -m a
 
-source ${CONFIG_FILE}
-
 [[ ! -f $DIR_METRICS ]] && mkdir -p $DIR_METRICS
 
 cd $DIR_METRICS
