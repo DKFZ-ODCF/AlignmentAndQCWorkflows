@@ -34,6 +34,9 @@
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
 
+        <!-- Directories -->
+        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
+        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
 
         <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
@@ -53,6 +56,9 @@
     <!--</testdataoptions>-->
 
     <processingTools>
+        <tool name="workflowEnvironment_tbiLsf" value="tbi-lsf-cluster.sh" basepath="qcPipeline/environments"/>
+        <tool name="workflowEnvironment_tbiPbs" value="tbi-pbs-cluster.sh" basepath="qcPipeline/environments"/>
+
         <tool name="bashLib" value="bashLib.sh" basepath="qcPipeline"/>
         <tool name="cleanupScript" value="cleanupScript.sh" basepath="qcPipeline" >
             <resourcesets>
@@ -230,7 +236,7 @@
                 <rset size="l" memory="1" cores="1" nodes="1" walltime="5"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter='FILENAME'/>
-            <output type="file" typeof="de.dkfz.b080.co.files.BamIndexFile"/>
+            <output type="file" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="IDX_FILE"/>
         </tool>
         <tool name='collectBamMetrics' value='picardCollectMetrics.sh' basepath='qcPipeline'>
             <resourcesets>

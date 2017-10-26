@@ -11,7 +11,6 @@
 # there are no readbins for the target extracted regions
 # the parent BAM's coverageQC file is needed
 
-source ${CONFIG_FILE}
 source "$TOOL_BASH_LIB"
 printInfo
 

@@ -1,13 +1,12 @@
 #!/bin/bash
 
-source ${CONFIG_FILE}
 source "$TOOL_BASH_LIB"
 
 printInfo
 
 set -o pipefail
 
-ON_CONVEY=$(runningOnConvey)
+ON_CONVEY=${useAcceleratedHardware:-false}
 
 # use scratch dir for temp files: samtools sort uses the current working directory for them
 WORKDIR=${DIR_TEMP}/${RODDY_JOBID}
@@ -87,7 +86,7 @@ then
     #We need a second output pipe for sampe
     o2=${WORKDIR}/at_o2
     mkfifo $o2
-    eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+    eval "$JAVA_BINARY -jar ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
     cat $o1 ${TRIM_STEP} ${REVERSE_STEP} | $MBUFFER_2 > $FNPIPE1 &
     cat $o2 ${TRIM_STEP} ${REVERSE_STEP} | $MBUFFER_2 > $FNPIPE2 &
 else

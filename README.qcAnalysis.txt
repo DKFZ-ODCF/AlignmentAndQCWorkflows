@@ -18,6 +18,13 @@ runSlimWorkflow             false   Use a full workflow with a lot of separate s
 
 == Changelist
 
+* Version update 1.2.82
+
+  - lifted to Roddy 2.4
+  - support for loading environment modules (via DefaultPlugin 1.2.0)
+  - removed references to PBS to allow running on LSF cluster
+  - fixed FASTQC code
+
 * Version update to 1.0.182
 
 * Version update to 1.0.180

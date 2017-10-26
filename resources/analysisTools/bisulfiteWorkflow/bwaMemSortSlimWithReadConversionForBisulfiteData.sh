@@ -1,19 +1,12 @@
 #!/bin/bash
 
-source ${CONFIG_FILE}
 source "$TOOL_BASH_LIB"
 
 printInfo
 
 set -o pipefail
 
-if [[ ${PBS_QUEUE} == convey* ]]; then
-	ON_CONVEY=true
-else
-	ON_CONVEY=false
-fi
-
-
+ON_CONVEY=${useAcceleratedHardware:-false}
 ID=${RUN}_${LANE}
 SM=sample_${SAMPLE}_${PID}
 
@@ -102,7 +95,7 @@ then
 		# But o2 now has to contain read2 here:
 		o2=${RODDY_SCRATCH}/at_o2
 		mkfifo $o2
-		eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+		eval "$JAVA_BINARY -jar ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
 		# trimming with fastx does not work in combination with Trimmomatic!
 		# besides, bwa mem automagically reverts mate pair data
 		#cat $o1 ${TRIM_STEP} ${REVERSE_STEP} | $MBUF_2G > $FNPIPE1 &

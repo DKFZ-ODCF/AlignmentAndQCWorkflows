@@ -12,22 +12,19 @@ function throw {
   exit "$exitCode"
 }
 
+
 function printInfo {
     ## Get information about the node.
-    hostname -f
-    ulimit -a
-    echo "user="$(whoami)
-    echo "umask="$(umask)
-    echo "groups="$(groups)
+    {
+        hostname -f
+        ulimit -a
+        echo "user="$(whoami)
+        echo "umask="$(umask)
+        echo "groups="$(groups)
+    } >> /dev/stderr
 }
 
-function runningOnConvey {
-    if [[ "$PBS_QUEUE" == convey* ]]; then
-    	echo "true"
-    else
-    	echo "false"
-    fi
-}
+
 toMinusIEqualsList () {
     declare -la inputFiles=($@)
     for inFile in ${inputFiles[@]}; do
@@ -55,7 +52,14 @@ stringJoin () {
     echo "$result"
 }
 
+
 checkBamIsComplete () {
     local bamFile="${1:?No BAM file given}"
-    "$TOOL_BAM_IS_COMPLETE" "$bamFile" || throw 40 "BAM is incomplete: $bamFile"
+    local result
+    result=$("$TOOL_BAM_IS_COMPLETE" "$bamFile")
+    if [[ $? ]]; then
+        echo "BAM is terminated! $bamFile" >> /dev/stderr
+    else
+        throw 40 "BAM is not terminated! $bamFile"
+    fi
 }

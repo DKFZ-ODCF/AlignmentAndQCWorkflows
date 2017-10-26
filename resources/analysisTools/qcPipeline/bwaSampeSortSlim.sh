@@ -119,7 +119,7 @@ else	# we have to make the BAM
 
 			if [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
 			then
-			eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+			eval "$JAVA_BINARY -jar ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
 			fi
 
 			cat $o1 ${TRIM_STEP} ${REVERSE_STEP} | $MBUF_4G > $FNPIPE1 &

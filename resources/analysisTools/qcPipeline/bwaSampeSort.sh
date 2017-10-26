@@ -9,7 +9,7 @@ source "$TOOL_BASH_LIB"
 
 set -o pipefail
 
-ON_CONVEY=$(runningOnConvey)
+ON_CONVEY=${useAcceleratedHardware:-false}
 
 # use scratch dir for temp files: samtools sort uses the current working directory for them
 LCLSCRATCH=${RODDY_SCRATCH}
@@ -82,7 +82,7 @@ else
 
         if [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
         then
-            eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
+            eval "$JAVA_BINARY -jar ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" &
         fi
 
         cat $o1 ${TRIM_STEP} ${REVERSE_STEP} | mbuffer -q -m 6G -l /dev/null > $FNPIPE1 &

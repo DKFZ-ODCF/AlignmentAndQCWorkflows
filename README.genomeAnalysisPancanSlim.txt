@@ -17,6 +17,13 @@ overrideBamFiles
 
 == Changelist
 
+* Version update 1.2.82
+
+  - lifted to Roddy 2.4
+  - support for loading environment modules (via DefaultPlugin 1.2.0)
+  - removed references to PBS to allow running on LSF cluster
+  - fixed FASTQC code
+
 * Version update to 1.0.182
 
 - The resource requests for jobs were increased to be on the safe side when switching to the new cluster (in particular concerning OOM killer).

@@ -10,10 +10,14 @@
                cleanupScript="cleanupScript">
     <configurationvalues>
         <cvalue name='runCoveragePlotsOnly' value='true' type='boolean'/>
+        <cvalue name="INDEX_PREFIX" value="${indexPrefix_bwa06_methylCtools_mm10_GRC}" type="path"
+                description="Absolute path to the in-silico bisulfite converted reference sequenced used for alignment." />
     </configurationvalues>
     <processingTools>
         <tool name='alignAndPairSlimWithReadConversionForBisulfiteData' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='qcPipeline'>
             <resourcesets>
+                <!-- Test -->
+                <rset size="t" memory="50" cores="8" nodes="1" walltime="1" queue="devel"/>
                 <!-- ChIP-Seq -->
                 <rset size="s" memory="12" cores="8" nodes="1" walltime="2"/>
                 <!-- exome part lane -->
