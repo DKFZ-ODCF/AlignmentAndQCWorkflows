@@ -37,10 +37,6 @@ mbuf () {
 }
 
 
-runningOnConvey () {
-    echo "${useAcceleratedHardware:-false}"
-}
-
 ## The return the directory, to which big temporary files should be written, e.g. for sorting.
 getBigScratchDirectory () {
     local suggestedLocation="${1}"
@@ -150,7 +146,7 @@ sampleType () {
 runFingerprinting () {
     local bamFile="${1:?No input BAM file given}"
     local fingerPrintsFile="${2:?No output fingerprints file given}"
-    if [[ "${runFingerprinting:-false}" == true && $(runningOnConvey) != true ]]; then
+    if [[ "${runFingerprinting:-false}" == true && ${useAcceleratedHardware:-false} != true ]]; then
         "${PYTHON_BINARY}" "${TOOL_FINGERPRINT}" "${fingerprintingSitesFile}" "${bamFile}" > "${fingerPrintsFile}.tmp" || throw 43 "Fingerprinting failed"
         mv "${fingerPrintsFile}.tmp" "${fingerPrintsFile}" || throw 39 "Could not move file"
     fi
