@@ -17,6 +17,13 @@ overrideBamFiles
 
 == Changelist
 
+* Version update to 1.2.73
+
+  - lifted to Roddy 2.4
+  - support for loading environment modules (via DefaultPlugin 1.2.0)
+  - removed references to PBS to allow running on LSF cluster
+  - fixed FASTQC code
+
 - Renamed plugin to AlignmentAndQCWorkflows.
 
 * Version update to 1.0.186

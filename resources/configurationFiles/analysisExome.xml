@@ -19,6 +19,8 @@
         <!--Reference genome'-->
         <cvalue name='SEQUENCER_STRATEGY' value='wholeExome'/>
         <cvalue name='WINDOW_SIZE' value='10' type="integer"/>
+        <cvalue name='runACEseqQc' value='false' type='boolean'
+                description="Turn on/off the GC correction."/>
 
         <!--Target regions-->
         <cvalue name='TARGETSIZE' value='35961919' type="integer" description="Other values #43992300 #62085286"/>

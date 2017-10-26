@@ -74,11 +74,13 @@ throw () {
 
 printInfo () {
     ## Get information about the node.
-    hostname -f
-    ulimit -a
-    echo "user="$(whoami)
-    echo "umask="$(umask)
-    echo "groups="$(groups)
+    {
+        hostname -f
+        ulimit -a
+        echo "user="$(whoami)
+        echo "umask="$(umask)
+        echo "groups="$(groups)
+    } >> /dev/stderr
 }
 
 

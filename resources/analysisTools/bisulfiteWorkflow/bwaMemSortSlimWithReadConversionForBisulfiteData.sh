@@ -1,6 +1,5 @@
 #!/bin/bash
 
-source ${CONFIG_FILE}
 source "$TOOL_WORKFLOW_LIB"
 
 printInfo 
@@ -92,7 +91,7 @@ if [[ ${bamFileExists} == false ]]; then	# we have to make the BAM
 		# But o2 now has to contain read2 here:
 		o2=${RODDY_SCRATCH}/at_o2
 		mkfifo $o2
-		eval "java7 -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" & procTrim=$!
+		eval "$JAVA_BINARY -jar ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" & procTrim=$!
 
 		# trimming with fastx does not work in combination with Trimmomatic!
 		# besides, bwa mem automagically reverts mate pair data
@@ -226,6 +225,7 @@ mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "
 mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
 mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
 
+runFingerprinting "${FILENAME_SORTED_BAM}" "${FILENAME_FINGERPRINTS}"
 if [[ "$RODDY_BIG_SCRATCH" != "$RODDY_SCRATCH" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
     rm -rf "$RODDY_BIG_SCRATCH" 2> /dev/null # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
 fi

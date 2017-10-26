@@ -37,14 +37,6 @@ mbuf () {
 }
 
 
-runningOnConvey () {
-    if [[ "$PBS_QUEUE" == convey* ]]; then
-    	echo "true"
-    else
-    	echo "false"
-    fi
-}
-
 ## The return the directory, to which big temporary files should be written, e.g. for sorting.
 getBigScratchDirectory () {
     local suggestedLocation="${1}"
@@ -59,7 +51,6 @@ getBigScratchDirectory () {
     mkdir -p "$scratchDir" || throw "$NOT_WRITABLE_CODE" "$NOT_WRITABLE_MSG: '$scratchDir'"
     echo "$scratchDir"
 }
-
 
 
 analysisType () {
@@ -113,7 +104,7 @@ toIEqualsList () {
 runFingerprinting () {
     local bamFile="${1:?No input BAM file given}"
     local fingerPrintsFile="${2:?No output fingerprints file given}"
-    if [[ "${runFingerprinting:-false}" == true && $(runningOnConvey) != true ]]; then
+    if [[ "${runFingerprinting:-false}" == true && ${useAcceleratedHardware:-false} != true ]]; then
         "${PYTHON_BINARY}" "${TOOL_FINGERPRINT}" "${fingerprintingSitesFile}" "${bamFile}" > "${fingerPrintsFile}.tmp" || throw 43 "Fingerprinting failed"
         mv "${fingerPrintsFile}.tmp" "${fingerPrintsFile}" || throw 39 "Could not move file"
     fi
@@ -144,7 +135,13 @@ removeRoddyBigScratch () {
 
 checkBamIsComplete () {
     local bamFile="${1:?No BAM file given}"
-    "$TOOL_BAM_IS_COMPLETE" "$bamFile" || throw 40 "BAM is incomplete: $bamFile"
+    local result
+    result=$("$TOOL_BAM_IS_COMPLETE" "$bamFile")
+    if [[ $? ]]; then
+        echo "BAM is terminated! $bamFile" >> /dev/stderr
+    else
+        throw 40 "BAM is not terminated! $bamFile"
+    fi
 }
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"
