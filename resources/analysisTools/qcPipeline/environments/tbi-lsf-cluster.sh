@@ -87,12 +87,12 @@ export VCFTOOLS_SORT_BINARY=vcf-sort
 
 # The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on Convey during view or sort.
 sambamba_sort_view() {
-    moduleLoad sambamba
+    moduleLoad sambamba SAMBAMBA_VERSION
     sambamba "$@"
     moduleUnload sambamba
 }
 export -f sambamba_sort_view
-export SAMBAMBA_BINARY=sambamba
+export SAMBAMBA_BINARY=sambamba_sort_view
 
 # The sambamba version used only for flagstats. For the flagstats sambamba 0.4.6 used is equivalent to samtools 0.1.19 flagstats. Newer versions
 # use the new way of counting in samtools (accounting for supplementary reads).
