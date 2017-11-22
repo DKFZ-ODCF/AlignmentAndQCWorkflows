@@ -85,7 +85,6 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         super(minorBam);
     }
 
-    @Override
     public void setAsTemporaryFile() {
         super.setAsTemporaryFile();
         if (hasIndex()) index().setAsTemporaryFile(); //Also indexFile files created by a or for a temporary bam file are temporary

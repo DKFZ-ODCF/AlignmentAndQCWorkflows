@@ -17,7 +17,7 @@
         <cvalue name='BEDTOOLS_VERSION' value='2.16.2' type='string'/>
         <cvalue name="VCFTOOLS_VERSION" value="0.1.10" type="string"/>
         <cvalue name="SAMTOOLS_VERSION" value="0.1.19" type="string"/>
-        <cvalue name="SAMBAMBA_VERSION" value="0.4.6" type="string"/>
+        <cvalue name="SAMBAMBA_VERSION" value="0.5.9" type="string"
                 description="Only used for 'view' and 'sort'."/>
         <cvalue name="SAMBAMBA_FLAGSTATS_VERSION" value="0.4.6" type="string"
                 description="Version 0.4.6 of sambamba produces the old samtools 0.1.19 compatible counts."/>
@@ -45,7 +45,7 @@
 
         <!-- Configuration options -->
         <cvalue name="runSlimWorkflow" value="true" type="boolean"/>
-        <cvalue name='useRoddyScratchAsBigFileScratch' value='true' type='boolean'
+        <cvalue name='useRoddyScratchAsBigFileScratch' value='false' type='boolean'
                 description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
