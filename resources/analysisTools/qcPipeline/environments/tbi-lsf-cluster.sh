@@ -87,7 +87,7 @@ export VCFTOOLS_SORT_BINARY=vcf-sort
 
 # The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on Convey during view or sort.
 sambamba_sort_view() {
-    moduleLoad sambamba
+    moduleLoad sambamba SAMBAMBA_VERSION
     sambamba "$@"
     moduleUnload sambamba
 }
