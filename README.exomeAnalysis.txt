@@ -5,7 +5,7 @@ The workflows are the same.
 
 == Changelist
 
-* Version update to 1.2.73
+* Version update to 1.2.76
 
 - lifted to Roddy 2.4
 - support for loading environment modules (via DefaultPlugin 1.2.0)

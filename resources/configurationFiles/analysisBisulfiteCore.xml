@@ -9,7 +9,6 @@
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
-
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${library}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
 
@@ -225,7 +224,6 @@
 
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="qcJson" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomic}_qualitycontrol.json'/>
 
-        <!-- These rules are only to avoid display of an auto-generated filename. The WGBS currently does not do fingerprinting but reuses the merge jobs of the WGS/WES workflow -->
         <filename class="TextFile" onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="fingerprints" pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
         <filename class="TextFile" onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlimWithLibrary' selectiontag="fingerprints" pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
         <filename class="TextFile" onMethod='BamFileGroup.mergeSlim' selectiontag="fingerprints" pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
