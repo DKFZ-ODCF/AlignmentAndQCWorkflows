@@ -10,6 +10,7 @@ import de.dkfz.roddy.execution.jobs.Job;
 import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.knowledge.files.FileGroup;
 import de.dkfz.roddy.knowledge.files.ITestdataSource;
+import de.dkfz.roddy.knowledge.files.Tuple2;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
 import de.dkfz.roddy.tools.LoggerWrapper;
 
@@ -63,9 +64,8 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
         align();
     }
 
-    public FastqcFile calcFastqc() {
-        fastqcFile = GenericMethod.callGenericTool("fastqc", this);//Common.fastqc(executionContext, this);
-        return fastqcFile;
+    public Tuple2<FastqcFile,TextFile> calcFastqc() {
+        return GenericMethod.callGenericTool("fastqc", this);//Common.fastqc(executionContext, this);
     }
 
     @Override

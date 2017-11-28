@@ -9,6 +9,7 @@ import de.dkfz.roddy.execution.jobs.BEJobResult;
 import de.dkfz.roddy.execution.jobs.Job;
 import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.knowledge.files.FileGroup;
+import de.dkfz.roddy.knowledge.files.Tuple2;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
 import de.dkfz.roddy.tools.LoggerWrapper;
 
@@ -71,8 +72,8 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
 
         LinkedList<FastqcFile> files = new LinkedList<FastqcFile>();
         for (LaneFile f : filesInGroup) {
-            FastqcFile calcFastqc = f.calcFastqc();
-            files.add(calcFastqc);
+            Tuple2<FastqcFile,TextFile> calcFastqcResult = f.calcFastqc();
+            files.add(calcFastqcResult.value0);
 
             if (useSingleEndProcessing) {
                 //Directly break after the first file if single end processing is active.
