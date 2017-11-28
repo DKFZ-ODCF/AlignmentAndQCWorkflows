@@ -95,7 +95,7 @@ fakeDupMarkMetrics () {
 
 
 toIEqualsList () {
-    declare -la inputFiles=($@)
+    declare -a inputFiles=($@)
     for inFile in ${inputFiles[@]}; do
 	    echo -n "I=$inFile "
     done
@@ -120,13 +120,13 @@ matchPrefixInArray () {
 
 isControlSample () {
     assertNonEmpty "$1" "isControlSample expects sample type name as single parameter" || return $?
-    declare -la prefixes="${possibleControlSampleNamePrefixes[@]}"
+    declare -a prefixes="${possibleControlSampleNamePrefixes[@]}"
     matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
 isTumorSample () {
     assertNonEmpty "$1" "isTumorSample expects sample type name as single parameter" || return $?
-    declare -la prefixes="${possibleTumorSampleNamePrefixes[@]}"
+    declare -a prefixes="${possibleTumorSampleNamePrefixes[@]}"
     matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
