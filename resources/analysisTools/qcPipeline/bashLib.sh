@@ -107,7 +107,7 @@ stringJoin () {
     local separator="$1"
     shift
     assertNonEmpty "$separator" "Undefined separator" || return $?
-    declare -la values=($@)
+    declare -a values=($@)
     local result=""
     local first=true
     for value in ${values[@]}; do
