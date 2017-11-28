@@ -15,12 +15,12 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="roddyBundledLibraries" level="project" />
     <orderEntry type="module" module-name="COWorkflows_1.2.20" />
-    <orderEntry type="module" module-name="RoddyCore" />
     <orderEntry type="library" name="R User Library" level="project" />
     <orderEntry type="library" name="R Skeletons" level="application" />
     <orderEntry type="module" module-name="RoddyToolLib_main" />
     <orderEntry type="module" module-name="PluginBase" />
+    <orderEntry type="library" name="roddyBundledLibraries" level="project" />
+    <orderEntry type="module" module-name="RoddyCore" />
   </component>
 </module>
