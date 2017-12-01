@@ -587,10 +587,14 @@
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_WG"/>
             <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
             <output type="tuple">
-                <output type="file" fnpatternselectiontag="correctedWindows" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_WINDOWS"/>
-                <output type="file" fnpatternselectiontag="tab" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_QUALITY"/>
-                <output type="file" fnpatternselectiontag="correctedGcPlot" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter='FILENAME_GC_CORRECT_PLOT'/>
-                    <output type="file" fnpatternselectiontag="tabSlim" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QC_GC_CORRECTION_JSON" />
+                <output type="file" fnpatternselectiontag="correctedWindows" typeof="de.dkfz.b080.co.files.TextFile"
+                        scriptparameter="FILENAME_GC_CORRECTED_WINDOWS"/>
+                <output type="file" fnpatternselectiontag="correctedTabSlim" typeof="de.dkfz.b080.co.files.TextFile"
+                        scriptparameter="FILENAME_GC_CORRECTED_QUALITY"/>
+                <output type="file" fnpatternselectiontag="correctedGcPlot" typeof="de.dkfz.b080.co.files.TextFile"
+                        scriptparameter='FILENAME_GC_CORRECT_PLOT'/>
+                <output type="file" fnpatternselectiontag="correctedJson" typeof="de.dkfz.b080.co.files.TextFile"
+                        scriptparameter="FILENAME_QC_GC_CORRECTION_JSON" />
             </output>
         </tool>
 
@@ -689,10 +693,10 @@
 
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedWindows"
                   pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_readCoverage_10kb_windows.filtered.corrected.txt.gz'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="tabSlim"
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedJson"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.json'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="tab"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.tsv'/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedTabSlim"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.slim.tsv'/>
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedGcPlot"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_gc_corrected.png'/>
 
