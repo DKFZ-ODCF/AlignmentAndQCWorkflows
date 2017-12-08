@@ -26,6 +26,8 @@ overrideBamFiles
 - fingerprinting for WGBS
 - turned off faulty fingerprinting on Conveys
 - classify FASTQs as QC-passed or QC-failed based on FASTQC output
+- check input BAMs for syntactic completeness (BAM trailer)
+- unit tests for Bash functions in workflowLib.sh and bashLib.sh (based on https://github.com/kward/shunit2.git)
 
 * Version update to 1.1.73
 

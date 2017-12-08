@@ -18,12 +18,14 @@ runSlimWorkflow             false   Use a full workflow with a lot of separate s
 
 == Changelist
 
-* Version update to UPCOMING
+* Version update to 1.2.76
 
+- Roddy 2.4
 - ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
 - fingerprinting for WGBS
 - turned off faulty fingerprinting on Conveys
 - classify FASTQs as QC-passed or QC-failed based on FASTQC output
+- check input BAMs for syntactic completeness (BAM trailer)
 
 * Version update to 1.1.73
 
