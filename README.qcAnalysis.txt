@@ -18,6 +18,10 @@ runSlimWorkflow             false   Use a full workflow with a lot of separate s
 
 == Changelist
 
+* Version update to 1.2.51
+
+* Version update to 1.0.51
+
 - Renamed plugin to AlignmentAndQCWorkflows.
 
 * Version update to 1.0.186

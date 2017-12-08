@@ -15,7 +15,8 @@ Switch                      Default Description
   - support for loading environment modules (via DefaultPlugin 1.2.0)
   - removed references to PBS to allow running on LSF cluster
   - fixed FASTQC code
-  - fingerprinting for WGBS
+  - fingerprinting
+
 
 * Version update 1.1.39
  
