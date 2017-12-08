@@ -23,8 +23,10 @@ overrideBamFiles
   - support for loading environment modules (via DefaultPlugin 1.2.0)
   - removed references to PBS to allow running on LSF cluster
   - fixed FASTQC code
+  - classify FASTQs as QC-passed or QC-failed based on FASTQC output
+  - check input BAMs for syntactic completeness (BAM trailer)
 
-...
+* Version update 1.1.51
 
 - Renamed plugin to AlignmentAndQCWorkflows.
 
