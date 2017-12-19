@@ -2,9 +2,14 @@
 
 set -xv
 
-# Load/Unload a module with $name and using the version given by the $versionVariable.
-# If the version is not given, take the name, put it into upper case and append _VERSION.
-versionVariable () {
+# Given a name of a tool version variable, get the name of the tool version variable. The
+# Idea is that if tool name variable is not defined, the name is interpreted as plain tool
+# name. Then the tool name is upper-cased _VERSION appended.
+#
+# sambamba => SAMBAMBA_VERSION
+# SAMBAMBA_VERSION => SAMBAMBA_VERSION    // if SAMBAMBA_VERSION is defined as variable
+#
+getVersionVariableName () {
     local name="${1:?No binary name given}"
     local versionVariable="${2:-}"
     if [[ -z "$versionVariable" ]]; then
@@ -17,10 +22,17 @@ versionVariable () {
 }
 export -f versionVariable
 
+# Load a module given the module name. The module version is implicitly taken from the
+# matching tool version variable, optionally given as second parameter. If the second
+# parameter is not given, the tool name will be upper-cased and _VERSION appended, to
+# get the name of the tool version variable.
+#
+# R_VERSION=3.3.1, then $(moduleLoad R) will do $(module load R/3.3.1).
+# RSCRIPT_VERSION=3.4.0, then $(moduleLoad R RSCRIPT_VERSION) will do $(module load R/3.4.0)
 moduleLoad() {
     local name="${1:?No module name given}"
     local versionVariable="${2:-}"
-    versionVariable=$(versionVariable "$name" "$versionVariable")
+    versionVariable=$(getVersionVariableName "$name" "$versionVariable")
     if [[ -z "${!versionVariable}" ]]; then
         throw 200 "$versionVariable is not set"
     fi
@@ -28,10 +40,11 @@ moduleLoad() {
 }
 export -f moduleLoad
 
+# Like moduleLoad, but for unloading the module/version.
 moduleUnload() {
     local name="${1:?No module name given}"
     local versionVariable="${2:-}"
-    local versionVariable=$(versionVariable "$name" "$versionVariable")
+    local versionVariable=$(getVersionVariableName "$name" "$versionVariable")
     if [[ -z "${!versionVariable}" ]]; then
         throw 200 "versionVariable for $name is not set"
     fi
