@@ -25,8 +25,9 @@
     <orderEntry type="module" module-name="RoddyToolLib_main" />
     <orderEntry type="module" module-name="COWorkflowsBasePlugin" />
     <orderEntry type="module" module-name="PluginBase" />
-    <orderEntry type="library" name="roddyBundledLibraries" level="project" />
-    <orderEntry type="module" module-name="RoddyCore" />
+    <orderEntry type="module" module-name="Roddy_main" />
+    <orderEntry type="library" scope="TEST" name="Gradle: junit:junit:4.12" level="project" />
+    <orderEntry type="library" name="Gradle: org.codehaus.groovy:groovy-all:2.4.9" level="project" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />
