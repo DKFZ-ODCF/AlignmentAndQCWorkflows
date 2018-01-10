@@ -27,7 +27,11 @@ The name of the Conda environment is arbitrary but needs to be consistent with t
 
 ### Disclaimer
 
-The software versions in the Conda environment are not exactly the same as the ones in our local HPC infrastructure at the German Cancer Research Center. Notable differences are:
+The software versions in the Conda environment are not exactly the same as the ones in our local HPC infrastructure at the German Cancer Research Center. Among the many differences the following are probably most interesting for the user of the data:
 
-* biobambam: Instead of 0.0.148 the Conda environment contains 2.0.79. As long as you do not select `markDuplicatesVariant=biobambam` this won't be a problem, as biobambam is only used for sorting BAMs.
-* bwa: For the WGBS workflow we currently use a patched version of BWA that does not check for the "/1" and "/2" first and second read marks. This version is not available in BioConda and thus the WGBS workflow won't work with the Conda environment.
+|Package   | DKFZ version | Conda version | Comment                |
+|----------|--------------|---------------|------------------------|
+|biobambam | 0.0.148      | 2.0.79        | As long as you do not select `markDuplicatesVariant=biobambam` this won't be a problem, as biobambam is only used for sorting BAMs. |
+|picard    | 1.125        | 1.129
+|bwa       | patched 0.7.8| 0.7.8         | For the WGBS workflow we currently use a patched version of BWA that does not check for the "/1" and "/2" first and second read marks. This version is not available in BioConda and thus the WGBS workflow won't work with the Conda environment. |
+|R         | 3.4.0        | 3.2.2        | |
