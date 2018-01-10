@@ -70,7 +70,7 @@ useBioBamBamSort=${useBioBamBamSort-true}
 # Do not use adaptor trimming by default.
 useAdaptorTrimming=${useAdaptorTrimming-false}
 
-if [[ ${bamFileExists} == false ]]	# we have to make the BAM
+if [[ ${bamFileExists} == false ]]  # we have to make the BAM
 then
 	mkfifo ${FNPIPE1} ${FNPIPE2}
 	if [[ ${useAdaptorTrimming} == true ]]
