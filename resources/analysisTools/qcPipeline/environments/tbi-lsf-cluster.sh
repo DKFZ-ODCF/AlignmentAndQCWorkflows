@@ -20,7 +20,7 @@ getVersionVariableName () {
         echo "$versionVariable"
     fi
 }
-export -f versionVariable
+export -f getVersionVariableName
 
 # Load a module given the module name. The module version is implicitly taken from the
 # matching tool version variable, optionally given as second parameter. If the second
