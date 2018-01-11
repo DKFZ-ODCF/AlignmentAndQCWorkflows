@@ -3,8 +3,8 @@
 set -xv
 
 # Given a name of a tool version variable, get the name of the tool version variable. The
-# Idea is that if tool name variable is not defined, the name is interpreted as plain tool
-# name. Then the tool name is upper-cased _VERSION appended.
+# idea is that if the tool name variable is not defined, the name is interpreted as plain tool
+# name and an upper-cased _VERSION is appended.
 #
 # sambamba => SAMBAMBA_VERSION
 # SAMBAMBA_VERSION => SAMBAMBA_VERSION    // if SAMBAMBA_VERSION is defined as variable
@@ -20,7 +20,7 @@ getVersionVariableName () {
         echo "$versionVariable"
     fi
 }
-export -f versionVariable
+export -f getVersionVariableName
 
 # Load a module given the module name. The module version is implicitly taken from the
 # matching tool version variable, optionally given as second parameter. If the second
