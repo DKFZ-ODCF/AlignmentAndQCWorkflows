@@ -32,6 +32,6 @@ The software versions in the Conda environment are not exactly the same as the o
 |Package   | DKFZ version | Conda version | Comment                |
 |----------|--------------|---------------|------------------------|
 |biobambam | 0.0.148      | 2.0.79        | As long as you do not select `markDuplicatesVariant=biobambam` this won't be a problem, as biobambam is only used for sorting BAMs. |
-|picard    | 1.125        | 1.126         | |
+|picard    | 1.125        | 1.126         | Probably no big deal. |
 |bwa       | patched 0.7.8| 0.7.8         | For the WGBS workflow we currently use a patched version of BWA that does not check for the "/1" and "/2" first and second read marks. This version is not available in BioConda and thus the WGBS workflow won't work with the Conda environment. |
-|R         | 3.4.0        | 3.2.2        | |
+|R         | 3.4.0        | 3.4.1        | Probably no big deal. |
