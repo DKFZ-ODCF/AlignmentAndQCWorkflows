@@ -95,10 +95,7 @@ fi
 #Wait for unfinished samtools jobs.
 wait
 
-#${SAMTOOLS_BINARY} index ${NP_INDEX}
-errorString="There was a non-zero exit code in the bwa sampe - samtools sort pipeline; exiting..." 
-
-source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+checkBwaLog "$TMP_FILE" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG"
 
 #rm $FILE_BENCHMARK_STAYALIVE
 #wait $utilizationLogProcess

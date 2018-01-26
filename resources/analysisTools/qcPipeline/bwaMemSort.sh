@@ -154,11 +154,10 @@ rm -rf ${FILENAME_BAMSORT_TMP}* 2> /dev/null # Remove temporary files.
 
 #fi
 #${SAMTOOLS_BINARY} index ${NP_INDEX}
-errorString="There was a non-zero exit code in the bwa sampe - samtools sort pipeline; exiting..." 
 
 [[ -f ${TMP_FILE_INDEX} ]] && mv ${TMP_FILE_INDEX} ${INDEX_FILE}
 
-source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+checkBwaLog "$TMP_FILE" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG"
 [[ "$ON_CONVEY" == "false" ]] && [[ ! -s ${INDEX_FILE} ]] && echo "Bam Index is of size 0; Exitting" && exit 5
 
 #rm $FILE_BENCHMARK_STAYALIVE

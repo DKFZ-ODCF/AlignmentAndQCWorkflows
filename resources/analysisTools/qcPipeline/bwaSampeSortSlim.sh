@@ -143,8 +143,7 @@ if [[ ${bamFileExists} == false ]]	# BAM was created
 then
 	rm $FNPIPE1
 	rm $FNPIPE2
-	errorString="There was a non-zero exit code in the bwa sampe - samtools sort pipeline; exiting..." 
-	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+	checkBwaLog "$TMP_FILE" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM}
 fi
 

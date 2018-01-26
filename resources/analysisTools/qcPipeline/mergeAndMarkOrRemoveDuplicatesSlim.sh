@@ -129,20 +129,20 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
             echo $? > ${returnCodeMarkDuplicatesFile}) & procIDMarkdup=$!
 
         # provide named pipes of SAM type
-        (cat ${NP_PIC_OUT} | mbuf 2g | tee ${NP_SAM_IN} ${NP_COMBINEDANALYSIS_IN} > /dev/null) & procIDMarkOutPipe=$!
+        (cat ${NP_PIC_OUT} | mbuf ${MBUFFER_SIZE_LARGE} | tee ${NP_SAM_IN} ${NP_COMBINEDANALYSIS_IN} > /dev/null) & procIDMarkOutPipe=$!
 
         md5File "$NP_MD5_IN" "$tempMd5File" & procIDMd5=$!
 
         # convert SAM to BAM
         (${SAMTOOLS_BINARY} view -S -@ 8 -b ${NP_SAM_IN} \
-            | mbuf 2g \
+            | mbuf ${MBUFFER_SIZE_LARGE} \
             | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_MD5_IN} \
             > ${tempBamFile}) & procIDSamtoolsView=$!
 
     else
         # To prevent abundancy of ifs, reuse the process id another time.
         (cat ${FILENAME} \
-            | mbuf 2g \
+            | mbuf ${MBUFFER_SIZE_LARGE} \
             | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} \
             | ${SAMTOOLS_BINARY} view - \
             > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!
@@ -161,11 +161,11 @@ elif markWithSambamba; then
 
     	fakeDupMarkMetrics "$NP_METRICS_IN" "$tempFilenameMetrics" & procIDFakeMetrics=$!
 
-        # The tee-like mbuffer decouples the IO in the output stream. -f forces writing into existing FIFO file.
+        # The tee-like mbuffer decouples the IO in the output streams. -f is required to force writing into existing FIFO file.
 
     	# Compress with uncompressed BAM stream with multiple cores.
     	${SAMTOOLS_BINARY} view -S -b -@ 6 "$NP_BAM_COMPRESS_IN" \
-    	    | mbuf 100m \
+    	    | mbuf ${MBUFFER_SIZE_SMALL} \
     	        -f -o "$NP_INDEX_IN" \
     	        -f -o "$tempBamFile" \
     	        -f -o "$NP_MD5_IN" \
@@ -173,7 +173,7 @@ elif markWithSambamba; then
 
         # Sambamba outputs uncompressed BAM, so convert to SAM make a SAM pipe for the Perl tools.
 	    ${SAMTOOLS_BINARY} view -h "$NP_SAM_IN" \
-    	    | mbuf 100m \
+    	    | mbuf ${MBUFFER_SIZE_SMALL} \
       	        -f -o "$NP_METRICS_IN" \
     	        -f -o "$NP_COMBINEDANALYSIS_IN" \
     	        -f -o "$NP_BAM_COMPRESS_IN" \
@@ -181,7 +181,7 @@ elif markWithSambamba; then
 
     	# Create BAM pipes for samtools index, flagstat and the two D tools, write BAM.
 	    cat "$NP_PIC_OUT" \
-    	    | mbuf 100m \
+    	    | mbuf ${MBUFFER_SIZE_SMALL} \
     	        -f -o "$NP_SAM_IN" \
     	        -f -o "$NP_FLAGSTATS_IN" \
     	        -f -o "$NP_COVERAGEQC_IN" \
@@ -196,7 +196,7 @@ elif markWithSambamba; then
 	else
         # To prevent abundancy of ifs, reuse the process id another time.
         (cat "$FILENAME" \
-            | mbuf 2g \
+            | mbuf ${MBUFFER_SIZE_LARGE} \
             | tee "$NP_INDEX_IN" "$NP_FLAGSTATS_IN" "$NP_COVERAGEQC_IN" "$NP_READBINS_IN" \
             | "$SAMTOOLS_BINARY" view - \
             > "$NP_COMBINEDANALYSIS_IN") & procIDSamtoolsView=$!
@@ -226,15 +226,14 @@ elif markWithBiobambam; then
 
         # create BAM pipes for flagstat and the two D tools, write to BAM
         # REUSE! NP_SAM_IN for bam to sam conversion
-        # was: MBUF_4G, why?
-        cat ${NP_PIC_OUT} | mbuf 2g | tee ${NP_SAM_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_MD5_IN} \
+        cat ${NP_PIC_OUT} | mbuf ${MBUFFER_SIZE_LARGE} | tee ${NP_SAM_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_MD5_IN} \
             > ${tempBamFile} & procIDMarkOutPipe=$!
 
         # make a SAM pipe for the Perl tool
-        ${SAMTOOLS_BINARY} view ${NP_SAM_IN} | mbuf 2g > ${NP_COMBINEDANALYSIS_IN} & procIDSamtoolsView=$!
+        ${SAMTOOLS_BINARY} view ${NP_SAM_IN} | mbuf ${MBUFFER_SIZE_LARGE} > ${NP_COMBINEDANALYSIS_IN} & procIDSamtoolsView=$!
     else
         (cat ${FILENAME} \
-            | mbuf 2g \
+            | mbuf ${MBUFFER_SIZE_LARGE} \
             | tee ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} \
             | ${SAMTOOLS_BINARY} view - \
             > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!
@@ -264,7 +263,7 @@ ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsF
 #TABIX_BINARY=tabix
 
 #--processors=1: this part often fails with broken pipe, ?? where this comes from. The mbuffer did not help, maybe --processors=4 does?
-(${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | mbuf 100m | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
+(${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | mbuf ${MBUFFER_SIZE_SMALL} | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
 
 # Some waits for parallel processes. This also depends on the used merge binary.
 # Picard

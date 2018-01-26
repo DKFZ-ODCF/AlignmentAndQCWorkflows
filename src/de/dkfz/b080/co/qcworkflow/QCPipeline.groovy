@@ -1,14 +1,16 @@
-package de.dkfz.b080.co.qcworkflow;
+package de.dkfz.b080.co.qcworkflow
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig
+import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService
+import de.dkfz.b080.co.common.COProjectsRuntimeService
+import de.dkfz.b080.co.files.*
 import de.dkfz.b080.co.methods.ACEseq
-import de.dkfz.b080.co.files.*;
-import de.dkfz.b080.co.common.*
+import de.dkfz.roddy.core.ExecutionContext
+import de.dkfz.roddy.core.ExecutionContextError
+import de.dkfz.roddy.core.Workflow
 import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
-import de.dkfz.roddy.tools.LoggerWrapper;
-import de.dkfz.roddy.core.*;
-
-import java.util.*
+import de.dkfz.roddy.tools.LoggerWrapper
 
 /**
  * @author michael

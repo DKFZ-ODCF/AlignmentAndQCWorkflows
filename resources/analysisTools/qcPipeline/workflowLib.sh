@@ -187,4 +187,60 @@ checkBamIsComplete () {
     fi
 }
 
+checkBwaLog() {
+    local bamFile="${1:?No BAM file given}"
+    local bwaOutput="${2:?No BWA STDERR output file given}"
+    local sortLog="${3:?No sort log given}"
+
+    # disable file size checks if the interprocess streaming is active
+    useMBufferStreaming=${useMBufferStreaming-false}
+    if [[ $useMBufferStreaming != true ]]
+    then
+
+        if [[ "2048" -gt `stat -c %s $bamFile` ]]; then
+            throw 33 "Output file is too small!"
+        fi
+
+        # TODO Check that?
+        if [[ "$?" != "0"  ]]; then
+            throw 32 "There was a non-zero exit code in bwa aln; exiting..."
+        fi
+    fi
+
+    # Check for segfault messages
+    success=`grep " fault" ${bwaOutput}`
+    if [[ ! -z "$success" ]]; then
+        throw 31 "found segfault $success in bwa logfile!"
+    fi
+
+    # Barbara Aug 10 2015: I can't remember what bwa aln and sampe reported as "error".
+    # bluebee bwa has "error_count" in bwa-0.7.8-r2.05; and new in bwa-0.7.8-r2.06: "WARNING:top_bs_ke_be_hw: dummy be execution, only setting error."
+    # these are not errors that would lead to fail, in contrast to "ERROR: Bus error"
+    success=`grep -i "error" ${bwaOutput} | grep -v "error_count" | grep -v "dummy be execution"`
+    if [[ ! -z "$success" ]]; then
+        throw 36 "found error $success in bwa logfile!"
+    fi
+
+    # Check for BWA abortion.
+    success=`grep "Abort. Sorry." ${bwaOutput}`
+    if [[ ! -z "$success" ]]; then
+        throw 37 "found error $success in bwa logfile!"
+    fi
+
+    # samtools sort may complain about truncated temp files and for each line outputs
+    # the error message. This happens when the same files are written at the same time,
+    # see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
+    # This happens when the scheduler puts the same job on 2 nodes bc. the prefix for samtools-0.1.19 -o $prefix is constructed using the job ID
+    if [ ! -z $sortLog ] && [ -f $sortLog ]; then
+        success=`grep "is truncated. Continue anyway." $sortLog`
+        if [[ ! -z "$success" ]]; then
+            throw 38 "echo found error $success in samtools sorting logfile!"
+        fi
+    else
+        echo "there is no samtools sort log file" >> /dev/stderr
+    fi
+    echo all OK
+}
+
+
 eval "$WORKFLOWLIB___SHELL_OPTIONS"

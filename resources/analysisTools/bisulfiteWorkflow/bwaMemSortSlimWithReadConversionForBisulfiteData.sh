@@ -24,8 +24,8 @@ NP_SAMTOOLS_INDEX_IN=${RODDY_SCRATCH}/np_samtools_index_in
 NP_BWA_OUT=${RODDY_SCRATCH}/np_bwa_out
 NP_BCONV_OUT=${RODDY_SCRATCH}/np_bconv_out
 
-MBUF_100M="${MBUFFER_BINARY} -m 100m -q -l /dev/null"
-MBUF_2G="${MBUFFER_BINARY} -m 2g -q -l /dev/null"
+MBUF_SMALL="${MBUFFER_BINARY} -m ${MBUFFER_SIZE_SMALL} -q -l /dev/null"
+MBUF_LARGE="${MBUFFER_BINARY} -m ${MBUFFER_SIZE_LARGE} -q -l /dev/null"
 
 mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS} ${NP_BWA_OUT} ${NP_BCONV_OUT}
 
@@ -127,7 +127,7 @@ fi
 (${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) & procIDGenomeCoverage=$!
 
 # read bins
-(set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_100M | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
+(set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_SMALL | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
 
 # use sambamba for flagstats
 (set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
@@ -135,7 +135,7 @@ fi
 if [[ ${bamFileExists} == true ]]; then
 	echo "the BAM file already exists, re-creating other output files."
 	# make all the pipes
-	(cat ${FILENAME_SORTED_BAM} | ${MBUF_2G} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_2G} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
+	(cat ${FILENAME_SORTED_BAM} | ${MBUF_LARGE} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_LARGE} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 else
 	if [[ ${useBioBamBamSort} == false ]]; then
 		# we use samtools for making the index
@@ -162,7 +162,7 @@ else
 		${SAMTOOLS_BINARY} view -h ${NP_BCONV_OUT} | \
 		tee ${NP_COMBINEDANALYSIS_IN} | \
 		${SAMTOOLS_BINARY} view -uSbh -F 2304 - | \
-		$MBUF_2G | \
+		$MBUF_LARGE | \
 		${SAMTOOLS_BINARY} sort -@ 8 \
 			-m ${SAMPESORT_MEMSIZE} \
 			-o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
@@ -192,8 +192,7 @@ else	# make sure to rename BAM file when it has been produced correctly
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	rm $FNPIPE1
 	rm $FNPIPE2
-	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
-	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+	checkBwaLog "$TMP_FILE" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG"
 	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp

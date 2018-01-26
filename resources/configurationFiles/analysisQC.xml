@@ -45,16 +45,13 @@
 
         <!-- Configuration options -->
         <cvalue name="runSlimWorkflow" value="true" type="boolean"/>
-        <cvalue name='useRoddyScratchAsBigFileScratch' value='false' type='boolean'
-                description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
 
-        <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
+        <cvalue name="BWA_MEM_OPTIONS" value='" -T 0 "' type="string"/>
 
-        <cvalue name="BWA_MEM_THREADS" value="8" type="integer"
-                description="Threads for bwa mem. NOTE: This does not change the number of threads requested via the batch processing system!"/>
+        <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
 
         <!-- Fingerprinting -->
         <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
@@ -111,6 +108,14 @@
         <cvalue name='markDuplicatesVariant' value='' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
 
+
+        <cvalue name='useRoddyScratchAsBigFileScratch' value='false' type='boolean'
+                description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
+
+        <cvalue name="BWA_MEM_THREADS" value="8" type="integer"
+                description="Threads for bwa mem. NOTE: This does not change the number of threads requested via the batch processing system!"/>
+        <cvalue name="BWA_MEM_CONVEY_ADDITIONAL_OPTIONS" value='"--bb_cny_timeout=5000000000 --bb_profile=1 -t 8"' type="string"/>
+
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'
                 description="Please use -l 0, the workflow unpacks the BAM directly with samtools. Compression is faster and more stable with samtools."/>
 
@@ -121,6 +126,14 @@
                 description="Number of threads for sorting the SAM output when running on Convey."/>
         <cvalue name="CONVEY_SAMBAMBA_SAMSORT_MEMSIZE" value="96G" type="string"
                 description="Estimated memory for sorting SAM output on Convey. Conveys have 128 GB. Safety margin for sambamba GC is included."/>
+        <cvalue name="SAMPESORT_MEMSIZE" value="20G" type="integer"
+                description="Value for the -m parameter of samtools sort."/>
+
+        <cvalue name="MBUFFER_SIZE_LARGE" value="2g" type="string"/>
+        <cvalue name="MBUFFER_SIZE_SMALL" value="100m" type="string"/>
+
+        <!--<cvalue name="enableJobProfiling" value="false"/>-->
+        <!--<cvalue name="JOB_PROFILER_BINARY" value="strace.sh"/>-->
 
     </configurationvalues>
     <!--<testdataoptions>-->

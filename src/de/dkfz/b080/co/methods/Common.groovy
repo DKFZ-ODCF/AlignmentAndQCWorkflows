@@ -20,7 +20,6 @@ class Common {
     public static final String GENOMECOVERAGE = "genomeCoverage";
     public static final String QCSUMMARY = "qcSummary";
 
-    public static final String CONFIG_FILE = "CONFIG_FILE";
     public static final String PID = "DataSet";
 
     @ScriptCallingMethod

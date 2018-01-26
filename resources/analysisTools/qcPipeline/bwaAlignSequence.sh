@@ -94,9 +94,7 @@ else
     rm $i1 $i2 $o1
 fi
 
-
-errorString="There was a non-zero exit code in bwa aln; exiting..." 
-source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
+checkBwaLog "$TMP_FILE" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG"
 
 #rm $FILE_BENCHMARK_STAYALIVE
 #wait $utilizationLogProcess
