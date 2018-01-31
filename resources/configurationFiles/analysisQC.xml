@@ -332,7 +332,6 @@
 
         <tool name='commonAlignmentSettingsScript' value='bwaCommonAlignmentSettings.sh' basepath='qcPipeline'/>
 
-        <tool name='bwaErrorCheckingScript' value='bwaErrorChecking.sh' basepath='qcPipeline'/>
         <tool name='insilicoGenotyperScript' value='insilicoGenotyper.py' basepath='qcPipeline'/>
         <tool name='pairedEndReadAberrationsScript' value='pairedEndReadAberrations.py' basepath='qcPipeline'/>
         <tool name='coveragePlotScript' value='coveragePlot.R' basepath='qcPipeline'/>
