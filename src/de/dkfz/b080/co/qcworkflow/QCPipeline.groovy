@@ -272,12 +272,11 @@ public class QCPipeline extends Workflow {
     }
 
     @Override
-    public boolean checkExecutability(ExecutionContext context) {
+    boolean checkExecutability(ExecutionContext context) {
         return checkSingleBam(context) && checkSamples(context) && checkLaneFiles(context);
     }
 
-    @Override
-    public boolean createTestdata(ExecutionContext context) {
+    boolean createTestdata(ExecutionContext context) {
         boolean allOk = true;
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
 
