@@ -6,7 +6,7 @@
 
 set -uvex
 
-source "$TOOL_WORKFLOW_LIB"
+source "$TOOL_BASH_LIB"
 printInfo
 
 # Check for single lane processing.
