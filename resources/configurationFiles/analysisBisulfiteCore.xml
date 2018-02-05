@@ -14,7 +14,7 @@
                 description="Absolute path to the in-silico bisulfite converted reference sequenced used for alignment." />
     </configurationvalues>
     <processingTools>
-        <tool name='alignAndPairSlimWithReadConversionForBisulfiteData' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='qcPipeline'>
+        <tool name='alignAndPairSlimWithReadConversionForBisulfiteData' value='bwaMemSortSlimWithReadConversionForBisulfiteData.sh' basepath='bisulfiteWorkflow'>
             <resourcesets>
                 <!-- Test -->
                 <rset size="t" memory="50" cores="8" nodes="1" walltime="1" queue="devel"/>
