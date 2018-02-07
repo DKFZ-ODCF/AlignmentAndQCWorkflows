@@ -57,12 +57,13 @@ if [[ -v EXISTING_BAM ]]; then
         # the Perl script returns BAM names separated by :, ending with :
         if [ -z $notyetmerged ]
         then
-                bamFileExists=true
-                echo "All listed BAM files are already in ${EXISTING_BAM}, re-creating other output files."
-        else	# new lane(s) need to be merged to the BAM
+            echo "All listed BAM files are already in ${EXISTING_BAM}, re-creating other output files."
+            bamFileExists=true
+        else
+            echo "New lane(s) need to be merged to the BAM."
 		    mkdir -p $tempDirectory
             # input files is now the merged file and the new file(s)
-            declare -a INPUT_FILES=("$FILENAME" $(echo $notyetmerged | sed -re 's/:/ /g'))
+            declare -a INPUT_FILES=("$EXISTING_BAM" $(echo $notyetmerged | sed -re 's/:/ /g'))
             # keep the old metrics file for comparison. For an externally provided BAM (via cvalue 'bam')
             # that file may not exist in the target directory.
             if [[ -f $FILENAME_METRICS ]]; then
