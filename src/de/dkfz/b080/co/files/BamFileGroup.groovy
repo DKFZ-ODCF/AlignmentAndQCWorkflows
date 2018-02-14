@@ -76,7 +76,8 @@ public class BamFileGroup extends FileGroup<BamFile> {
                 }
             }
 
-            Object[] parameterList = ([this, "SAMPLE=${sample.getName()}"] as ArrayList<Object>) + (additionalMergeParameters as ArrayList<Object>) as Object[]
+            Object[] parameterList = ([this, "SAMPLE=${sample.getName()}", "sample=${sample.getName()}"]
+                    as ArrayList<Object>) + (additionalMergeParameters as ArrayList<Object>) as Object[]
             mergedBam = (BamFile) GenericMethod.callGenericTool(toolId, getFilesInGroup().get(0), parameterList)
         }
         return mergedBam;
