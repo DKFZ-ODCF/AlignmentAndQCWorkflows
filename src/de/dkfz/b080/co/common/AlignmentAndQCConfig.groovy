@@ -19,13 +19,13 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_TARGET_REGIONS_FILE = "TARGET_REGIONS_FILE"
     public static final String CVALUE_TARGETSIZE = "TARGETSIZE"
     public static final String CVALUE_TARGET_SIZE = "TARGET_SIZE"
-    public static final String CVALUE_RUN_COVERAGE_PLOTS_ONLY = "runCoveragePlotsOnly";
-    public static final String CVALUE_OVERRIDE_BAM_FILES = "overrideBamFiles";
-    public static final String CVALUE_OVERRIDE_SAMPLE_NAMES = "overrideSampleNames";
-    public static final String CVALUE_MAPPABILITY_FILE = "MAPPABILITY_FILE_ALN";
-    public static final String CVALUE_REPLICATION_TIME_FILE = "REPLICATION_TIME_FILE_ALN";
-    public static final String CVALUE_GC_CONTENT_FILE = "GC_CONTENT_FILE_ALN";
-    public static final String CVALUE_RUN_ACESEQ_QC = "runACEseqQc";
+    public static final String CVALUE_RUN_COVERAGE_PLOTS_ONLY = "runCoveragePlotsOnly"
+    public static final String CVALUE_OVERRIDE_BAM_FILES = "overrideBamFiles"
+    public static final String CVALUE_OVERRIDE_SAMPLE_NAMES = "overrideSampleNames"
+    public static final String CVALUE_MAPPABILITY_FILE = "MAPPABILITY_FILE_ALN"
+    public static final String CVALUE_REPLICATION_TIME_FILE = "REPLICATION_TIME_FILE_ALN"
+    public static final String CVALUE_GC_CONTENT_FILE = "GC_CONTENT_FILE_ALN"
+    public static final String CVALUE_RUN_ACESEQ_QC = "runACEseqQc"
 
     public static final String CVALUE_CLIP_INDEX = "CLIP_INDEX"
     public static final String CVALUE_CYTOSINE_POSITIONS_INDEX = "CYTOSINE_POSITIONS_INDEX"
@@ -33,7 +33,7 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_FINGERPRINTING_SITES_FILE="fingerprintingSitesFile"
     public static final String CVALUE_DEFAULT_LIBRARY_NAME = "defaultLibraryName"
 
-    public AlignmentAndQCConfig(ExecutionContext context) {
+    AlignmentAndQCConfig(ExecutionContext context) {
         super(context)
     }
 
@@ -41,8 +41,16 @@ class AlignmentAndQCConfig extends COConfig {
         return filename.replaceAll("[\$]${ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION}(?=\\W|\$)", dirExecution)
     }
 
-    public String getSingleBamParameter() {
-        return configValues.get("bam", "");
+    String getSingleBamParameter() {
+        return configValues.get("bam", "")
+    }
+
+    boolean getUseOnlyExistingTargetBam() {
+        return configValues.getBoolean("useOnlyExistingTargetBam", false)
+    }
+
+    boolean getUseExistingLaneBams() {
+        return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false)
     }
 
     public String getIndexPrefix() {
@@ -151,10 +159,6 @@ class AlignmentAndQCConfig extends COConfig {
 
     public boolean getRunCoveragePlots() {
         return configValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true)
-    }
-
-    public boolean getRunSlimWorkflow() {
-        return configValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false)
     }
 
     public boolean getRunCollectBamFileMetrics() {

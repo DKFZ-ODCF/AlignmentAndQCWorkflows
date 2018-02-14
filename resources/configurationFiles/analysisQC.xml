@@ -4,7 +4,7 @@
                runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
                imports="commonCOWorkflowsSettings"
                canCreateTestdata='true'
-               listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,qcSummary,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"
+               listOfUsedTools="alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,qcSummary,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
@@ -91,8 +91,6 @@
         <cvalue name='min_X_ratio_ALN' value='0.8' type="float"/>
         <cvalue name='min_Y_ratio_ALN' value='0.12' type="float"/>
 
-        <!-- cnvMergeFilter Opts-->
-
         <!-- cnv_min_coverage should be 50 for controls and 0 for tumors. Take care that you correctly set the possible{Tumor,Control}SampleNamePrefixes variables! -->
         <cvalue name='cnv_min_coverage_ALN' value='50' type="integer"/>
         <cvalue name='mapping_quality_ALN' value='1000' type="integer"/>
@@ -126,7 +124,7 @@
                 description="Number of threads for sorting the SAM output when running on Convey."/>
         <cvalue name="CONVEY_SAMBAMBA_SAMSORT_MEMSIZE" value="96G" type="string"
                 description="Estimated memory for sorting SAM output on Convey. Conveys have 128 GB. Safety margin for sambamba GC is included."/>
-        <cvalue name="SAMPESORT_MEMSIZE" value="20G" type="integer"
+        <cvalue name="SAMPESORT_MEMSIZE" value="10G" type="integer"
                 description="Value for the -m parameter of samtools sort."/>
 
         <cvalue name="MBUFFER_SIZE_LARGE" value="2g" type="string"/>
@@ -173,93 +171,6 @@
             </output>
         </tool>
         <tool name='adaptorTrimming' value='trimmomatic/trimmomatic-0.30.jar' basepath="qcPipelineTools"/>
-        <tool name='alignment' value='bwaAlignSequence.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="4" cores="8" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="l" memory="4" cores="8" nodes="1" walltime="10"/>
-                <rset size="xl" memory="8" cores="8" nodes="1" walltime="10"/>
-            </resourcesets>
-        </tool>
-        <tool name='accelerated:alignment' value='bwaAlignSequence.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="24" cores="12" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="m" memory="24" cores="12" nodes="1" walltime="1" queue="convey"/>
-                <rset size="l" memory="24" cores="12" nodes="1" walltime="2" queue="convey"/>
-                <rset size="xl" memory="36" cores="12" nodes="1" walltime="5" queue="convey"/>
-            </resourcesets>
-        </tool>
-        <tool name='sampesort' value='bwaSampeSort.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="25" cores="6" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="s" memory="38" cores="6" nodes="1" walltime="2"/>
-                <rset size="m" memory="42" cores="6" nodes="1" walltime="4"/>
-                <rset size="l" memory="52" cores="6" nodes="1" walltime="10"/>
-                <rset size="xl" memory="75" cores="6" nodes="1" walltime="12"/>
-            </resourcesets>
-        </tool>
-        <tool name='sampesortSlim' value='bwaSampeSortSlim.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="25" cores="6" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="s" memory="25" cores="6" nodes="1" walltime="1"/>
-                <rset size="m" memory="30" cores="6" nodes="1" walltime="2"/>
-                <rset size="l" memory="35" cores="8" nodes="1" walltime="7"/>
-                <rset size="xl" memory="35" cores="6" nodes="1" walltime="12"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.AlignedSequenceFile" scriptparameter="FILENAME_SEQ_1" />
-            <input type="file" typeof="de.dkfz.b080.co.files.AlignedSequenceFile" scriptparameter="FILENAME_SEQ_2" />
-            <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_1" />
-            <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_2" />
-            <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
-            <input type="string" setby="callingCode" scriptparameter="RUN"/>
-            <input type="string" setby="callingCode" scriptparameter="LANE"/>
-            <input type="string" setby="callingCode" scriptparameter="LB"/>
-            <input type="string" setby="callingCode" scriptparameter="RAW_SEQ_FILE_1_INDEX"/>
-            <input type="string" setby="callingCode" scriptparameter="RAW_SEQ_FILE_2_INDEX"/>
-            <output type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_SORTED_BAM">
-                <output type="file" variable="flagstatsFile" typeof="de.dkfz.b080.co.files.FlagstatsFile" scriptparameter="FILENAME_FLAGSTATS" />
-                <output type="file" variable="extendedFlagstatsFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_EXTENDED_FLAGSTATS" />
-                <output type="file" variable="chromosomeDiffStatisticsFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAME_DIFFCHROM_STATISTICS" />
-                <output type="file" variable="chromosomeDiffMatrixFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffTextFile" scriptparameter="FILENAME_DIFFCHROM_MATRIX" />
-                <output type="file" variable="chromosomeDiffPlotFile" check="false" typeof="de.dkfz.b080.co.files.ChromosomeDiffPlotFile" scriptparameter="FILENAME_DIFFCHROM_PLOT" />
-                <output type="file" variable="insertSizesStatisticsFile" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAME_ISIZES_STATISTICS" />
-                <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX" />
-                <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT" />
-                <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE" />
-                <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE" />
-                <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY" />
-            </output>
-        </tool>
-        <tool name='alignAndPair' value='bwaMemSort.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="12" cores="8" nodes="1" walltime="00:10:00" queue="convey_fast"/>
-                <!-- Production -->
-                <rset size="s" memory="12" cores="8" nodes="1" walltime="2"/>
-                <rset size="m" memory="17" cores="8" nodes="1" walltime="6"/>
-                <rset size="l" memory="18" cores="8" nodes="1" walltime="35"/>
-                <rset size="xl" memory="20" cores="8" nodes="1" walltime="50"/>
-            </resourcesets>
-        </tool>
-        <tool name='accelerated:alignAndPair' value='bwaMemSort.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="20" cores="12" nodes="1" queue="convey_fast"/>
-                <!-- Production -->
-                <rset size="xs" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
-                <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
-                <rset size="m" memory="20" cores="12" nodes="1" walltime="5" queue="convey"/>
-                <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey"/>
-                <rset size="xl" memory="26" cores="12" nodes="1" walltime="30" queue="convey"/>
-            </resourcesets>
-        </tool>
         <tool name='alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
@@ -337,7 +248,6 @@
         <tool name='coveragePlotScript' value='coveragePlot.R' basepath='qcPipeline'/>
         <tool name='insertSizesBucketSortScript' value='isizes_bucketsort.pl' basepath='qcPipeline'/>
         <tool name='insertSizePlotScript' value='insertsizePlot.R' basepath='qcPipeline'/>
-        <!--<tool name='writeQcSummary' value='writeQCSummary.py' basepath='qcPipeline'/>-->
         <tool name='writeQcSummary' value='writeQCsummary.pl' basepath='qcPipeline'/>
         <tool name='qcJson' value='qcJson.pl' basepath='qcPipeline'/>
 
@@ -440,19 +350,6 @@
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_CONTROL"/>
             <output type="file" fnpatternselectiontag="singlePlot" typeof="de.dkfz.b080.co.files.GenomeCoveragePlotFile" scriptparameter="PLOTFILE"/>
-        </tool>
-        <tool name='qcSummary' value='writeQCSummary.sh' basepath='qcPipeline'/>
-        <tool name='mergeAndRemoveDuplicates' value='mergeAndRemoveDuplicates.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="73" cores="8" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="xs" memory="73" cores="8" nodes="1" walltime="1"/>
-                <rset size="s" memory="73" cores="8" nodes="1" walltime="5"/>
-                <rset size="m" memory="73" cores="8" nodes="1" walltime="20"/>
-                <rset size="l" memory="73" cores="8" nodes="1" walltime="40"/>
-                <rset size="xl" memory="73" cores="8" nodes="1" walltime="80"/>
-            </resourcesets>
         </tool>
         <tool name='fingerprint' value="bsnp.py" basepath="qcPipeline"/>
         <tool name='mergeAndRemoveDuplicatesSlimPicard' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -558,7 +455,7 @@
         <!-- not sure if that belongs here ... needed for sambamba markdup, which is no own tool -->
 	    <tool name='fakeDupmarkMetrics' value='fakeDupmarkMetrics.pl' basepath='qcPipeline'/>
 
-        <tool name="checkAlreadyMergedLanes" value="alreadyMergedLanes.pl" basepath="qcPipeline"/>
+        <tool name="printMissingReadGroups" value="missingReadGroups.pl" basepath="qcPipeline"/>
         <tool name='combinedBamAnalysis' value='flags_isizes_PEaberrations.pl' basepath='qcPipeline'/>
 
 

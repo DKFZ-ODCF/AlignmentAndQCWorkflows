@@ -44,16 +44,12 @@ public class QCPipeline extends Workflow {
             if (aqcfg.runFastQCOnly || aqcfg.runAlignmentOnly) continue;
 
             BamFile mergedBam;
-            if (aqcfg.runSlimWorkflow) {
-                mergedBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
-                if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
-            } else {
-                mergedBam = mergeAndRemoveDuplicatesFat(aqcfg, sample, sortedBamFiles);
-            }
+            mergedBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample)
+            if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics()
 
             if (aqcfg.runExomeAnalysis) {
-                if (!aqcfg.runSlimWorkflow) mergedBam.rawBamCoverage();
-                BamFile targetOnlyBamFile = mergedBam.extractTargetsCalculateCoverage();
+                mergedBam.rawBamCoverage()
+                mergedBam.extractTargetsCalculateCoverage()
             }
 
 
@@ -120,18 +116,10 @@ public class QCPipeline extends Workflow {
                 BamFile bamFile = null;
 
                 if (aqcfg.useCombinedAlignAndSampe) { //I.e. bwa mem
-                    if (aqcfg.runSlimWorkflow) {
-                        bamFile = rawSequenceGroup.alignAndPairSlim();
-                    } else {
-                        bamFile = rawSequenceGroup.alignAndPair();
-                    }
+                    bamFile = rawSequenceGroup.alignAndPairSlim();
                 } else { //I.e. bwa align
                     rawSequenceGroup.alignAll();
-                    if (aqcfg.runSlimWorkflow) {
-                        bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
-                    } else {
-                        bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSort();
-                    }
+                    bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
                 }
 
                 // @Michael: The comment suggests that this should only be called in the else branch above!?
@@ -142,22 +130,6 @@ public class QCPipeline extends Workflow {
 
         }
         return sortedBamFiles;
-    }
-
-    private BamFile mergeAndRemoveDuplicatesFat(AlignmentAndQCConfig aqcfg, Sample sample, BamFileGroup sortedBamFiles) {
-        //To avoid problems with qcsummary the step is done manually.
-        sortedBamFiles.runDefaultOperations();
-        for (BamFile sortedBam : sortedBamFiles.getFilesInGroup())
-            sortedBam.createQCSummaryFile();
-
-        BamFile mergedBam = sortedBamFiles.mergeAndRemoveDuplicates();
-
-        if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
-        mergedBam.runDefaultOperations();
-        mergedBam.calcCoverage();
-        mergedBam.createQCSummaryFile();
-
-        return mergedBam;
     }
 
     boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
@@ -218,17 +190,32 @@ public class QCPipeline extends Workflow {
 
     protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
-        final boolean useExistingPairedBams = context.getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
-        if (!useExistingPairedBams) {
-            int cnt = 0;
+
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
+
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
+
+        if (cfg.useOnlyExistingTargetBam && cfg.fastqFileListIsSet) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                    expand("Both 'fastq_list' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
+            returnValue = false
+        }
+
+        if (cfg.useOnlyExistingTargetBam && cfg.useExistingLaneBams) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("Both 'useExistingLaneBams' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
+            returnValue = false
+        }
+
+        if (!cfg.useExistingLaneBams) {
+            int cnt = 0
             for (Sample sample : samples) {
-                List<LaneFileGroup> laneFileGroups = ((COProjectsRuntimeService)runtimeService).loadLaneFilesForSample(context, sample);
+                List<LaneFileGroup> laneFileGroups = ((COProjectsRuntimeService) runtimeService).loadLaneFilesForSample(context, sample)
                 for (LaneFileGroup lfg : laneFileGroups) {
-                    cnt += lfg.getFilesInGroup().size();
+                    cnt += lfg.getFilesInGroup().size()
                 }
-                logger.postAlwaysInfo("Processed sample " + sample.getName() + " and found " + laneFileGroups.size() + " groups of lane files.");
+                logger.postAlwaysInfo("Processed sample " + sample.getName() + " and found " + laneFileGroups.size() + " groups of lane files.")
             }
             if (cnt <= 0) {
                 context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
@@ -236,27 +223,37 @@ public class QCPipeline extends Workflow {
                 returnValue = false
             }
         }
-        return returnValue;
+
+        return returnValue
     }
 
     protected boolean checkSingleBam(ExecutionContext context) {
 
         AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
-        if (!aqcfg.getSingleBamParameter()) return true
+        if (!aqcfg.singleBamParameter) return true
 
         boolean returnValue = true
+
+        if (aqcfg.useOnlyExistingTargetBam) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("Both 'bam' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
+            returnValue &= false
+        }
+
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() > 1) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but there is more than one sample available."));
-            returnValue &= false;
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("A 'bam' parameter for a single BAM, but there is more than one sample available."))
+            returnValue &= false
         }
 
         def accessProvider = FileSystemAccessProvider.getInstance()
         def bamFile = new File(aqcfg.getSingleBamParameter())
         if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("A bam parameter for single bam was set, but the bam file is not readable: '${bamFile}'"));
-            returnValue &= false;
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("A 'bam' parameter was set, but the BAM file is not readable: '${bamFile}'"))
+            returnValue &= false
         }
 
         return returnValue
