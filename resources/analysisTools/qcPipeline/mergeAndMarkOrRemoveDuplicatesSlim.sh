@@ -35,43 +35,44 @@ bamname=`basename ${FILENAME}`
 
 declare -a INPUT_FILES="$INPUT_FILES"
 
-# Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
+useOnlyExistingTargetBam=${useOnlyExistingTargetBam-false}
+
 if [[ -v bam && ! -z "$bam" ]]; then
+    # Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
+    # When "bam" is used the target BAM (FILENAME is not taken as input (but moved)).
+    if [[ "$useOnlyExistingTargetBam" == true ]]; then
+        throw 1 "Inconsistent parameters: onlyUseExistingTargetBam is set to true and 'bam' is set"
+    fi
     checkBamIsComplete "$bam"
     EXISTING_BAM="$bam"
 fi
-# Handle existing merged BAM at target location.
+
 if [[ -f ${FILENAME} && -s ${FILENAME} ]]; then
-    checkBamIsComplete "$FILENAME"
+    # Handle existing merged BAM at target location.
     if [[ -v EXISTING_BAM ]]; then
         echo "Input BAM provided via 'bam' option takes precendence over existing merged BAM. Rescuing merged BAM."
         mv "$FILENAME" "${FILENAME}_before_${today}" || throw 50 "Could not move $FILENAME"
     else
         # If the merged file already exists, only merge new lanes to it.
+        checkBamIsComplete "$FILENAME"
         EXISTING_BAM="$FILENAME"
     fi
 fi
 
-# if the merged file already exists, only merge new lanes to it
-if [[ -v EXISTING_BAM ]]; then
-    singlebams=`${SAMTOOLS_BINARY} view -H ${EXISTING_BAM} | grep "^@RG"`
-            [[ -z "$singlebams" ]] && throw 23 "could not detect single lane BAM files in ${EXISTING_BAM}, stopping here"
 
-    ## Note: This does not test or even complain, if the BAM (e.g. due to manual manipulation) contains lanes that are
-    ##       NOT in among the INPUT_FILES. TODO Add at least a warning upon unknown lanes in BAM.
-    notyetmerged=`perl ${TOOL_CHECK_ALREADY_MERGED_LANES} $(stringJoin ":" ${INPUT_FILES[@]}) "$singlebams" ${pairedBamSuffix} $SAMPLE`
-    [[ "$?" != 0 ]] && throw 24 "something went wrong with the detection of merged files in ${EXISTING_BAM}, stopping here"
+# If the merged file already exists, only merge new lanes into it.
+if [[ "$useOnlyExistingTargetBam" == false && -v EXISTING_BAM ]]; then
+    readGroupsToMerge=$(getMissingReadGroups "$pairedBamSuffix" "$sample" "$EXISTING_BAM" ${INPUT_FILES[@]})
 
     # the Perl script returns BAM names separated by :, ending with :
-    if [ -z $notyetmerged ]; then
-        bamFileExists=true
+    if [ -z $readGroupsToMerge ]; then
         echo "All listed BAM files (lanes) are already in ${EXISTING_BAM}, re-creating other output files."
-    else    # new lane(s) need to be merged to the BAM
-        # input files is now the merged file and the new file(s)
-        declare -a INPUT_FILES=("$EXISTING_BAM" $(echo $notyetmerged | sed -re 's/:/ /g'))
-        # keep the old metrics file for comparison
-        # that file may not exist in the target directory.
+        useOnlyExistingTargetBam=true
+    else
+        echo "New lane(s) need to be merged to the BAM."
+        declare -a INPUT_FILES=("$EXISTING_BAM" $(echo $readGroupsToMerge | sed -re 's/:/ /g'))
         if [[ -f $FILENAME_METRICS ]]; then
+            # Keep the old metrics file for comparison. That file may not exist in the target directory.
             mv ${FILENAME_METRICS} ${FILENAME_METRICS}_before_${today}.txt || throw 37 "Could not move file"
         fi
     fi
@@ -82,7 +83,6 @@ mkfifo ${NP_PIC_OUT} ${NP_SAM_IN} ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_READBIN
 # default: use biobambam
 useBioBamBamMarkDuplicates=${useBioBamBamMarkDuplicates-true}
 
-bamFileExists=${bamFileExists-false}
 mergeOnly=${MERGE_BAM_ONLY-false}
 
 if markWithPicard || [[ "$mergeOnly" == true ]]; then
@@ -94,7 +94,7 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
     (${SAMTOOLS_BINARY} index ${NP_INDEX_IN} $tempIndexFile) & procIDSamtoolsIndex=$!
 
     # make picard write SAM output that is later compressed more efficiently with samtools
-    if [[ ${bamFileExists} == false ]]; then
+    if [[ ${useOnlyExistingTargetBam} == false ]]; then
         # The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
         PICARD_BINARY=${PICARD_BINARY-picard-1.125.sh}
 
@@ -140,12 +140,13 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
             > ${tempBamFile}) & procIDSamtoolsView=$!
 
     else
-        # To prevent abundancy of ifs, reuse the process id another time.
+        # Only use the existing target BAM
         (cat ${FILENAME} \
             | mbuf ${MBUFFER_SIZE_LARGE} \
             | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} \
             | ${SAMTOOLS_BINARY} view - \
             > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!
+        # To prevent abundancy of ifs, reuse the process id another time.
         procIDMarkOutPipe=$procIDSamtoolsView
         procIDMd5=$procIDSamtoolsView
     fi
@@ -156,7 +157,7 @@ elif markWithSambamba; then
     # index piped BAM (done with new merged BAM and reuse of old BAM)
     ${SAMTOOLS_BINARY} index ${NP_INDEX_IN} $tempIndexFile & procIDSamtoolsIndex=$!
 
-    if [[ "$bamFileExists" == false ]]; then
+    if [[ "$useOnlyExistingTargetBam" == false ]]; then
     	md5File "$NP_MD5_IN" "$tempMd5File" & procIDMd5=$!
 
     	fakeDupMarkMetrics "$NP_METRICS_IN" "$tempFilenameMetrics" & procIDFakeMetrics=$!
@@ -194,12 +195,13 @@ elif markWithSambamba; then
     	(${SAMBAMBA_MARKDUP_BINARY} markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$RODDY_BIG_SCRATCH" ${INPUT_FILES[@]} "$NP_PIC_OUT"; \
 	        echo $? > "$returnCodeMarkDuplicatesFile") & procIDMarkdup=$!
 	else
-        # To prevent abundancy of ifs, reuse the process id another time.
+	    # Only use the existing target BAM
         (cat "$FILENAME" \
             | mbuf ${MBUFFER_SIZE_LARGE} \
             | tee "$NP_INDEX_IN" "$NP_FLAGSTATS_IN" "$NP_COVERAGEQC_IN" "$NP_READBINS_IN" \
             | "$SAMTOOLS_BINARY" view - \
             > "$NP_COMBINEDANALYSIS_IN") & procIDSamtoolsView=$!
+        # To prevent abundancy of ifs, reuse the process id another time.
         procIDMarkOutPipe=$procIDSamtoolsView
         procIDMd5=$procIDSamtoolsView
    	fi
@@ -211,7 +213,7 @@ elif markWithBiobambam; then
     # using $workDirectory was a bad idea for biobambam: each time it crashes, there are large files left over
     # and they will never be deleted because the directory is different for another job ID - because do not use the scratch
     # so use $tempDirectory instead
-    if [[ ${bamFileExists} == false ]]; then
+    if [[ ${useOnlyExistingTargetBam} == false ]]; then
         (${BAMMARKDUPLICATES_BINARY} \
             M=${tempFilenameMetrics} \
             tmpfile=${RODDY_BIG_SCRATCH}/biobambammerge.tmp \
@@ -232,6 +234,9 @@ elif markWithBiobambam; then
         # make a SAM pipe for the Perl tool
         ${SAMTOOLS_BINARY} view ${NP_SAM_IN} | mbuf ${MBUFFER_SIZE_LARGE} > ${NP_COMBINEDANALYSIS_IN} & procIDSamtoolsView=$!
     else
+        # Only use the existing target BAM
+        ## The only difference here to the picard and sambamba is that here no NP_INDEX_IN is used, because biobambam creates
+        ## the index on the fly.
         (cat ${FILENAME} \
             | mbuf ${MBUFFER_SIZE_LARGE} \
             | tee ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} \
@@ -239,8 +244,7 @@ elif markWithBiobambam; then
             > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!
         procIDMarkOutPipe=$procIDSamtoolsView
         procIDMd5=$procIDSamtoolsView
-        ## The only difference here to the picard and sambamba is that here no NP_INDEX_IN is used, because biobambam creates
-        ## the index on the fly.
+        # To prevent abundancy of ifs, reuse the process id another time.
     fi
 
 else
@@ -268,7 +272,7 @@ ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsF
 # Some waits for parallel processes. This also depends on the used merge binary.
 # Picard
 if markWithPicard || [[ "$mergeOnly" == true ]]; then
-    if [[ ${bamFileExists} == false ]]; then
+    if [[ ${useOnlyExistingTargetBam} == false ]]; then
     	wait $procIDMarkdup
     	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Picard returned an exit code and the job will die now." && exit 100
     	checkBamIsComplete "$tempBamFile"
@@ -288,7 +292,7 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
 
 elif markWithSambamba; then
-    if [[ ${bamFileExists} == false ]]; then
+    if [[ ${useOnlyExistingTargetBam} == false ]]; then
     	wait $procIDMarkdup
     	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Sambamba returned an exit code and the job will die now." && exit 100
         waitAndMaybeExit $procBamCompress "Error during BAM compression"
@@ -303,7 +307,7 @@ elif markWithSambamba; then
 	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
 
 elif markWithBiobambam; then
-    if [[ ${bamFileExists} == false ]]; then
+    if [[ ${useOnlyExistingTargetBam} == false ]]; then
         wait $procIDMarkdup
 	    [[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Biobambam returned an exit code and the job will die now." && exit 100
 	    # always rename BAM, even if other jobs might have failed
@@ -342,7 +346,7 @@ removeRoddyBigScratch
 
 [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]] && rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
 
-if [[ "$bamFileExists" == true || (-v mergeOnly && "$mergeOnly" == true) ]]; then
+if [[ "$useOnlyExistingTargetBam" == true || (-v mergeOnly && "$mergeOnly" == true) ]]; then
     METRICS_OPTION="";
 else
     METRICS_OPTION="-m ${FILENAME_METRICS}"

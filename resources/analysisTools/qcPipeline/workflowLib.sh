@@ -187,24 +187,18 @@ checkBamIsComplete () {
     fi
 }
 
-checkBwaLog() {
+checkBwaOutput() {
     local bamFile="${1:?No BAM file given}"
     local bwaOutput="${2:?No BWA STDERR output file given}"
     local sortLog="${3:?No sort log given}"
+    local errorCodeFile="${4:?No error code file given}"
 
-    # disable file size checks if the interprocess streaming is active
-    useMBufferStreaming=${useMBufferStreaming-false}
-    if [[ $useMBufferStreaming != true ]]
-    then
+    if [[ $(cat "$errorCodeFile") != "0" ]]; then
+        throw 32 "There was a non-zero exit code in bwa pipe (w/ pipefail); exiting..."
+    fi
 
-        if [[ "2048" -gt `stat -c %s $bamFile` ]]; then
-            throw 33 "Output file is too small!"
-        fi
-
-        # TODO Check that?
-        if [[ "$?" != "0"  ]]; then
-            throw 32 "There was a non-zero exit code in bwa aln; exiting..."
-        fi
+    if [[ "2048" -gt `stat -c %s $bamFile` ]]; then
+        throw 33 "Output file is too small!"
     fi
 
     # Check for segfault messages
@@ -239,7 +233,36 @@ checkBwaLog() {
     else
         echo "there is no samtools sort log file" >> /dev/stderr
     fi
+
+    checkBamIsComplete "$tempSortedBamFile"
+
     echo all OK
+}
+
+readGroupsInBam() {
+    local bamFile="${1:?No bam file given}"
+    local readGroups=`${SAMTOOLS_BINARY} view -H ${bamFile} | grep "^@RG"`
+    if [[ -z "$readGroups" ]]; then
+        throw 23 "could not detect single lane BAM files in $bamFile, stopping here"
+    fi
+    echo "$readGroups"
+}
+
+getMissingReadGroups() {
+    local pairedBamSuffix="${1:?No paired-bam suffix given}"
+    local sample="${2:?No sample name given}"
+    local bamFile="${3:?No existing bam file given}"
+    shift 3
+    declare -a inputFiles=($@)
+
+    local existingBamReadGroups=`readGroupsInBam "$bamFile"`
+    ## Note: This does not test or even complain, if the BAM (e.g. due to manual manipulation) contains lanes that are
+    ##       NOT among the INPUT_FILES. TODO Add at least a warning upon unknown lanes in BAM.
+    readGroupsToMerge=`perl ${TOOL_PRINT_MISSING_READ_GROUPS} $(stringJoin ":" ${inputFiles[@]}) "$existingBamReadGroups" "$pairedBamSuffix" "$sample"`
+    if [[ "$?" != 0 ]]; then
+        throw 24 "something went wrong with the detection of merged files in ${EXISTING_BAM}, stopping here"
+    fi
+    echo "$readGroupsToMerge"
 }
 
 
