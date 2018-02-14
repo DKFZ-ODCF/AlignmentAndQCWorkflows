@@ -20,7 +20,7 @@ runSlimWorkflow             false   Use a full workflow with a lot of separate s
 
 * Version update to 1.2.76
 
-- Roddy 2.4
+- Roddy 3.0
 - ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
 - fingerprinting for WGBS
 - turned off faulty fingerprinting on Conveys
