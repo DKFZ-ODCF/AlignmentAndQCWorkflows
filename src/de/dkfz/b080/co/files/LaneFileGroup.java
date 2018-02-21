@@ -125,7 +125,11 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
         String laneId1 = "RAW_SEQ_FILE_2_INDEX=" + ((COFileStageSettings) laneFile1.getFileStage()).getNumericIndex();
 
         final String TOOL = useAcceleratedHardware ? COConstants.TOOL_ACCELERATED_ALIGNANDPAIR_SLIM : COConstants.TOOL_ALIGNANDPAIR_SLIM;
-        BamFile bamFile = GenericMethod.callGenericTool(TOOL, laneFile0, laneFile1, "SAMPLE=" + sampleName, "RUN=" + run, "LANE=" + lane, "LB=" + lb, laneId0, laneId1);
+        BamFile bamFile = GenericMethod.callGenericTool(TOOL, laneFile0, laneFile1,
+                "SAMPLE=" + sampleName, "sample=" + sampleName,
+                "RUN=" + run, "run=" + run,
+                "LANE=" + lane, "lane=" + lane,
+                "LB=" + lb, laneId0, laneId1);
         return bamFile;
     }
 

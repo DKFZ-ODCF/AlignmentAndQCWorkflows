@@ -19,12 +19,16 @@ overrideBamFiles
 
 * Version update to 1.2.73
 
-  - lifted to Roddy 2.4
-  - support for loading environment modules (via DefaultPlugin 1.2.0)
-  - removed references to PBS to allow running on LSF cluster
-  - fixed FASTQC code
-  - classify FASTQs as QC-passed or QC-failed based on FASTQC output
+  - lifted to Roddy 3.0
+  - support for loading environment modules (via DefaultPlugin 1.2.2)
+  - refactoring: bamFileExists -> useOnlyExistingTargetBam
+  - ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
+  - bugfix: FASTQC code
+  - bugfix: use existing BAM files
+  - bugfix: BWA error recognition
   - check input BAMs for syntactic completeness (BAM trailer)
+  - classify FASTQs as QC-passed or QC-failed based on FASTQC output
+  - more documentation
 
 * Version update 1.1.73
 

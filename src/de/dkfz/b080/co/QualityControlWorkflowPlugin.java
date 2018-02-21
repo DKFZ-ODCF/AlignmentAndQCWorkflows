@@ -9,7 +9,7 @@ import de.dkfz.roddy.plugins.BasePlugin;
 public class QualityControlWorkflowPlugin extends BasePlugin {
 
 	public static final String CURRENT_VERSION_STRING = "1.2.73";
-	public static final String CURRENT_VERSION_BUILD_DATE = "Mon Nov 27 15:08:43 CET 2017";
+	public static final String CURRENT_VERSION_BUILD_DATE = "Wed Feb 21 15:47:18 CET 2018";
 
     @Override
     public String getVersionInfo() {

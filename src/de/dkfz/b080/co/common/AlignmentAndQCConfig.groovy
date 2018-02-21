@@ -28,6 +28,14 @@ class AlignmentAndQCConfig extends COConfig {
         return configValues.get("bam", "");
     }
 
+    boolean getUseOnlyExistingTargetBam() {
+        return configValues.getBoolean("useOnlyExistingTargetBam", false)
+    }
+
+    boolean getUseExistingLaneBams() {
+        return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false)
+    }
+
     public String getIndexPrefix() {
         return configValues.getString(CVALUE_INDEX_PREFIX, "")
     }
@@ -67,5 +75,10 @@ class AlignmentAndQCConfig extends COConfig {
     public File getFingerprintingSitesFile() {
         return new File(configValues.getString(CVALUE_FINGERPRINTING_SITES_FILE))
     }
+
+    public Boolean getUseOnlyExistingPairedBams() {
+        return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
+    }
+
 
 }

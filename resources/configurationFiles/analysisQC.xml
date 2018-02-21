@@ -76,6 +76,13 @@
         <cvalue name="CONVEY_SAMBAMBA_SAMSORT_MEMSIZE" value="96G" type="string"
                 description="Estimated memory for sorting SAM output on Convey. Conveys have 128 GB. Safety margin for sambamba GC is included."/>
 
+        <!-- Reference Files -->
+        <cvalue name="CHROM_SIZES_FILE" value=""
+                description="Number of A, T, C, G, but not N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
+        <cvalue name="INDEX_PREFIX" value=""
+                description="Path to the genome FASTA file. The same directory should contain the BWA index using the FASTA file, including the FASTA suffix (whatever that may be)."/>
+
+
     </configurationvalues>
     <!--<testdataoptions>-->
         <!--&lt;!&ndash; id is the name of the test data option set-->
