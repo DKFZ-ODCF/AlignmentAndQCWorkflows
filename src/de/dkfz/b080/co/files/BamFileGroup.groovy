@@ -15,42 +15,38 @@ import de.dkfz.roddy.tools.LoggerWrapper
  * @author michael
  */
 @groovy.transform.CompileStatic
-public class BamFileGroup extends FileGroup<BamFile> {
+class BamFileGroup extends FileGroup<BamFile> {
 
-    public static final String MERGEANDRMDUP = "mergeAndRemoveDuplicates";
-    public static final String MERGEANDMORMDUP_SLIM_BIOBAMBAM = "mergeAndRemoveDuplicatesSlimBioBambam";
-    public static final String MERGEANDMORMDUP_SLIM_PICARD = "mergeAndRemoveDuplicatesSlimPicard";
-    public static final String MERGEANDMORMDUP_SLIM_SAMBAMBA = "mergeAndRemoveDuplicatesSlimSambamba";
-    public static final String COVERAGEPLOT = "coveragePlots";
-    public static final String SNPCOMP = "snpComparison";
+    static final String MERGEANDRMDUP = "mergeAndRemoveDuplicates";
+    static final String MERGEANDMORMDUP_SLIM_BIOBAMBAM = "mergeAndRemoveDuplicatesSlimBioBambam";
+    static final String MERGEANDMORMDUP_SLIM_PICARD = "mergeAndRemoveDuplicatesSlimPicard";
+    static final String MERGEANDMORMDUP_SLIM_SAMBAMBA = "mergeAndRemoveDuplicatesSlimSambamba";
 
     private static LoggerWrapper logger = LoggerWrapper.getLogger(COProjectsRuntimeService.class.getName());
 
     private BamFile mergedBam = null;
 
-    public BamFileGroup() {
-        super(null);
+    BamFileGroup() {
+        super(null)
     }
 
-    public BamFileGroup(List<BamFile> files) {
-        super(files);
+    BamFileGroup(List<BamFile> files) {
+        super(files)
     }
 
-    public BamFile mergeSlim(Sample sample, String... additionalMergeParameters) {
-        return baseMergeAndRemoveDuplicatesSlim(sample,
-                ((["MERGE_BAM_ONLY=true"] + (additionalMergeParameters as List)) as String[]))
+    BamFile mergeSlim(Sample sample, Object... additionalMergeParameters) {
+        return baseMergeAndRemoveDuplicatesSlim(sample, additionalMergeParameters + ["MERGE_BAM_ONLY": true.toString()])
     }
 
-    public BamFile mergeAndRemoveDuplicatesSlimWithLibrary(Sample sample, String library, String... additionalMergeParameters) {
-        return baseMergeAndRemoveDuplicatesSlim(sample,
-                (["LIBRARY=${library}"] + (additionalMergeParameters as List<GString>)) as String[])
+    BamFile mergeAndRemoveDuplicatesSlimWithLibrary(Sample sample, String library, Object... additionalMergeParameters) {
+        return baseMergeAndRemoveDuplicatesSlim(sample, additionalMergeParameters + ["LIBRARY": library, "library": library])
     }
 
-    public BamFile mergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {
-        return baseMergeAndRemoveDuplicatesSlim(sample, additionalMergeParameters);
+    BamFile mergeAndRemoveDuplicatesSlim(Sample sample, Object... additionalMergeParameters) {
+        return baseMergeAndRemoveDuplicatesSlim(sample, additionalMergeParameters)
     }
 
-    public BamFile baseMergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {
+    BamFile baseMergeAndRemoveDuplicatesSlim(Sample sample, Object... additionalMergeParameters) {
         if (mergedBam == null) {
             RecursiveOverridableMapContainerForConfigurationValues cvalues = executionContext.getConfiguration().getConfigurationValues()
             boolean useBioBamBamMarkDuplicates = cvalues.getBoolean(COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES, true);
@@ -76,14 +72,13 @@ public class BamFileGroup extends FileGroup<BamFile> {
                 }
             }
 
-            Object[] parameterList = ([this, "SAMPLE=${sample.getName()}", "sample=${sample.getName()}"]
-                    as ArrayList<Object>) + (additionalMergeParameters as ArrayList<Object>) as Object[]
-            mergedBam = (BamFile) GenericMethod.callGenericTool(toolId, getFilesInGroup().get(0), parameterList)
+            mergedBam = (BamFile) GenericMethod.callGenericTool(toolId, getFilesInGroup().get(0),
+                    ([this as Object] + additionalMergeParameters.toList() << ["SAMPLE": sample.getName(), "sample": sample.getName()]) as Object[])
         }
-        return mergedBam;
+        return mergedBam
     }
 
-    public BamFile mergeAndRemoveDuplicates() {
+    BamFile mergeAndRemoveDuplicates() {
         ExecutionContext run = executionContext;
         boolean useBioBamBamMarkDuplicates = executionContext.getConfiguration().getConfigurationValues().getBoolean("useBioBamBamMarkDuplicates", true);
 

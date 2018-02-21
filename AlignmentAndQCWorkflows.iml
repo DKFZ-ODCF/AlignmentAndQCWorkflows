@@ -14,6 +14,7 @@
       <sourceFolder url="file://$MODULE_DIR$/test/src" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/test/resources" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/resources/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
@@ -27,6 +28,7 @@
     <orderEntry type="module" module-name="Roddy" />
     <orderEntry type="module" module-name="BatchEuphoria" />
     <orderEntry type="module" module-name="RoddyToolLib" />
+    <orderEntry type="library" name="Gradle: com.google.guava:guava:23.0" level="project" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />

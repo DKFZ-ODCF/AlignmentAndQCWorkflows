@@ -239,6 +239,51 @@ checkBwaOutput() {
     echo all OK
 }
 
+biobambamSortAndIndex() {
+    local unsortedBam="${1:?No input file}"
+    local sortedBam="${2:?No output file}"
+    local indexFile="${3:?No index file}"
+    local temp="${4:?No temp-file name}"
+    local referenceGenomePath="${5:?No reference genome path}"
+    "$BAMSORT_BINARY" \
+        I="$unsortedBam" \
+        O="$sortedBam" \
+        level=1 \
+        md5=1 \
+        inputthreads=2 \
+        outputthreads=2 \
+	    index=1 \
+	    indexfilename="$indexFile" \
+	    calmdnm=1 \
+	    calmdnmrecompindetonly=1 \
+	    calmdnmreference="$referenceGenomePath" \
+	    tmpfile="$temp"
+}
+
+samtoolsSortAndIndex() {
+    local unsortedBam="${1:?No input file}"
+    local sortedBam="${2:?No output file}"
+    local indexFile="${3:?No index file}"
+    local temp="${4:?No temp-file name}"
+    "$SAMTOOLS_BINARY" sort -o -@ "${SAMTOOLS_SORT_THREADS:-2}" -m "${SAMTOOLS_SORT_PER_THREAD_MEM:-2G}" "$unsortedBam" "$temp" \
+        | mbuf "$MBUFFER_SIZE_SMALL" \
+            -f -o "$sortedBam" \
+            -f -o /dev/stdout \
+        | "$SAMTOOLS_BINARY" index - "$indexFile"
+}
+
+sambambaSortAndIndex() {
+    local unsortedBam="${1:?No input file}"
+    local sortedBam="${2:?No output file}"
+    local indexFile="${3:?No index file}"
+    local temp="${4:?No temp-file name}"
+    "$SAMBAMBA_BINARY" sort -t "${SAMBAMBA_SORT_THREADS:-2}" -m "${SAMBAMBA_SORT_PER_THREAD_MEM:-2G}" --tmpdir "$temp" -o /dev/stdout "$unsortedBam" \
+        | mbuf "$MBUFFER_SIZE_SMALL" \
+            -f -o "$sortedBam" \
+            -f -o /dev/stdout \
+        | "$SAMBAMBA_BINARY" index - "$indexFile"
+}
+
 readGroupsInBam() {
     local bamFile="${1:?No bam file given}"
     local readGroups=`${SAMTOOLS_BINARY} view -H ${bamFile} | grep "^@RG"`

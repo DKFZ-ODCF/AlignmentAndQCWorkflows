@@ -15,10 +15,7 @@ import de.dkfz.roddy.knowledge.methods.GenericMethod;
 import de.dkfz.roddy.tools.LoggerWrapper;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -64,7 +61,11 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
     }
 
     public Tuple2<FastqcFile,TextFile> calcFastqc() {
-        return GenericMethod.callGenericTool("fastqc", this);//Common.fastqc(executionContext, this);
+        return GenericMethod.callGenericTool("fastqc", this, new LinkedHashMap<String, String>());
+    }
+
+    public Tuple2<FastqcFile,TextFile> calcFastqc(Map<String, String> parameters) {
+        return GenericMethod.callGenericTool("fastqc", this, parameters);
     }
 
     @Override

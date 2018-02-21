@@ -5,8 +5,8 @@ import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
-import de.dkfz.roddy.execution.jobs.Job;
 import de.dkfz.roddy.execution.jobs.BEJobResult;
+import de.dkfz.roddy.execution.jobs.Job;
 import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.knowledge.files.FileGroup;
 import de.dkfz.roddy.knowledge.files.Tuple2;
@@ -15,10 +15,7 @@ import de.dkfz.roddy.tools.LoggerWrapper;
 import groovy.transform.CompileStatic;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -70,11 +67,15 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
 
     //This method could be a candidate for
     public FastqcGroup calcFastqcForAll() {
+        return calcFastqcForAll(new LinkedHashMap<String, String>());
+    }
+
+    public FastqcGroup calcFastqcForAll(Map<String, String> parameters) {
         final boolean useSingleEndProcessing = getExecutionContext().getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING, false);
 
         LinkedList<FastqcFile> files = new LinkedList<FastqcFile>();
         for (LaneFile f : filesInGroup) {
-            Tuple2<FastqcFile,TextFile> calcFastqcResult = f.calcFastqc();
+            Tuple2<FastqcFile,TextFile> calcFastqcResult = f.calcFastqc(parameters);
             files.add(calcFastqcResult.value0);
 
             if (useSingleEndProcessing) {
@@ -108,6 +109,10 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
     }
 
     public BamFile alignAndPairSlim() {
+        return alignAndPairSlim(new LinkedHashMap<>());
+    }
+
+    public BamFile alignAndPairSlim(Map<String, String> parameters) {
         ExecutionContext context = getExecutionContext();
         Configuration configuration = context.getConfiguration();
         boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ACCELERATED_HARDWARE);
@@ -127,11 +132,13 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
         String laneId1 = "RAW_SEQ_FILE_2_INDEX=" + ((COFileStageSettings) laneFile1.getFileStage()).getNumericIndex();
 
         final String TOOL = useAcceleratedHardware ? COConstants.TOOL_ACCELERATED_ALIGNANDPAIR_SLIM : COConstants.TOOL_ALIGNANDPAIR_SLIM;
-        BamFile bamFile = GenericMethod.callGenericTool(TOOL, laneFile0, laneFile1,
+        BamFile bamFile = GenericMethod.callGenericTool(TOOL, laneFile0, laneFile1, parameters,
                 "SAMPLE=" + sampleName, "sample=" + sampleName,
                 "RUN=" + run, "run=" + run,
                 "LANE=" + lane, "lane=" + lane,
-                "LB=" + lb, laneId0, laneId1);
+                "LB=" + lb, "lb=" + lb,
+                parameters,
+                laneId0, laneId1);
         return bamFile;
     }
 
