@@ -1,7 +1,6 @@
 package de.dkfz.b080.co.common;
 
 import de.dkfz.b080.co.files.*
-import de.dkfz.roddy.Roddy;
 import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
@@ -81,10 +80,10 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
 
         ProcessingFlag flag = context.setProcessingFlag(ProcessingFlag.STORE_FILES);
 
-        List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
-        if (config.getExtractSamplesFromMetadataTable()) {
+        List<LaneFileGroup> laneFiles
+        if (config.getMetadataTableIsSet()) {
             laneFiles = getLaneFileGroupsFromInputTable(context, sample, libraryID)
-        } else if (config.getExtractSamplesFromFastqFileList()) {
+        } else if (config.getFastqFileListIsSet()) {
             laneFiles = getLaneFileGroupsFromFastqList(context, sample, libraryID)
         } else {
             laneFiles = getLaneFileGroupsFromFilesystem(context, sample, libraryID)

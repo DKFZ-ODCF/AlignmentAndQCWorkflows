@@ -26,6 +26,14 @@ class AlignmentAndQCConfig extends COConfig {
         return configValues.get("bam", "");
     }
 
+    boolean getUseOnlyExistingTargetBam() {
+        return configValues.getBoolean("useOnlyExistingTargetBam", false)
+    }
+
+    boolean getUseExistingLaneBams() {
+        return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_LANE_BAMS, false)
+    }
+
     public String getIndexPrefix() {
         return configValues.getString(CVALUE_INDEX_PREFIX, "")
     }
@@ -56,6 +64,15 @@ class AlignmentAndQCConfig extends COConfig {
 
     public File getClipIndex() {
         return new File(configValues.getString(CVALUE_CLIP_INDEX))
+    }
+
+    public Boolean getUseOnlyExistingPairedBams() {
+        if (configValues.hasValue(COConstants.FLAG_USE_EXISTING_LANE_BAMS)) {
+            System.err.println("${COConstants.FLAG_USE_EXISTING_LANE_BAMS} is deprecated. Use ${COConstants.FLAG_USE_ONLY_EXISTING_PAIRED_BAMS}.")
+            return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_LANE_BAMS, false);
+        } else {
+            return configValues.getBoolean(COConstants.FLAG_USE_ONLY_EXISTING_PAIRED_BAMS, false);
+        }
     }
 
 }

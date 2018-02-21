@@ -44,11 +44,11 @@ public class BamFileGroup extends FileGroup<BamFile> {
         return baseMergeAndRemoveDuplicatesSlim(sample, "LIBRARY=${library}")
     }
 
-    public BamFile mergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {
-        return baseMergeAndRemoveDuplicatesSlim(sample, additionalMergeParameters);
+    public BamFile mergeAndRemoveDuplicatesSlim(Sample sample, Object... additionalMergeParameters) {
+        return baseMergeAndRemoveDuplicatesSlim(sample, additionalMergeParameters)
     }
 
-    public BamFile baseMergeAndRemoveDuplicatesSlim(Sample sample, String... additionalMergeParameters) {
+    public BamFile baseMergeAndRemoveDuplicatesSlim(Sample sample, Object... additionalMergeParameters) {
         if (mergedBam == null) {
             RecursiveOverridableMapContainerForConfigurationValues cvalues = executionContext.getConfiguration().getConfigurationValues()
             boolean useBioBamBamMarkDuplicates = cvalues.getBoolean(COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES, true);
@@ -74,8 +74,8 @@ public class BamFileGroup extends FileGroup<BamFile> {
                 }
             }
 
-            Object[] parameterList = ([this, "SAMPLE=${sample.getName()}"] as ArrayList<Object>) + (additionalMergeParameters as ArrayList<Object>) as Object[]
-            mergedBam = (BamFile) GenericMethod.callGenericTool(toolId, getFilesInGroup().get(0), parameterList)
+            mergedBam = (BamFile) GenericMethod.callGenericTool(toolId, getFilesInGroup().get(0),
+                    ([this as Object] + additionalMergeParameters.toList() << ["SAMPLE": sample.getName(), "sample": sample.getName()]) as Object[])
         }
         return mergedBam;
     }
