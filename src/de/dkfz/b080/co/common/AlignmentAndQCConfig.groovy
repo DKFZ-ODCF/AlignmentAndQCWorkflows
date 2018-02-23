@@ -3,7 +3,6 @@ package de.dkfz.b080.co.common
 import de.dkfz.b080.co.files.COConstants
 import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.core.ExecutionContext
-import de.dkfz.roddy.core.ExecutionContextLevel
 import de.dkfz.roddy.execution.io.ExecutionService
 import groovy.transform.CompileStatic
 
@@ -49,8 +48,8 @@ class AlignmentAndQCConfig extends COConfig {
         return configValues.getBoolean("useOnlyExistingTargetBam", false)
     }
 
-    boolean getUseExistingLaneBams() {
-        return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false)
+    boolean getUseOnlyExistingLaneBams() {
+        return configValues.getBoolean(COConstants.FLAG_USE_ONLY_EXISTING_PAIRED_BAMS, false)
     }
 
     public String getIndexPrefix() {
@@ -176,11 +175,6 @@ class AlignmentAndQCConfig extends COConfig {
     public boolean getUseCombinedAlignAndSampe() {
         return configValues.getBoolean(COConstants.FLAG_USE_COMBINED_ALIGN_AND_SAMPE, false)
     }
-
-    public boolean getUseExistingPairedBams() {
-        return configValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false)
-    }
-
     public String getDefaultLibraryName() {
         return configValues. getString(CVALUE_DEFAULT_LIBRARY_NAME, "null")
     }

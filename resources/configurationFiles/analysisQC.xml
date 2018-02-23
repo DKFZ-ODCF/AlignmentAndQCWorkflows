@@ -53,6 +53,12 @@
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
 
+        <!-- Reference Files -->
+        <cvalue name="CHROM_SIZES_FILE" value=""
+                description="Number of A, T, C, G, but not N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
+        <cvalue name="INDEX_PREFIX" value=""
+                description="Path to the genome FASTA file. The same directory should contain the BWA index using the FASTA file, including the FASTA suffix (whatever that may be)."/>
+
         <!-- Fingerprinting -->
         <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
         <cvalue name='runFingerprinting' value='false' type='boolean'
@@ -68,7 +74,6 @@
 
         <cvalue name='gccorOutputDirectory' value='correctedGcBias' type="path"/>
         <cvalue name='gccorPlotOutputDirectory' value='${gccorOutputDirectory}/plots' type="path"/>
-
 
         <!-- For ACEseq QC in the alignment plugin -->
         <cvalue name="assembliesHG191000GenomesDirectory" value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes" type="path"/>

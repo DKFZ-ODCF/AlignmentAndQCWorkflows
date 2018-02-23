@@ -7,6 +7,7 @@ import de.dkfz.b080.co.files.*
 import de.dkfz.b080.co.methods.ACEseq
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
+import de.dkfz.roddy.core.RuntimeService
 import de.dkfz.roddy.core.Workflow
 import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
@@ -16,34 +17,34 @@ import de.dkfz.roddy.tools.LoggerWrapper
  * @author michael
  */
 @groovy.transform.CompileStatic
-public class QCPipeline extends Workflow {
+class QCPipeline extends Workflow {
 
-    private static LoggerWrapper logger = LoggerWrapper.getLogger(QCPipeline.class.getName());
+    private static LoggerWrapper logger = LoggerWrapper.getLogger(QCPipeline.class.getName())
 
-    public QCPipeline() {}
+    QCPipeline() {}
 
     @Override
-    public boolean execute(ExecutionContext context) {
+    boolean execute(ExecutionContext context) {
         AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
         aqcfg.extractSamplesFromOutputFiles = false
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
 
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() == 0)
-            return false;
+            return false
 
-        BamFileGroup mergedBamFiles = new BamFileGroup();
-        Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
+        BamFileGroup mergedBamFiles = new BamFileGroup()
+        Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>()
 
         for (Sample sample : samples) {
-            BamFileGroup sortedBamFiles = createSortedBams(aqcfg, runtimeService, sample);
+            BamFileGroup sortedBamFiles = createLaneBams(aqcfg, runtimeService, sample)
 
-            if (sortedBamFiles.getFilesInGroup().size() == 0) continue;
+            if (sortedBamFiles.getFilesInGroup().size() == 0) continue
 
-            if (aqcfg.runFastQCOnly || aqcfg.runAlignmentOnly) continue;
+            if (aqcfg.runFastQCOnly || aqcfg.runAlignmentOnly) continue
 
-            BamFile mergedBam;
+            BamFile mergedBam
             mergedBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample)
             if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics()
 
@@ -54,10 +55,10 @@ public class QCPipeline extends Workflow {
 
 
             if (!coverageTextFilesBySample.containsKey(sample.sampleType))
-                coverageTextFilesBySample.put(sample.sampleType, new CoverageTextFileGroup());
-            coverageTextFilesBySample.get(sample.sampleType).addFile(mergedBam.calcReadBinsCoverage());
+                coverageTextFilesBySample.put(sample.sampleType, new CoverageTextFileGroup())
+            coverageTextFilesBySample.get(sample.sampleType).addFile(mergedBam.calcReadBinsCoverage())
 
-            mergedBamFiles.addFile(mergedBam);
+            mergedBamFiles.addFile(mergedBam)
 
             // The ACEseq QC could also be done per lane/run, but for non X10 data there is not the required >30x coverage (Kortine).
             if (aqcfg.runACEseqQC) {
@@ -78,58 +79,58 @@ public class QCPipeline extends Workflow {
         }
 
         if (mergedBamFiles.getFilesInGroup().size() == 0) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."));
-            return false;
+            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."))
+            return false
         }
 
         if (aqcfg.runFastQCOnly)
-            return true;
+            return true
 
         if (aqcfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
-            coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
+            coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR))
         } else if (coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
-            ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot();
+            ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot()
         }
 
-        return true;
+        return true
     }
 
-    private BamFileGroup createSortedBams(AlignmentAndQCConfig aqcfg, COProjectsRuntimeService runtimeService, Sample sample) {
-        BamFileGroup sortedBamFiles = new BamFileGroup();
+    private BamFileGroup createLaneBams(AlignmentAndQCConfig aqcfg, COProjectsRuntimeService runtimeService, Sample sample) {
+        BamFileGroup sortedBamFiles = new BamFileGroup()
 
-        if (aqcfg.useExistingPairedBams) {
-            //Start from the paired bams instead of the lane files.
-            sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(aqcfg.context, sample);
+        if (aqcfg.useOnlyExistingLaneBams) {
+            //Start from the paired bams instead of the fastq files.
+            sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(aqcfg.context, sample)
 
         } else {
-            //Create bam files out of the lane files
-            List<LaneFileGroup> rawSequenceGroups = runtimeService.loadLaneFilesForSample(aqcfg.context, sample);
+            // Create bam files out of the fastq files
+            List<LaneFileGroup> rawSequenceGroups = runtimeService.loadLaneFilesForSample(aqcfg.context, sample)
             if (rawSequenceGroups == null || rawSequenceGroups.size() == 0)
-                return sortedBamFiles;
+                return sortedBamFiles
             for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
                 if (aqcfg.runFastQC && !aqcfg.runAlignmentOnly)
-                    rawSequenceGroup.calcFastqcForAll();
+                    rawSequenceGroup.calcFastqcForAll()
                 if (aqcfg.runFastQCOnly)
-                    continue;
+                    continue
 
-                BamFile bamFile = null;
+                BamFile bamFile = null
 
                 if (aqcfg.useCombinedAlignAndSampe) { //I.e. bwa mem
-                    bamFile = rawSequenceGroup.alignAndPairSlim();
+                    bamFile = rawSequenceGroup.alignAndPairSlim()
                 } else { //I.e. bwa align
-                    rawSequenceGroup.alignAll();
-                    bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
+                    rawSequenceGroup.alignAll()
+                    bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim()
                 }
 
                 // @Michael: The comment suggests that this should only be called in the else branch above!?
                 // @Michael: Why should BAM files created with sai files be temporary? Because they are lane BAMs?
-                bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
-                sortedBamFiles.addFile(bamFile);
+                bamFile.setAsTemporaryFile()  // Bam files created with sai files are only temporary.
+                sortedBamFiles.addFile(bamFile)
             }
 
         }
-        return sortedBamFiles;
+        return sortedBamFiles
     }
 
     boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
@@ -183,9 +184,45 @@ public class QCPipeline extends Workflow {
             context.addErrorEntry(getInvalidError("No samples found for PID ${context.getDataSet()}!"))
             return false
         } else {
-            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId());
+            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId())
             return true
         }
+    }
+
+    private boolean checkFile(ExecutionContext context, File file) {
+        if (!context.fileIsAccessible(file)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                    expand("Could not access '${file}'."))
+            return false
+        }
+        return true
+    }
+    
+    protected boolean checkFastqFiles(ExecutionContext context) {
+        boolean returnValue = true
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
+        COProjectsRuntimeService runtimeService = context.runtimeService as COProjectsRuntimeService
+        if (!cfg.useOnlyExistingTargetBam) {
+            for (Sample sample in runtimeService.getSamplesForContext(context)) {
+                List<String> libraries = sample.getLibraries()
+                if (libraries) {
+                    for (String library in libraries) {
+                        for (LaneFileGroup laneFileGroup in runtimeService.loadLaneFilesForSample(context, sample)) {
+                            for (LaneFile laneFile in laneFileGroup.filesInGroup) {
+                                returnValue &= checkFile(context, laneFile.path)
+                            }
+                        }
+                    }
+                } else {
+                    for (LaneFileGroup laneFileGroup in runtimeService.loadLaneFilesForSample(context, sample)) {
+                        for (LaneFile laneFile in laneFileGroup.filesInGroup) {
+                            returnValue &= checkFile(context, laneFile.path)
+                        }
+                    }
+                }
+            }
+        }
+        return returnValue
     }
 
     protected boolean checkLaneFiles(ExecutionContext context) {
@@ -202,13 +239,13 @@ public class QCPipeline extends Workflow {
             returnValue = false
         }
 
-        if (cfg.useOnlyExistingTargetBam && cfg.useExistingLaneBams) {
+        if (cfg.useOnlyExistingTargetBam && cfg.useOnlyExistingLaneBams) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
                     expand("Both 'useExistingLaneBams' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
             returnValue = false
         }
 
-        if (!cfg.useExistingLaneBams) {
+        if (!cfg.useOnlyExistingLaneBams) {
             int cnt = 0
             for (Sample sample : samples) {
                 List<LaneFileGroup> laneFileGroups = ((COProjectsRuntimeService) runtimeService).loadLaneFilesForSample(context, sample)
@@ -264,7 +301,7 @@ public class QCPipeline extends Workflow {
      * @param context
      * @return
      */
-    public boolean checkFingerprintingSitesFile(ExecutionContext context) {
+    boolean checkFingerprintingSitesFile(ExecutionContext context) {
         def aqcfg = new AlignmentAndQCConfig(context)
         boolean result = true
         if (aqcfg.runFingerprinting) {
@@ -280,7 +317,7 @@ public class QCPipeline extends Workflow {
      * @param context
      * @return
      */
-    public boolean checkClipIndexFile(ExecutionContext context) {
+    boolean checkClipIndexFile(ExecutionContext context) {
         def aqcfg = new AlignmentAndQCConfig(context)
         Boolean result = true
         if (aqcfg.useAdapterTrimming) {
@@ -295,6 +332,7 @@ public class QCPipeline extends Workflow {
     boolean checkExecutability(ExecutionContext context) {
         boolean result = super.checkExecutability(context)
         result &= checkConfiguration(context)
+        result &= checkFastqFiles(context)
         result &= checkSamples(context)
         result &= checkLaneFiles(context)
         result &= checkSingleBam(context)
@@ -303,23 +341,23 @@ public class QCPipeline extends Workflow {
         return result
     }
 
-    public boolean createTestdata(ExecutionContext context) {
-        boolean allOk = true;
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
+    boolean createTestdata(ExecutionContext context) {
+        boolean allOk = true
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
 
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
         for (Sample sample : samples) {
-            List<LaneFile> files = new LinkedList<LaneFile>();
-            LaneFileGroup allLaneFiles = new LaneFileGroup(context, "allLaneFiles", "noSpecificRun", sample, files);
+            List<LaneFile> files = new LinkedList<LaneFile>()
+            LaneFileGroup allLaneFiles = new LaneFileGroup(context, "allLaneFiles", "noSpecificRun", sample, files)
 
-            List<LaneFileGroup> rawSequenceGroups = runtimeService.getLanesForSample(context, sample);
+            List<LaneFileGroup> rawSequenceGroups = runtimeService.getLanesForSample(context, sample)
             for (LaneFileGroup lfg : rawSequenceGroups) {
                 for (LaneFile lf : lfg.getFilesInGroup()) {
-                    allLaneFiles.addFile(lf);
+                    allLaneFiles.addFile(lf)
                 }
             }
-            allLaneFiles.createTestDataForLaneFiles();
+            allLaneFiles.createTestDataForLaneFiles()
         }
-        return allOk;
+        return allOk
     }
 }
