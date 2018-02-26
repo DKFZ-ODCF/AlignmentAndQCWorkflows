@@ -46,7 +46,7 @@
 
         <!-- Directories -->
         <cvalue name="SEQUENCER_PROTOCOL" value="paired" type="string"
-                description="single, paired, mate-paired"/>
+                description="One of: single, paired, mate-paired"/>
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'
                 description="Directory containing the FASTQ files."/>
@@ -60,6 +60,8 @@
                 description="Number of A, T, C, G, but not N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
         <cvalue name="INDEX_PREFIX" value="${assembliesHG191000GenomesDirectory}/indexes/bwa/bwa06_1KGRef/hs37d5.fa"
                 description="Path to the genome FASTA file. The same directory should contain the BWA index. The prefix (-p) used for `bwa index` should be the same as the FASTA file, i.e. including the FASTA suffix."/>
+        <cvalue name='CLIP_INDEX' value='' type="path"
+                description="Absolute path to the sequences to be trimmed before alignment." />
 
         <!-- Fingerprinting allows to identify sample swaps or samples belonging to other patients. -->
         <cvalue name='runFingerprinting' value='false' type='boolean'

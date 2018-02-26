@@ -20,7 +20,8 @@
                 description="Turn on/off the GC correction."/>
 
         <!--Target regions-->
-        <cvalue name='TARGETSIZE' value='35961919' type="integer" description="Other values #43992300 #62085286"/>
+        <cvalue name="TARGET_REGIONS_FILE" value="" type="path" description="Exom/Target-regions BED file with accompanied tabix-index."/>
+        <cvalue name='TARGETSIZE' value='35961919' type="integer" description="The number of bases covered by the target regions."/>
 
         <!--Options for onTargetCoverage'-->
         <cvalue name='SAMTOOLS_VIEW_OPTIONS' value='" -bu -q 1 -F 1024"' description="-q 1 uniquely mapped reads, -bu output uncompressed BAM for pipe to coverageBed"/>
@@ -28,8 +29,6 @@
         <cvalue name='COVERAGEBED_OPTIONS' value='" -d "'/>
     </configurationvalues>
     <processingTools>
-        <!--<tool name='targetExtraction' value='targetExtract.sh' basepath='exomePipeline'/>-->
-        <!--<tool name='targetExtractionAndCoverage' value='targetExtractCoverage.sh' basepath='exomePipeline'/>-->
         <tool name='onTargetCoverage' value='samtoolsOnTargetCoverage.sh' basepath='exomePipeline'/>
         <tool name='onTargetCoveragePlotter' value='createOnTargetCoveragePlot.sh' basepath='exomePipeline'/>
         <tool name='onTargetCoveragePlotterBinary' value='targetCoverageDistributionPlot.r' basepath="exomePipeline"/>

@@ -1,11 +1,17 @@
 # Alignment and Quality Control Plugin for Roddy
 
-This plugins contains a series of alignment and quality control related workflows:
+This plugins contains alignment and quality control related [Roddy](https://github.com/eilslabs/Roddy) workflows:
 
-- PanCancer alignment workflow for whole genome and exome
-- Postmerge QC workflow for whole genome and exome
-- Bisulfite core workflow
+- PanCancer alignment workflow for whole genome (WGS) and exome (WES)
+- Bisulfite core workflow (WGBS)
 
+These are basically BWA alignment (bwa mem) workflows with plenty of additional quality control steps. QC-steps acting on the BAM files are mostly done through piping the input data into multiple QC tools simultaneously to achieve a high performance. All workflows can be run for each sample or with combinations of tumor- and control-samples.
+
+# Configuration
+
+All configuration variables are documented in the XML files in the `resources/configurationFiles/` directory. One per workflow. Note that the workflows depend on each other, i.e. the WES and WGBS workflows are extension of the WGS workflow. This means that most options of the WGS workflow also are used for the other two workflows. Furthermore, settings in the WGBS and WES workflow may override those in the WGS workflow. Some processing steps, notably those of the ACEseq quality control (QC) are not valid for the WES workflow. 
+
+See the [Roddy](https://github.com/eilslabs/Roddy) documentation for a description of how to configure and run workflows.
 
 # Software Requirements
 
@@ -40,7 +46,7 @@ The software versions in the Conda environment are yet not exactly the same as t
 |bwa       | patched 0.7.8| 0.7.8         | For the WGBS workflow we currently use a patched version of BWA that does not check for the "/1" and "/2" first and second read marks. This version is not available in BioConda and thus the WGBS workflow won't work with the Conda environment. |
 |R         | 3.4.0        | 3.4.1         | Probably no big deal. |
 
-We successfully tested the Conda environment imported as described above and using the parameters `useBioBamBamSort=false`, `markDuplicatesVariant=sambamba`, `workflowEnvironmentScript=workflowEnvironment_conda` and `condaEnvironmentName=AlignmentAndQCWorkflows`.
+We successfully tested the Conda environment imported as described above and using the parameters `useBioBamBamSort=false`, `markDuplicatesVariant=sambamba`, `workflowEnvironmentScript=workflowEnvironment_conda` and `condaEnvironmentName=AlignmentAndQCWorkflows` on WGS data.
 
 # Resource Requirements
 
@@ -75,4 +81,5 @@ It depends on the set of parameters, which BAM file is used as input, e.g. when 
 ## Read Group Identifiers
 
 Read group IDs in BAMs are determined (input files) from or stored in (output files) the `ID` attribute in `@RG` header lines. Usually, read group IDs in FASTQ files are determined from filenames using the patterns `${RUN}_${LANE}`. With a metadata input table you can provide FASTQ files with arbitrary file names, because the metadata is taken from the table's columns. 
+
 
