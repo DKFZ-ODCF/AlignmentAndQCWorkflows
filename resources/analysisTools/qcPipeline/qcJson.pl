@@ -181,11 +181,11 @@ sub runTests () {
     subtest 'toJSON' => sub {
 		my $res1 = toJSON({});
 		$res1 =~ s/\s//g;
-		like($res1, qr/^{}*$/, "{}");
+		like($res1, qr/^\{\}*$/, "{}");
 
 		my $res2 = toJSON({ "a" => 1 });
 		$res2 =~ s/\s//g;
-		like($res2, qr/^{"a":1}$/, "{ \"a\": 1 }");
+		like($res2, qr/^\{"a":1\}$/, "{ \"a\": 1 }");
 
 		my $res3 = toJSON([ "a", 1 ]);
 		$res3 =~ s/\s//g;
@@ -193,17 +193,17 @@ sub runTests () {
 
 		my $res4 = toJSON({ "a" => [ "b", "c" ] });
 		$res4 =~ s/\s//g;
-		like($res4, qr/^{"a":\["b","c"\]}$/, '{ "a": [ "b", "c" ] }');
+		like($res4, qr/^\{"a":\["b","c"\]\}$/, '{ "a": [ "b", "c" ] }');
 
 
 		my $res5 = toJSON([ "a", { "b" => "c" } ]);
 		unlike($res5, qr/"b"\s:/, "No space before ':' key-value separator (for Groovy JSON parser (OTP))");
 		$res5 =~ s/\s//g;
-		like($res5 , qr/^\["a",{"b":"c"}\]$/, '[ "a", { "b": "c" } ]');
+		like($res5 , qr/^\["a",\{"b":"c"\}\]$/, '[ "a", { "b": "c" } ]');
 
 		my $res6 = toJSON({ "1" => 5, "100" => 3 , "10" => 4, "100000" => 1, "1000" => "b"});
 		$res6 =~ s/\s//g;
-		like($res6, qr/{"1":5,"10":4,"100":3,"1000":"b","100000":1}/, "alphabetic key order")
+		like($res6, qr/\{"1":5,"10":4,"100":3,"1000":"b","100000":1\}/, "alphabetic key order")
     };
 
     subtest 'mapQcValues' => sub {

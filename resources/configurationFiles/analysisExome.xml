@@ -9,9 +9,6 @@
                usedToolFolders="qcPipeline,qcPipelineTools,exomePipeline,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
-        <cvalue name='analysisMethodNameOnInput' value='exon_sequencing' type='string' />
-        <cvalue name='analysisMethodNameOnOutput' value='exome' type='string' />
-
         <cvalue name='runExomeAnalysis' value='true' type="boolean" description="Shows that the workflow is running for whole exome datasets."/>
 
         <cvalue name='BASE_QUALITY_CUTOFF' value='25' type="integer"/>

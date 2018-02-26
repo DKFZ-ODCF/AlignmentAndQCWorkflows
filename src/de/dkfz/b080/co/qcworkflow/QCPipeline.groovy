@@ -62,19 +62,7 @@ class QCPipeline extends Workflow {
 
             // The ACEseq QC could also be done per lane/run, but for non X10 data there is not the required >30x coverage (Kortine).
             if (aqcfg.runACEseqQC) {
-                if (aqcfg.windowSize.toInteger() != 1) {
-                    // Kortine: The mappability file may have other than the same window size as the input data (i.e. WINDOW_SIZE),
-                    //          the replication timing and GC content files need to have the same window size as the input.
-                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${aqcfg.windowSize}. SKIPPING!"))
-                } else if (aqcfg.mappabilityFile == null) {
-                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE} to be set. SKIPPING!"))
-                } else if (aqcfg.replicationTimeFile == null) {
-                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE} to be set. SKIPPING!"))
-                } else if (aqcfg.gcContentFile == null) {
-                    aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE} to be set. SKIPPING!"))
-                } else {
-                    ACEseq.aceSeqQc(mergedBam.readBinsCoverageTextFile, sample)
-                }
+                ACEseq.aceSeqQc(mergedBam.readBinsCoverageTextFile, sample)
             }
         }
 
@@ -312,6 +300,34 @@ class QCPipeline extends Workflow {
         return result
     }
 
+    /** If the ACEseq QC is turned on, check that the mappability, replication-timing and GC-content files are available.
+     *
+     * @param context
+     * @return
+     */
+    boolean checkACEseqQCPrerequisites(ExecutionContext context) {
+        def aqcfg = new AlignmentAndQCConfig(context)
+        boolean result = true
+        if (aqcfg.runACEseqQC) {
+            if (aqcfg.windowSize.toInteger() != 1) {
+                // Kortine: The mappability file may have other than the same window size as the input data (i.e. WINDOW_SIZE),
+                //          the replication timing and GC content files need to have the same window size as the input.
+                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${aqcfg.windowSize}."))
+                result = false
+            } else if (aqcfg.mappabilityFile == null) {
+                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE} to be set."))
+                result = false
+            } else if (aqcfg.replicationTimeFile == null) {
+                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE} to be set."))
+                result = false
+            } else if (aqcfg.gcContentFile == null) {
+                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE} to be set."))
+                result = false
+            }
+        }
+        return result
+    }
+
     /** Check that the clipping index file is accessible, unless it is in the plugin.
      *
      * @param context
@@ -338,6 +354,7 @@ class QCPipeline extends Workflow {
         result &= checkSingleBam(context)
         result &= checkFingerprintingSitesFile(context)
         result &= checkClipIndexFile(context)
+        result &= checkACEseqQCPrerequisites(context)
         return result
     }
 

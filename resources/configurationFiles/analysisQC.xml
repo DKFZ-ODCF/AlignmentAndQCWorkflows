@@ -34,15 +34,6 @@
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
 
-        <!-- Directories -->
-        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
-        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
-
-        <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
-        <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
-
-        <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
-
         <!-- Configuration options -->
         <cvalue name="runSlimWorkflow" value="true" type="boolean"/>
 
@@ -53,30 +44,42 @@
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
 
-        <!-- Reference Files -->
-        <cvalue name="CHROM_SIZES_FILE" value=""
-                description="Number of A, T, C, G, but not N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
-        <cvalue name="INDEX_PREFIX" value=""
-                description="Path to the genome FASTA file. The same directory should contain the BWA index using the FASTA file, including the FASTA suffix (whatever that may be)."/>
+        <!-- Directories -->
+        <cvalue name="SEQUENCER_PROTOCOL" value="paired" type="string"
+                description="single, paired, mate-paired"/>
+        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
+        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'
+                description="Directory containing the FASTQ files."/>
 
-        <!-- Fingerprinting -->
-        <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
+
+        <!-- Reference Files -->
+        <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
+        <cvalue name="assembliesHG191000GenomesDirectory" value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes" type="path"/>
+
+        <cvalue name="CHROM_SIZES_FILE" value="${assembliesHG191000GenomesDirectory}/stats/hs37d5.fa.chrLenOnlyACGT_realChromosomes.tab"
+                description="Number of A, T, C, G, but not N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
+        <cvalue name="INDEX_PREFIX" value="${assembliesHG191000GenomesDirectory}/indexes/bwa/bwa06_1KGRef/hs37d5.fa"
+                description="Path to the genome FASTA file. The same directory should contain the BWA index. The prefix (-p) used for `bwa index` should be the same as the FASTA file, i.e. including the FASTA suffix."/>
+
+        <!-- Fingerprinting allows to identify sample swaps or samples belonging to other patients. -->
         <cvalue name='runFingerprinting' value='false' type='boolean'
                 description='Fingerprint the individuals using a set of reference positions.'/>
+        <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"
+                description="Name of the directory within the output directory within which the fingerprinting results will be written."/>
         <cvalue name="fingerprintingSitesFile_hs37"
-                value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes/databases/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
+                value="${assembliesHG191000GenomesDirectory}/databases/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
         <cvalue name="fingerprintingSitesFile" value="${fingerprintingSitesFile_hs37}" type="path"
                 description='BED file with the reference positions used for fingerprinting. Used for to discover sample swaps'/>
 
-        <!-- Former ACEseq QC configurations. -->
+        <!-- Quality checks from the ACEseq workflow. -->
         <cvalue name='runACEseqQc' value='true' type='boolean'
                 description="Turn on/off the GC correction."/>
 
-        <cvalue name='gccorOutputDirectory' value='correctedGcBias' type="path"/>
+        <cvalue name='gccorOutputDirectory' value='correctedGcBias' type="path"
+                description="Name of the directory within the output directory within which the GC-corrected results will be written."/>
         <cvalue name='gccorPlotOutputDirectory' value='${gccorOutputDirectory}/plots' type="path"/>
 
-        <!-- For ACEseq QC in the alignment plugin -->
-        <cvalue name="assembliesHG191000GenomesDirectory" value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes" type="path"/>
+        <!-- Reference files required for ACEseq QC. -->
         <cvalue name="gcContentFile_hg19_10kb" value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_10kb.txt" type="path"/>
         <cvalue name="gcContentFile_hg19_1kb"  value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_1kb.txt" type="path"/>
         <cvalue name="mappabilityFile_hg19" value="${assembliesHG191000GenomesDirectory}/databases/UCSC/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz" type="path"/>
@@ -84,33 +87,32 @@
         <cvalue name="chromosomeLengthFile_hg19" value="${assembliesHG191000GenomesDirectory}/stats/chrlengths.txt" type="path"/>
 
         <cvalue name="GC_CONTENT_FILE_ALN" value="${gcContentFile_hg19_10kb}" type="path"
-                description="Window size of this file must match WINDOW_SIZE parameter. For instance stats/hg19_GRch37_100genomes_gc_content_10kb.txt."/>
+                description="Window size of this file must match the WINDOW_SIZE parameter. For instance stats/hg19_GRch37_100genomes_gc_content_10kb.txt."/>
         <cvalue name="MAPPABILITY_FILE_ALN" value="${mappabilityFile_hg19}" type="path"
-                description="For the ACEseq workflow and the ACEseq QC in the alignment workflows. WARNING: There is a similar variable MAPABILITY in the variant calling workflows."/>
+                description="Gzipped bedGraph file including an accompanied tabix-index."/>
         <cvalue name="REPLICATION_TIME_FILE_ALN" value="${replicationTimingFile_hg19_10kb}" type="path"
                 description="Window size of this file must match WINDOW_SIZE parameter. For instance ENCODE/ReplicationTime_10cellines_mean_10KB.Rda."/>
         <cvalue name="CHROMOSOME_LENGTH_FILE_ALN" value="${chromosomeLengthFile_hg19}" type="path"
-                description="Window size must match WINDOW_SIZE parameter. For instance stats/chrlengths.txt"/>
+                description="For instance stats/chrlengths.txt"/>
 
-        <!-- annotateCnvFiles Opts-->
+        <!-- ACEseq QC: annotateCnvFiles Opts-->
         <cvalue name='min_X_ratio_ALN' value='0.8' type="float"/>
         <cvalue name='min_Y_ratio_ALN' value='0.12' type="float"/>
 
-        <!-- cnv_min_coverage should be 50 for controls and 0 for tumors. Take care that you correctly set the possible{Tumor,Control}SampleNamePrefixes variables! -->
+        <!-- ACEseq QC: cnv_min_coverage should be 50 for controls and 0 for tumors. Take care that you correctly set the possible{Tumor,Control}SampleNamePrefixes variables! -->
         <cvalue name='cnv_min_coverage_ALN' value='50' type="integer"/>
         <cvalue name='mapping_quality_ALN' value='1000' type="integer"/>
         <cvalue name='min_windows_ALN' value='5' type="integer"/>
 
-        <!-- correctGC Opts-->
+        <!-- ACEseq QC: correctGC Opts-->
         <cvalue name='LOWESS_F_ALN' value='0.1' type="float"/>
         <cvalue name='SCALE_FACTOR_ALN' value='0.9' type="float"/>
         <cvalue name='COVERAGEPLOT_YLIMS_ALN' value='4' type="float"/>
         <cvalue name='GC_bias_json_key_ALN' value='gc-bias' type="string"/>
 
         <!-- Duplication marking -->
-        <cvalue name='markDuplicatesVariant' value='' type="string"
+        <cvalue name='markDuplicatesVariant' value='sambamba' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
-
 
         <cvalue name='useRoddyScratchAsBigFileScratch' value='false' type='boolean'
                 description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
