@@ -46,11 +46,11 @@ ${SAMTOOLS_BINARY} view ${NP_COMP_IN} | ${MBUF_1G} > ${NP_COMBINEDANALYSIS_IN} &
 # create a streamed BAM file of target regions with intersectBed
 # on this, also calculate the per-target coverage with coverageBed per base and parse per perl script per region
 (set -o pipefail; $INTERSECTBED_BINARY $INTERSECTBED_OPTIONS -abam $FILENAME_PARENTBAM -b $TARGET_REGIONS_FILE | ${MBUF_1G} | \
-tee ${NP_COMP_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} | \
-$SAMTOOLS_BINARY view $SAMTOOLS_VIEW_OPTIONS - | ${MBUF_1G} | \
-$COVERAGEBED_BINARY $COVERAGEBED_OPTIONS -abam stdin -b $TARGET_REGIONS_FILE | \
-${PERL_BINARY} ${TOOL_TARGET_COVERAGE_PERL_SCRIPT} - > ${FILENAME_TARGETS_WITH_COVERAGE_TEXT}.tmp ; \
-echo $? > ${DIR_TEMP}/${samplepid}_ec_target) & procIDtargetExtr=$!
+    tee ${NP_COMP_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} | \
+    $SAMTOOLS_BINARY view $SAMTOOLS_VIEW_OPTIONS - | ${MBUF_1G} | \
+    $COVERAGEBED_BINARY $COVERAGEBED_OPTIONS -abam stdin -b $TARGET_REGIONS_FILE | \
+    ${PERL_BINARY} ${TOOL_TARGET_COVERAGE_PERL_SCRIPT} - > ${FILENAME_TARGETS_WITH_COVERAGE_TEXT}.tmp ; \
+    echo $? > ${DIR_TEMP}/${samplepid}_ec_target) & procIDtargetExtr=$!
 
 wait $procIDtargetExtr; [[ ! `cat ${DIR_TEMP}/${samplepid}_ec_target` -eq "0" ]] && throw 100 "intersectBed - samtools pipe returned a non-zero exit code and the job will die now."
 

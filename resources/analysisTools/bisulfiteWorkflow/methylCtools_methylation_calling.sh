@@ -29,9 +29,6 @@ mkfifo ${NP_METHCALLS_CG} ${NP_METHCALLS_CH}
 chr=""
 if [[ -n "$PARM_CHR_INDEX" ]]; then
     chr=${CHR_PREFIX}${PARM_CHR_INDEX}${CHR_SUFFIX}
-else
-    chr=${CHR_PREFIX}${CHROMOSOME_INDICES[$((RODDY_JOBARRAYINDEX-1))]}${CHR_SUFFIX}
-    # File names can contain X and Y. The pattern contains RODDY_JOBARRAYINDEX so this has to be changed temporary as the value is always numeric!
 fi
 
 # Get directories and create filenames

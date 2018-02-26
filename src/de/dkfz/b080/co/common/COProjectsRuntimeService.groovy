@@ -10,6 +10,7 @@ import de.dkfz.roddy.execution.io.ExecutionResult
 import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper
+import de.dkfz.roddy.tools.RoddyIOHelperMethods
 
 /**
  * Created by heinold on 15.01.16.
@@ -170,18 +171,20 @@ class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         COConfig coConfig = new COConfig(context)
         List<File> fastqFiles = coConfig.getFastqList().collect { String it -> new File(it) }
         def sequenceDirectory = coConfig.getSequenceDirectory()
-        int indexOfSampleID = indexOfPathElement(sequenceDirectory, '${sample}')
-        int indexOfRunID = indexOfPathElement(sequenceDirectory, '${run}')
+        Integer indexOfSampleID = RoddyIOHelperMethods.findComponentIndexInPath(sequenceDirectory, '${sample}').
+                orElseThrow { new RuntimeException("Could not find '\${sample}' in ${COConstants.CVALUE_SEQUENCE_DIRECTORY}='${sequenceDirectory}'") }
+        Integer indexOfRunID = RoddyIOHelperMethods.findComponentIndexInPath(sequenceDirectory, '${run}').
+                orElseThrow { new RuntimeException("Could not finde '\${run}' in ${COConstants.CVALUE_SEQUENCE_DIRECTORY}='${sequenceDirectory}'") }
         List<File> listOfFastqFilesForSample = fastqFiles.findAll {
-            it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfSampleID] == sample.getName()
+            RoddyIOHelperMethods.splitPathname(it.absolutePath)[indexOfSampleID] == sample.getName()
         } as List<File>
         List<String> listOfRunIDs = listOfFastqFilesForSample.collect {
-            it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID]
+            RoddyIOHelperMethods.splitPathname(it.absolutePath)[indexOfRunID]
         }.unique() as List<String>
         List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
         for(String runID : listOfRunIDs) {
             List<File> fastqFilesForRun = listOfFastqFilesForSample.findAll {
-                it.absolutePath.split(StringConstants.SPLIT_SLASH)[indexOfRunID] == runID
+                RoddyIOHelperMethods.splitPathname(it.absolutePath)[indexOfRunID] == runID
             } as List<File>
             List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun)
             laneFiles.addAll(bundleFiles)

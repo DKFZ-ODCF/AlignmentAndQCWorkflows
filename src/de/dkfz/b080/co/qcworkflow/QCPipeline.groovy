@@ -309,20 +309,17 @@ class QCPipeline extends Workflow {
         def aqcfg = new AlignmentAndQCConfig(context)
         boolean result = true
         if (aqcfg.runACEseqQC) {
-            if (aqcfg.windowSize.toInteger() != 1) {
-                // Kortine: The mappability file may have other than the same window size as the input data (i.e. WINDOW_SIZE),
-                //          the replication timing and GC content files need to have the same window size as the input.
-                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps are not implemented for other window sizes than 1kb: got ${aqcfg.windowSize}."))
-                result = false
-            } else if (aqcfg.mappabilityFile == null) {
+            // Kortine: The mappability file may have other than the same window size as the input data (i.e. WINDOW_SIZE),
+            //          the replication timing and GC content files need to have the same window size as the input.
+            if (aqcfg.mappabilityFile == null) {
                 aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE} to be set."))
-                result = false
+                result &= fileIsAccessible(context, aqcfg.mappabilityFile, AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE)
             } else if (aqcfg.replicationTimeFile == null) {
                 aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE} to be set."))
-                result = false
+                result &= fileIsAccessible(context, aqcfg.replicationTimeFile, AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE)
             } else if (aqcfg.gcContentFile == null) {
                 aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE} to be set."))
-                result = false
+                result &= fileIsAccessible(context, aqcfg.gcContentFile, AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE)
             }
         }
         return result
