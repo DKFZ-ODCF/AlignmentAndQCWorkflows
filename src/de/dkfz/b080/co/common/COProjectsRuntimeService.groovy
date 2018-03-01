@@ -189,7 +189,6 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
 
         ProcessingFlag flag = context.setProcessingFlag(ProcessingFlag.STORE_NOTHING);
 
-//        File outputFolderForDataSetAndAnalysis = getOutputFolderForDataSetAndAnalysis(context.getDataSet(), context.getAnalysis());
         BamFileGroup mergedBamFiles = new BamFileGroup();
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
 
