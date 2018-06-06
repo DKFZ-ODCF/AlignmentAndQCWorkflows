@@ -29,3 +29,4 @@ export SAMBAMBA_MARKDUP_BINARY=sambamba
 export MBUFFER_BINARY=mbuffer
 export CHECKSUM_BINARY=md5sum
 export BWA_BINARY=bwa
+export TRIMMOMATIC_BINARY=trimmomatic

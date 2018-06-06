@@ -155,11 +155,24 @@ class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         return copyOfLaneFileGroups
     }
 
+    List<String> listSampleNames(MetadataTable inputTable) {
+        return inputTable.listColumn(COConstants.INPUT_TABLE_SAMPLECOL_NAME).unique()
+    }
+
+    List<String> listRunIds(MetadataTable inputTable) {
+        return inputTable.listColumn(COConstants.INPUT_TABLE_RUNCOL_NAME).unique()
+    }
+
+    List<String> listLibraries(MetadataTable inputTable) {
+        return inputTable.listColumn(COConstants.INPUT_TABLE_MARKCOL_NAME).unique()
+    }
+
+
     List<LaneFileGroup> getLaneFileGroupsFromInputTable(ExecutionContext context, Sample sample, String libraryID = null) {
-        MetadataTable inputTable = getMetadataTable(context).subsetBySample(sample.name)
+        MetadataTable inputTable = metadataAccessor.getMetadataTable(context).subsetBySample(sample.name)
         if (libraryID) inputTable = inputTable.subsetByLibrary(libraryID)
         List<LaneFileGroup> laneFiles = new LinkedList<LaneFileGroup>()
-        for(String runID : inputTable.listRunIDs()) {
+        for(String runID : listRunIds(inputTable)) {
             List<File> fastqFilesForRun = inputTable.subsetByRun(runID).listFiles()
             List<LaneFileGroup> bundleFiles = QCPipelineScriptFileServiceHelper.sortAndPairLaneFilesToGroupsForSampleAndRun(context, sample, libraryID, runID, fastqFilesForRun)
             laneFiles.addAll(bundleFiles)
@@ -236,13 +249,12 @@ class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
                 String run = split[runIndex..-2].join(StringConstants.UNDERSCORE)
                 String lane = String.format("L%03d", laneID)
 
-
-                BamFile bamFile = COBaseFile.constructSourceFile(BamFile, f, context, new COFileStageSettings(new LaneID(lane), new RunID(run), null, sample, context.getDataSet())) as BamFile
+                BamFile bamFile = COBaseFile.constructSourceFile(BamFile, f, context,
+                        new COFileStageSettings(new LaneID(lane), new RunID(run), null, sample, context.getDataSet())) as BamFile
                 return bamFile
         })
-        BamFileGroup bamFileGroup = new BamFileGroup(bamFiles)
-        logger.info("Found ${bamFileGroup.getFilesInGroup().size()} paired bam files for sample ${sample.getName()}")
-        return bamFileGroup
+        logger.info("Found ${bamFiles.size()} paired bam files for sample ${sample.getName()}")
+        return new BamFileGroup(bamFiles)
     }
     
 }

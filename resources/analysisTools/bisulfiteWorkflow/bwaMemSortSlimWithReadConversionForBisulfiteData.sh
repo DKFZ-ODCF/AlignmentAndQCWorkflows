@@ -91,7 +91,7 @@ if [[ ${bamFileExists} == false ]]; then	# we have to make the BAM
 		# But o2 now has to contain read2 here:
 		o2=${RODDY_SCRATCH}/at_o2
 		mkfifo $o2
-		eval "$JAVA_BINARY -jar  ${TOOL_ADAPTOR_TRIMMING} $ADAPTOR_TRIMMING_OPTIONS_0 $i1 $i2 $o1 $u1 $o2 $u2 $ADAPTOR_TRIMMING_OPTIONS_1" & procTrim=$!
+		"$TRIMMOMATIC_BINARY" "$ADAPTOR_TRIMMING_OPTIONS_0" "$i1" "$i2" "$o1" "$u1" "$o2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1 & procTrim=$!
 
 		# trimming with fastx does not work in combination with Trimmomatic!
 		# besides, bwa mem automagically reverts mate pair data

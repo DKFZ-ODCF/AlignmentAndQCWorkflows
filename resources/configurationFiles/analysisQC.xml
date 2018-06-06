@@ -30,6 +30,7 @@
         <cvalue name="BWA_VERSION" value="0.7.8" type="string"
                 description="Use e.g. 0.7.8-r2.05 for a specific revision of bb-bwa."/>
         <cvalue name="FASTQC_VERSION" value="0.11.3" type="string"/>
+        <cvalue name="TRIMMOMATIC_VERSION" value="0.30" type="string"/>
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
 

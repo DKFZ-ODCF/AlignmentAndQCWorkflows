@@ -9,9 +9,9 @@ These are basically BWA alignment (bwa mem) workflows with plenty of additional 
 
 # Configuration
 
-All configuration variables are documented in the XML files in the `resources/configurationFiles/` directory. One per workflow. Note that the workflows depend on each other, i.e. the WES and WGBS workflows are extension of the WGS workflow. This means that most options of the WGS workflow also are used for the other two workflows. Furthermore, settings in the WGBS and WES workflow may override those in the WGS workflow. Some processing steps, notably those of the ACEseq quality control (QC) are not valid for the WES workflow. 
+All configuration variables are documented in the XML files in the `resources/configurationFiles/` directory. There is one XML for each workflow. Note that the workflows depend on each other, i.e. the WES and WGBS workflows are extension of the WGS workflow -- this can be recognized from the `imports` attribute of the top-level configuration tag in the XMLs. This means that most options of the WGS workflow also affect the other two workflows. Furthermore, settings in the WGBS and WES workflow may override those in the WGS workflow. Some processing steps, notably those of the ACEseq quality control (QC) are not valid for the WES workflow. 
 
-See the [Roddy](https://github.com/eilslabs/Roddy) documentation for a description of how to configure and run workflows.
+See the [Roddy](https://github.com/TheRoddyWMS/Roddy) documentation for a description of how to configure and run workflows.
 
 # Software Requirements
 
@@ -41,10 +41,11 @@ The software versions in the Conda environment are yet not exactly the same as t
 
 |Package   | DKFZ version | Conda version | Comment                |
 |----------|--------------|---------------|------------------------|
-|biobambam | 0.0.148      | 2.0.79        | As long as you do not select `markDuplicatesVariant=biobambam` this won't be a problem, as biobambam is only used for sorting BAMs. Note further, we did not manage to get bamsort 2 from Conda to run on a CentOS 7 VM. Please use `useBioBamBamSort=false` to sort with samtools.|
+|biobambam | 0.0.148      | 2.0.79        | As long as you do not select `markDuplicatesVariant=biobambam` this won't be a problem, as biobambam is only used for sorting BAMs. Note further, we did not manage to get bamsort 2 from Conda to run on a CentOS 7 VM. You can also use `useBioBamBamSort=false` to sort with samtools.|
 |picard    | 1.125        | 1.126         | Probably no big deal. |
 |bwa       | patched 0.7.8| 0.7.8         | For the WGBS workflow we currently use a patched version of BWA that does not check for the "/1" and "/2" first and second read marks. This version is not available in BioConda and thus the WGBS workflow won't work with the Conda environment. |
 |R         | 3.4.0        | 3.4.1         | Probably no big deal. |
+|trimmomatic| 0.30        | 0.33          |                       | 
 
 We successfully tested the Conda environment imported as described above and using the parameters `useBioBamBamSort=false`, `markDuplicatesVariant=sambamba`, `workflowEnvironmentScript=workflowEnvironment_conda` and `condaEnvironmentName=AlignmentAndQCWorkflows` on WGS data.
 
@@ -81,5 +82,4 @@ It depends on the set of parameters, which BAM file is used as input, e.g. when 
 ## Read Group Identifiers
 
 Read group IDs in BAMs are determined (input files) from or stored in (output files) the `ID` attribute in `@RG` header lines. Usually, read group IDs in FASTQ files are determined from filenames using the patterns `${RUN}_${LANE}`. With a metadata input table you can provide FASTQ files with arbitrary file names, because the metadata is taken from the table's columns. 
-
 

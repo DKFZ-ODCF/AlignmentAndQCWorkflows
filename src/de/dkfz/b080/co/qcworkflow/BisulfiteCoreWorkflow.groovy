@@ -120,9 +120,8 @@ class BisulfiteCoreWorkflow extends QCPipeline {
         return true
     }
 
-
     @Override
-    protected boolean checkLaneFiles(ExecutionContext context) {
+    protected boolean checkLaneFileCounts(ExecutionContext context) {
         boolean returnValue = true
         int cnt = 0
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()

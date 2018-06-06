@@ -175,8 +175,13 @@ class AlignmentAndQCConfig extends COConfig {
     public boolean getUseCombinedAlignAndSampe() {
         return configValues.getBoolean(COConstants.FLAG_USE_COMBINED_ALIGN_AND_SAMPE, false)
     }
+
     public String getDefaultLibraryName() {
-        return configValues. getString(CVALUE_DEFAULT_LIBRARY_NAME, "null")
+        return configValues.getString(CVALUE_DEFAULT_LIBRARY_NAME, "null")
+    }
+
+    String getUseSingleEndProcessing() {
+        return configValues.getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING , false)
     }
 
 }

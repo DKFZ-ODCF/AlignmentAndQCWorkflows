@@ -7,10 +7,10 @@ import de.dkfz.b080.co.files.*
 import de.dkfz.b080.co.methods.ACEseq
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
-import de.dkfz.roddy.core.RuntimeService
 import de.dkfz.roddy.core.Workflow
 import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
+import de.dkfz.roddy.knowledge.files.BaseFile
 import de.dkfz.roddy.tools.LoggerWrapper
 
 /**
@@ -88,11 +88,11 @@ class QCPipeline extends Workflow {
         BamFileGroup sortedBamFiles = new BamFileGroup()
 
         if (aqcfg.useOnlyExistingLaneBams) {
-            //Start from the paired bams instead of the fastq files.
+            // Start from the paired BAMs instead of the FASTQ files.
             sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(aqcfg.context, sample)
 
         } else {
-            // Create bam files out of the fastq files
+            // Create bam files out of the FASTQ files.
             List<LaneFileGroup> rawSequenceGroups = runtimeService.loadLaneFilesForSample(aqcfg.context, sample)
             if (rawSequenceGroups == null || rawSequenceGroups.size() == 0)
                 return sortedBamFiles
@@ -121,30 +121,6 @@ class QCPipeline extends Workflow {
         return sortedBamFiles
     }
 
-    boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
-        if (value == null || value.toString() == "") {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Expected value to be set: ${variableName}"))
-            return true
-        }
-        return false
-    }
-
-    boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
-        if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
-            return false
-        }
-        return true
-    }
-
-    boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
-        if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
-            return false
-        }
-        return true
-    }
-
     private static ExecutionContextError getInvalidError (String message) {
         return ExecutionContextError.EXECUTION_SETUP_INVALID.expand(message)
     }
@@ -153,14 +129,24 @@ class QCPipeline extends Workflow {
         AlignmentAndQCConfig config = new AlignmentAndQCConfig(context)
         boolean returnValue
         returnValue =
-                !valueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
-                directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
+                !context.valueIsEmpty(config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
+                context.directoryIsAccessible(new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
         returnValue &=
-                fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
+                context.fileIsAccessible(config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
         if (config.runExomeAnalysis) {
             returnValue &=
-                    fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
-                    !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
+                    context.fileIsAccessible(config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
+                    !context.valueIsEmpty(config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
+        }
+        if (config.useOnlyExistingTargetBam && config.fastqFileListIsSet) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                    expand("Both 'fastq_list' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
+            returnValue = false
+        }
+        if (config.useOnlyExistingTargetBam && config.useOnlyExistingLaneBams) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("Both 'useExistingLaneBams' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
+            returnValue = false
         }
         return returnValue
     }
@@ -185,58 +171,48 @@ class QCPipeline extends Workflow {
         }
         return true
     }
-    
-    protected boolean checkFastqFiles(ExecutionContext context) {
+
+    private <T extends BaseFile> boolean checkFiles(ExecutionContext context, List<T> files) {
+        return files.collect { checkFile(context, it.path) }.inject { acc, i -> acc && i }
+    }
+
+    private Boolean checkLaneFileGroups(ExecutionContext context, List<LaneFileGroup> laneFileGroups) {
         boolean returnValue = true
-        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
-        COProjectsRuntimeService runtimeService = context.runtimeService as COProjectsRuntimeService
-        if (!cfg.useOnlyExistingTargetBam) {
-            for (Sample sample in runtimeService.getSamplesForContext(context)) {
-                List<String> libraries = sample.getLibraries()
-                if (libraries) {
-                    for (String library in libraries) {
-                        for (LaneFileGroup laneFileGroup in runtimeService.loadLaneFilesForSample(context, sample)) {
-                            for (LaneFile laneFile in laneFileGroup.filesInGroup) {
-                                returnValue &= checkFile(context, laneFile.path)
-                            }
-                        }
-                    }
-                } else {
-                    for (LaneFileGroup laneFileGroup in runtimeService.loadLaneFilesForSample(context, sample)) {
-                        for (LaneFile laneFile in laneFileGroup.filesInGroup) {
-                            returnValue &= checkFile(context, laneFile.path)
-                        }
-                    }
-                }
-            }
+        for (laneFileGroup in laneFileGroups) {
+            if (new AlignmentAndQCConfig(context).useSingleEndProcessing)
+                returnValue &= checkFiles(context, [laneFileGroup.filesInGroup[0]] as List)
+            else
+                returnValue &= checkFiles(context, laneFileGroup.filesInGroup)
         }
         return returnValue
     }
 
     protected boolean checkLaneFiles(ExecutionContext context) {
         boolean returnValue = true
-
         AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
+        COProjectsRuntimeService runtimeService = context.runtimeService as COProjectsRuntimeService
+        if (!cfg.useOnlyExistingTargetBam) {
+            for (Sample sample in runtimeService.getSamplesForContext(context)) {
+                List<String> libraries = sample.getLibraries()
+                if (libraries)
+                    for (String library in libraries)
+                        returnValue &= checkLaneFileGroups(context, runtimeService.loadLaneFilesForSampleAndLibrary(context, sample, library))
+                else
+                    returnValue &= checkLaneFileGroups(context, runtimeService.loadLaneFilesForSample(context, sample))
+            }
+        }
+        return returnValue
+    }
 
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+    protected boolean checkLaneFileCounts(ExecutionContext context) {
+        boolean returnValue = true
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
         List<Sample> samples = runtimeService.getSamplesForContext(context)
-
-        if (cfg.useOnlyExistingTargetBam && cfg.fastqFileListIsSet) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
-                    expand("Both 'fastq_list' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
-            returnValue = false
-        }
-
-        if (cfg.useOnlyExistingTargetBam && cfg.useOnlyExistingLaneBams) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
-                    expand("Both 'useExistingLaneBams' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
-            returnValue = false
-        }
-
         if (!cfg.useOnlyExistingLaneBams) {
             int cnt = 0
             for (Sample sample : samples) {
-                List<LaneFileGroup> laneFileGroups = ((COProjectsRuntimeService) runtimeService).loadLaneFilesForSample(context, sample)
+                List<LaneFileGroup> laneFileGroups = runtimeService.loadLaneFilesForSample(context, sample)
                 for (LaneFileGroup lfg : laneFileGroups) {
                     cnt += lfg.getFilesInGroup().size()
                 }
@@ -248,7 +224,6 @@ class QCPipeline extends Workflow {
                 returnValue = false
             }
         }
-
         return returnValue
     }
 
@@ -294,7 +269,7 @@ class QCPipeline extends Workflow {
         boolean result = true
         if (aqcfg.runFingerprinting) {
             if (!aqcfg.fingerprintingSitesFile.absolutePath.contains("\$${ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION}")) {
-                result = fileIsAccessible(context, aqcfg.fingerprintingSitesFile, AlignmentAndQCConfig.CVALUE_FINGERPRINTING_SITES_FILE)
+                result = context.fileIsAccessible(aqcfg.fingerprintingSitesFile, AlignmentAndQCConfig.CVALUE_FINGERPRINTING_SITES_FILE)
             }
         }
         return result
@@ -312,15 +287,25 @@ class QCPipeline extends Workflow {
             // Kortine: The mappability file may have other than the same window size as the input data (i.e. WINDOW_SIZE),
             //          the replication timing and GC content files need to have the same window size as the input.
             if (aqcfg.mappabilityFile == null) {
-                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE} to be set."))
-                result &= fileIsAccessible(context, aqcfg.mappabilityFile, AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE)
-            } else if (aqcfg.replicationTimeFile == null) {
-                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE} to be set."))
-                result &= fileIsAccessible(context, aqcfg.replicationTimeFile, AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE)
-            } else if (aqcfg.gcContentFile == null) {
-                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE} to be set."))
-                result &= fileIsAccessible(context, aqcfg.gcContentFile, AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE)
+                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                        expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE} to be set."))
+                result = false
             }
+            result &= context.fileIsAccessible(aqcfg.mappabilityFile, AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE)
+
+            if (aqcfg.replicationTimeFile == null) {
+                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                        expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE} to be set."))
+                result = false
+            }
+            result &= context.fileIsAccessible(aqcfg.replicationTimeFile, AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE)
+
+            if (aqcfg.gcContentFile == null) {
+                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                        expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE} to be set."))
+                result = false
+            }
+            result &= context.fileIsAccessible(aqcfg.gcContentFile, AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE)
         }
         return result
     }
@@ -335,7 +320,7 @@ class QCPipeline extends Workflow {
         Boolean result = true
         if (aqcfg.useAdapterTrimming) {
             if (!aqcfg.clipIndex.absolutePath.contains("\$${ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION}")) {
-                result = fileIsAccessible(context, aqcfg.clipIndex, AlignmentAndQCConfig.CVALUE_CLIP_INDEX)
+                result = context.fileIsAccessible(aqcfg.clipIndex, AlignmentAndQCConfig.CVALUE_CLIP_INDEX)
             }
         }
         return result
@@ -345,9 +330,9 @@ class QCPipeline extends Workflow {
     boolean checkExecutability(ExecutionContext context) {
         boolean result = super.checkExecutability(context)
         result &= checkConfiguration(context)
-        result &= checkFastqFiles(context)
-        result &= checkSamples(context)
+        result &= checkLaneFileCounts(context)
         result &= checkLaneFiles(context)
+        result &= checkSamples(context)
         result &= checkSingleBam(context)
         result &= checkFingerprintingSitesFile(context)
         result &= checkClipIndexFile(context)

@@ -39,5 +39,8 @@ else
     export BWA_ACCELERATED_BINARY="/opt/bb/bwa-${BWA_VERSION:?BWA_VERSION is not set}/bin/bwa-bb"
 fi
 
+moduleLoad trimmomatic
+export TRIMMOMATIC_BINARY=trimmomatic.sh
+
 export MBUFFER_BINARY=mbuffer
 

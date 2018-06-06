@@ -146,6 +146,10 @@ else
     throw 200 "Unknown workflow ID '$WORKFLOW_ID'"
 fi
 
+moduleLoad trimmomatic
+export TRIMMOMATIC_BINARY=trimmomatic.sh
+
 # Unversioned binaries.
 export MBUFFER_BINARY=mbuffer
 export CHECKSUM_BINARY=md5sum
+

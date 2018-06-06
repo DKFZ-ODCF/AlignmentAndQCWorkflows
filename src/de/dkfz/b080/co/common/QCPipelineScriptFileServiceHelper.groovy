@@ -46,16 +46,16 @@ class QCPipelineScriptFileServiceHelper {
             for (int i = 0; i < sortedFiles.size(); i++) {
                 File _f0 = sortedFiles[i];
                 File _f1 = new File(_f0.getAbsolutePath() + "_dummySecondary");
-                IndexID index = new IndexID("R1");
+                IndexID index1 = new IndexID("R1");
                 IndexID index2 = new IndexID("R2");
                 String lane = String.format("L%03d", i);
-                LaneID laneId = new LaneID(String.format("%s_%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), libId, runName, lane, index));
+                LaneID laneId = new LaneID(String.format("%s_%s_%s_%s_%s", context.getDataSet().getId(), sample.getName(), libId, runName, lane, index1));
 
 
                 BEJobResult result = getFileExistedFakeJobResult()
                 LinkedList<LaneFile> filesInGroup = new LinkedList<LaneFile>(Arrays.asList(
                         (LaneFile) BaseFile.constructSourceFile(LaneFile, _f0, context,
-                                new COFileStageSettings(laneId, index,  0, new RunID(runName), libId, sample, context.getDataSet(), COFileStage.INDEXEDLANE),
+                                new COFileStageSettings(laneId, index1, 0, new RunID(runName), libId, sample, context.getDataSet(), COFileStage.INDEXEDLANE),
                                 result),
                         (LaneFile) BaseFile.constructSourceFile(LaneFile, _f1, context,
                                 new COFileStageSettings(laneId, index2, 1, new RunID(runName), libId, sample, context.getDataSet(), COFileStage.INDEXEDLANE),
