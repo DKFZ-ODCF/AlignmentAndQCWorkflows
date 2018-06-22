@@ -1,8 +1,12 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
 # Read in a number of statistics files and compile some of the content into a JSON file.
 # The JSON file is required by OTP.
 # Philip R. Kensche <p.kensche@dkfz.de>
-
 
 use strict;
 use warnings;
@@ -579,7 +583,7 @@ From discussion of Ivo, Kortine, Philip 13-07-2015:
 
 =item coverage* (decided per project) $readgroup/coverage/control_ICGC_MB99.DepthOfCoverage_Genome.txt
 =item insertsize
-           - median*		$readgroup/insertsize_distribution/control_ICGC_MB99_insertsize_plot.png_qcValues.txt (Median, SD, ?)
+           - median*		$readgroup/insertsize_distribution/control_ICGC_MB99_insertsize_plot.png_qcValues.txt (Median, SDpercent [=SD/median * 100], SD)
            - 10 and 90% quartile ( not done yet ) ==> add to Joachims skript
 =item % reads mapped*             $readgroup/flagstats/control_ICGC_MB99_merged.mdup.bam_flagstats.txt (mapped)
 =item proper pairs*	        $readgroup/flagstats/control_ICGC_MB99_merged.mdup.bam_flagstats.txt (properly paired, convert to % of paired)

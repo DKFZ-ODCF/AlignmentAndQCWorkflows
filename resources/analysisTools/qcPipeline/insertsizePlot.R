@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
 
 # Rscript ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAMED} ${FILENAMEP}_qcValues.txt ${FILENAMEP} "PE insertsize of ${FILEINFO} (rmdup)"
 # Rscript ${TOOL_INSERT_SIZE_PLOT_SCRIPT} tumor_ICGC_GBM21_insertsizes.txt tumor_ICGC_GBM21_insertsize_plot.png_qcValues.txt tumor_ICGC_GBM21_insertsize_plot.png "PE insertsize of tumor_ICGC_GBM21 (rmdup)"

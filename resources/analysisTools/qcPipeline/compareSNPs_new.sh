@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright (c) 2018 DKFZ.
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
 
 #PBS -l walltime=2:00:00,nodes=1:ppn=1
 

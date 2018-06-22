@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
 
 currentDir=$(dirname $(readlink -f "$0"))
 runner=${SHUNIT2:?No SHUNIT2 variable. Point it to the shunit2 of https://github.com/kward/shunit2.git.}

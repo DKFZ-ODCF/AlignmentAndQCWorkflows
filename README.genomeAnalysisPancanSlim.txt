@@ -16,6 +16,18 @@ overrideBamFiles
 
 == Changelist
 
+* Version update to 1.2.77
+
+- check ACEseq QC input file before start
+- dead code removal
+- fixed some Perl tests
+- Conda environment
+- contributors
+- MIT licence, where necessary copyleft licence
+- improved read-me
+- use externally provided trimmomatic
+- JVM code updated to depend on Roddy 3.1.0
+
 * Version update to 1.2.76
 
 - lifted to Roddy 3.0

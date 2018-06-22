@@ -1,4 +1,9 @@
-#! /usr/bin/python
+#!/usr/bin/env python
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
 #
 # Use this script to
 # - determine the genome wide base coverage (will also report base coverage per chromosome)

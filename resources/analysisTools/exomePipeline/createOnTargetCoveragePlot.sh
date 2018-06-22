@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
 
 #PBS -l nodes=1:ppn=2
 #PBS -l walltime=2:00:00

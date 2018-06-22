@@ -3,13 +3,13 @@
 This plugins contains alignment and quality control related [Roddy](https://github.com/eilslabs/Roddy) workflows:
 
 - PanCancer alignment workflow for whole genome (WGS) and exome (WES)
-- Bisulfite core workflow (WGBS)
+- Bisulfite core workflow (WGBS) using [methylCtools](https://github.com/hovestadt/methylCtools)
 
 These are basically BWA alignment (bwa mem) workflows with plenty of additional quality control steps. QC-steps acting on the BAM files are mostly done through piping the input data into multiple QC tools simultaneously to achieve a high performance. All workflows can be run for each sample or with combinations of tumor- and control-samples.
 
 # Configuration
 
-All configuration variables are documented in the XML files in the `resources/configurationFiles/` directory. There is one XML for each workflow. Note that the workflows depend on each other, i.e. the WES and WGBS workflows are extension of the WGS workflow -- this can be recognized from the `imports` attribute of the top-level configuration tag in the XMLs. This means that most options of the WGS workflow also affect the other two workflows. Furthermore, settings in the WGBS and WES workflow may override those in the WGS workflow. Some processing steps, notably those of the ACEseq quality control (QC) are not valid for the WES workflow. 
+All configuration variables are documented in the XML files in the `resources/configurationFiles/` directory. There is one XML for each workflow. Note that the workflows depend on each other, i.e. the WES and WGBS workflows are extension of the WGS workflow -- this can be recognized from the `imports` attribute of the top-level configuration tag in the XMLs. This means that most options of the WGS workflow also affect the other two workflows. Conversely, settings in the WGBS and WES workflow may override those in the WGS workflow. Some processing steps, notably those of the ACEseq quality control (QC) are not valid for the WES workflow. Note that the plugin depends on the [COWorkflowBasePlugin](https://github.com/TheRoddyWMS/COWorkflowsBasePlugin), which has its own configurations affecting this alignment plugin.
 
 See the [Roddy](https://github.com/TheRoddyWMS/Roddy) documentation for a description of how to configure and run workflows.
 
@@ -48,6 +48,17 @@ The software versions in the Conda environment are yet not exactly the same as t
 |trimmomatic| 0.30        | 0.33          |                       | 
 
 We successfully tested the Conda environment imported as described above and using the parameters `useBioBamBamSort=false`, `markDuplicatesVariant=sambamba`, `workflowEnvironmentScript=workflowEnvironment_conda` and `condaEnvironmentName=AlignmentAndQCWorkflows` on WGS data.
+
+## WGBS Data Processing and methylCtools
+
+The current implementation of the WGBS workflow uses [methylCtools](https://github.com/hovestadt/methylCtools) requires a patched BWA version. Note that the methylCtools version in this repository is not as new as the one in the official Github repository. Furthermore, 
+
+## Recompiling the D-based Components
+
+Two programs in this repository -- `genomeCoverage.d` and `coverageQc.d` -- were written in the programming language [D](https://dlang.org/) and are provided as binaries and source code. If the need arises to recompile them you can find the build instructions in `resources/`. For the compilation you will need
+
+  * the D-compiler [LDC 0.12.1](https://github.com/ldc-developers/ldc/releases/tag/v0.12.1) compiler
+  * and [BioD](https://github.com/lomereiter/BioD) master branch (commit 8b633de) 
 
 # Resource Requirements
 

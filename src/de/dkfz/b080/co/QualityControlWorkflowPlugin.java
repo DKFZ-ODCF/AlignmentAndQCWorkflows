@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2018 German Cancer Research Center (DKFZ).
+ *
+ * Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+ */
+
 package de.dkfz.b080.co;
 
 import de.dkfz.roddy.plugins.BasePlugin;
@@ -9,7 +15,7 @@ import de.dkfz.roddy.plugins.BasePlugin;
 public class QualityControlWorkflowPlugin extends BasePlugin {
 
 	public static final String CURRENT_VERSION_STRING = "1.2.77";
-	public static final String CURRENT_VERSION_BUILD_DATE = "Mon Feb 26 10:31:29 CET 2018";
+	public static final String CURRENT_VERSION_BUILD_DATE = "Fri Jun 22 11:43:11 CEST 2018";
 
     @Override
     public String getVersionInfo() {

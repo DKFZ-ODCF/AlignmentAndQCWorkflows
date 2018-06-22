@@ -1,5 +1,22 @@
+#!/usr/bin/env Rscript
+#
+# This file is part of the AlignmentAndQCWorkflow plugin.
+#
+# This script is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License.
+#
+# This script is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script.  If not, see <https://www.gnu.org/licenses/>.
+#
+#
 # example script call: R -f coveragePieCharts.r --no-save --no-restore --args "/ngs/s_1_bwa.sorted_readCoverage_1kb_windows.txt" "read" "1" "/ngs/plots/"
-
+#
 # OBTAIN CONFIGURATION PARAMETERS FOR PLOTTING THE READ/BASE COVERAGE AS PIE CHARTS (WITH R)
 
 cmdArgs = commandArgs(TRUE)

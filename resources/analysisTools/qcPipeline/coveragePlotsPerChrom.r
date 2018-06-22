@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
+
 # OBTAIN CONFIGURATION PARAMETERS FOR PLOTTING THE READ/BASE COVERAGE (WITH R)
 cmdArgs = commandArgs(TRUE)
 print(cmdArgs)

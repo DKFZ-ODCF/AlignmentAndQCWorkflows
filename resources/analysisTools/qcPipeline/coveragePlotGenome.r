@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
+
 # example call:      R -f /home/jaegern/rWorkspace/coveragePlotGenome.r --no-save --no-restore --args "/icgc/lsdf/mb/analysis/QC_pipeline/results_per_pid/179743/coverage/control_179743_merged.bam.rmdup_readCoverage_1kb_windows_sorted.txt" "/icgc/lsdf/mb/analysis/QC_pipeline/results_per_pid/179743/coverage/tumor_179743_merged.bam.rmdup_readCoverage_1kb_windows_sorted.txt" "read" "1" "/icgc/lsdf/mb/analysis/QC_pipeline/results_per_pid/179743/coverage/readDepth.png"
 #                    R -f /home/jaegern/rWorkspace/coveragePlotGenome.r --no-save --no-restore --args "/icgc/lsdf/mb/analysis/QC_pipeline/results_per_pid/198151/coverage/control_198151_merged.bam.rmdup_readCoverage_1kb_windows_sorted.txt" "/icgc/lsdf/mb/analysis/QC_pipeline/results_per_pid/198151/coverage/tumor_198151_merged.bam.rmdup_readCoverage_1kb_windows_sorted.txt" "read" "1" "/icgc/lsdf/mb/analysis/QC_pipeline/results_per_pid/198151/coverage/readDepth.png"
         

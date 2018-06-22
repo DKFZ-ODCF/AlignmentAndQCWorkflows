@@ -1,4 +1,10 @@
-#! /usr/bin/python
+#!/usr/bin/env python
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
+
 #
 # Use this script to
 # - find reads of a PE read pair that have been mapped to different chromosomes; writes tab-separated output text file

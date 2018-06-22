@@ -1,4 +1,10 @@
-#! /usr/bin/python
+#!/usr/bin/env python
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
+
 #
 # Use this script to
 # - determine genome wide read or base coverage by using user-defined window sizes (default window size is 1KB)

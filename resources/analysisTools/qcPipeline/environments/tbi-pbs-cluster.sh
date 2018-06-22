@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
 
 # The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort.
 export SAMBAMBA_BINARY="sambamba_v${SAMBAMBA_VERSION:?SAMBAMBA_VERSION is not set}"

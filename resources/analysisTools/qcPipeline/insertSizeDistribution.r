@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+#
+
 # example script call: R -f insertSizeDistribution.r --no-save --no-restore --args "/ibios/temp1/2010-06-07QCGATC/insertsize_distribution/tumor/s_1_insertsizes.txt" "/ibios/temp1/2010-06-07QCGATC/insertsize_distribution/tumor/s_1_isize_testplot.png" "isize tumor s1 gatc"
 # OBTAIN CONFIGURATION PARAMETERS FOR PLOTTING THE INSERT SIZE DISTRIBUTION (WITH R)
 
