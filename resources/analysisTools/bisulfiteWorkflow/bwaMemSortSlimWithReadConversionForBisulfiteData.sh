@@ -243,6 +243,7 @@ groupLongAndShortChromosomeNames "$FILENAME_GENOME_COVERAGE" \
     || throw 43 "Error grouping reads by having (=long) or not having (=short) prefix/suffix"
 mv "$FILENAME_GROUPED_GENOME_COVERAGE.tmp" "$FILENAME_GROUPED_GENOME_COVERAGE" || throw 27 "Could not move file"
 
+# Produced qualitycontrol.json for OTP.
 ${PERL_BINARY} ${TOOL_QC_JSON} \
     ${FILENAME_GENOME_COVERAGE} \
     ${FILENAME_GROUPED_GENOME_COVERAGE} \
