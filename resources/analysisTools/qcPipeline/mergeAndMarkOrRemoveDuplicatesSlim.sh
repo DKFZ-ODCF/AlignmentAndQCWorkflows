@@ -250,25 +250,20 @@ ${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $analy
 
 [[ -d $tempDirectory ]] && rm -rf $tempDirectory
 
+groupLongAndShortChromosomeNames "$FILENAME_GENOME_COVERAGE" \
+    > "$FILENAME_GROUPED_GENOME_COVERAGE.tmp"  \
+    || throw 43 "Error grouping reads by having (=long) or not having (=short) prefix/suffix"
+mv "$FILENAME_GROUPED_GENOME_COVERAGE.tmp" "$FILENAME_GROUPED_GENOME_COVERAGE" || throw 27 "Could not move file"
+
 # Produced qualitycontrol.json for OTP. Remove the first branch as soon as the dip-statistics is implemented.
-if [[ 1 ]]; then
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
-	${FILENAME_GENOME_COVERAGE} \
+${PERL_BINARY} ${TOOL_QC_JSON} \
+    ${FILENAME_GENOME_COVERAGE} \
+    ${FILENAME_GROUPED_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
     > ${FILENAME_QCJSON}.tmp \
     || throw 25 "Error when compiling qualitycontrol.json for ${FILENAME}"
-else
-  ${PERL_BINARY} ${TOOL_QC_JSON} \
-  	${FILENAME_GENOME_COVERAGE} \
-    ${FILENAME_ISIZES_STATISTICS} \
-    ${FILENAME_FLAGSTATS} \
-    ${FILENAME_DIFFCHROM_STATISTICS} \
-    ${FILENAME_DIP_STATISTICS} \
-    > ${FILENAME_QCJSON}.tmp \
-    || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}"
-fi
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # if the BAM only contains single end reads, there can be no pairs to have insert sizes or ends mapping to different chromosomes
