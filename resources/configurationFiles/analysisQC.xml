@@ -33,6 +33,11 @@
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
 
+        <cvalue name='CHR_PREFIX' value="" description="Set this to e.g. chrMmu if you have xenograft data."/>
+        <cvalue name='CHR_SUFFIX' value="" description="Usually empty."/>
+        <cvalue name='CHROMOSOME_INDICES' value='( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT )' type='bashArray'
+                description="Bash array (enclosed in parens) of chromosome identifiers as found in the BAM header. Mind 'chr' prefixes! See also CHROM_SIZES_FILE. Needed for grouping data by short and long chromosome names, where long names match '$CHR_PREFIX$chr$CHR_SUFFIX'."/>
+
         <!-- Directories -->
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
@@ -45,19 +50,14 @@
 
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
         <cvalue name="BWA_MEM_THREADS" value="8" type="integer" description="Threads for bwa mem."/>
+
     </configurationvalues>
-    <!--<testdataoptions>-->
-        <!--&lt;!&ndash; id is the name of the test data option set-->
-             <!--Size has either a relative or absolute ratio, with absolute being the default-->
-             <!--If path is not set testdataOutputBaseDirectory is used &ndash;&gt;-->
-        <!--<testdataoption id="small" size="10000" ratio="absolute" testDataPath="${testDataDirectory}" outputPath="${testDataOutputBaseDirectory}"/>-->
-        <!--<testdataoption id="large" size="100000" ratio="absolute"/>-->
-    <!--</testdataoptions>-->
 
     <processingTools>
         <tool name="workflowEnvironment_tbiLsf" value="tbi-lsf-cluster.sh" basepath="qcPipeline/environments"/>
         <tool name="workflowEnvironment_tbiPbs" value="tbi-pbs-cluster.sh" basepath="qcPipeline/environments"/>
         <tool name="bashLib" value="bashLib.sh" basepath="qcPipeline"/>
+        <tool name="groupedGenomeCoverages" value="groupedGenomeCoverages.pl" basepath="qcPipeline"/>
         <tool name="cleanupScript" value="cleanupScript.sh" basepath="qcPipeline" >
             <resourcesets>
                 <rset size="l" memory="0.1" cores="1" nodes="1" walltime="1"/>
@@ -351,6 +351,7 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" fnpatternselectiontag="groupedGenomeCoverage" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
@@ -385,6 +386,7 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" fnpatternselectiontag="groupedGenomeCoverage" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
@@ -442,16 +444,21 @@
         <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png_qcValues.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="groupedGenomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+
         <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="groupedGenomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
         <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="groupedGenomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.calcReadBinsCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.calcCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.rawBamCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_RawBamFile.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.targetCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}.DepthOfCoverage_Target.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="targetsWithCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_TargetsWithCov.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="groupedGenomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target_Grouped.txt'/>
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="extendedFlagstats" pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
 
         <filename class='OnTargetCoverageTextFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}_TargetsWithCov.txt'/>

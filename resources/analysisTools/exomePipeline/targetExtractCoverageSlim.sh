@@ -80,9 +80,15 @@ ${RSCRIPT_BINARY} ${TOOL_ON_TARGET_COVERAGE_PLOTTER_BINARY} ${FILENAME_TARGETS_W
     && mv ${TARGETS_PLOT}.tmp ${TARGETS_PLOT} \
     || throw 15 "Error from on target coverage plotter"
 
+groupLongAndShortChromosomeNames "$FILENAME_GENOME_COVERAGE" \
+    > "$FILENAME_GROUPED_GENOME_COVERAGE.tmp"  \
+    || throw 43 "Error grouping reads by having (=long) or not having (=short) prefix/suffix"
+mv "$FILENAME_GROUPED_GENOME_COVERAGE.tmp" "$FILENAME_GROUPED_GENOME_COVERAGE" || throw 27 "Could not move file"
+
 # Produce qualitycontrol.json for OTP.
 ${PERL_BINARY} ${TOOL_QC_JSON} \
     ${FILENAME_GENOME_COVERAGE} \
+    ${FILENAME_GROUPED_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
