@@ -20,7 +20,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-<<<<<<< HEAD:AlignmentAndQCWorkflows.iml
     <orderEntry type="library" name="R User Library" level="project" />
     <orderEntry type="library" name="R Skeletons" level="application" />
     <orderEntry type="module" module-name="PluginBase" />
@@ -36,12 +35,5 @@
   </component>
   <component name="TestRunnerService">
     <option name="PROJECT_TEST_RUNNER" value="Unittests" />
-=======
-    <orderEntry type="module" module-name="COWorkflowsBasePlugin" />
-    <orderEntry type="module" module-name="PluginBase" />
-    <orderEntry type="module" module-name="Roddy" />
-    <orderEntry type="module" module-name="BatchEuphoria" />
-    <orderEntry type="library" name="Gradle: org.codehaus.groovy:groovy-all:2.4.9" level="project" />
->>>>>>> 21a9175... Script to group chromosome coverage statistics from genomeCoverage.d into "long" and "short" ID groups (e.g. "long" have chrMmu prefix).:AlignmentAndQCWorkflows.iml
   </component>
 </module>

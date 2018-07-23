@@ -358,9 +358,15 @@ else
 fi
 ${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r all_merged -l $(analysisType) -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE ${METRICS_OPTION} > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY || throw 14 "Error from writeQCsummary.pl"
 
-# Produce qualitycontrol.json for OTP.
+groupLongAndShortChromosomeNames "$FILENAME_GENOME_COVERAGE" \
+    > "$FILENAME_GROUPED_GENOME_COVERAGE.tmp"  \
+    || throw 43 "Error grouping reads by having (=long) or not having (=short) prefix/suffix"
+mv "$FILENAME_GROUPED_GENOME_COVERAGE.tmp" "$FILENAME_GROUPED_GENOME_COVERAGE" || throw 27 "Could not move file"
+
+# Produced qualitycontrol.json for OTP. Remove the first branch as soon as the dip-statistics is implemented.
 ${PERL_BINARY} ${TOOL_QC_JSON} \
-	${FILENAME_GENOME_COVERAGE} \
+    ${FILENAME_GENOME_COVERAGE} \
+    ${FILENAME_GROUPED_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
