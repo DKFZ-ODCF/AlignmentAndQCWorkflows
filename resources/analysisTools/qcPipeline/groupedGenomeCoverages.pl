@@ -17,8 +17,10 @@ use Data::Dumper;
 use IO::String;
 
 my $chromosomeColumn = "interval";
-my $coverageAllColumn = "#QC bases/#total bases";
-my $coverageNotNColumn = "#QC bases/#total not_N bases";
+my $coverageAllColumn = "coverage QC bases";
+my $coverageAllQuotientColumn = "#QC bases/#total bases";
+my $coverageNotNColumn = "genome_w/o_N coverage QC bases";
+my $coverageNotNQuotientColumn = "#QC bases/#total not_N bases";
 
 our $USAGE = "
 Read in the output table of genomeCoverage.d and sum up the values in specific columns for the rows (chromosomes) matching or not matching
@@ -191,8 +193,12 @@ THE_END
     is(coverageQuotientString($aggregationResult->{"long"}->{-coverageAll}), "54077111617/2725521370", "long chromosome names");
     is(coverageQuotientString($aggregationResult->{"short"}->{-coverageAll}), "156598893583/3095677412", "short chromosome names");
 
-    is(coverageQuotientString($aggregationResult->{"long"}->{-coverageNotN}), "54077111617/2647521431", "long chromosome names");
-    is(coverageQuotientString($aggregationResult->{"short"}->{-coverageNotN}), "156598893583/2858658094", "short chromosome names");
+    is(coverageString($aggregationResult->{"short"}->{-coverageAll}), "50.59x", "coverage short chromosome names");
+
+    is(coverageQuotientString($aggregationResult->{"long"}->{-coverageNotN}), "54077111617/2647521431", "long chromosome names (no N)");
+    is(coverageQuotientString($aggregationResult->{"short"}->{-coverageNotN}), "156598893583/2858658094", "short chromosome names (no N)");
+
+    is(coverageString($aggregationResult->{"short"}->{-coverageNotN}), "54.78x", "coverage short chromosome names (no N)");
     return 0;
 }
 
@@ -260,6 +266,11 @@ sub coverageQuotientString($) {
     return $hash->{-coverageBases} . "/" . $hash->{-totalBases};
 }
 
+sub coverageString($) {
+    my ($hash) = @_;
+    return sprintf("%1.2fx", $hash->{-coverageBases}  / $hash->{-totalBases});
+}
+
 sub sumCoverageQuotient($$) {
     my ($first, $second) = @_;
     return {
@@ -269,12 +280,12 @@ sub sumCoverageQuotient($$) {
 }
 
 sub coverageNotNQuotient($) {
-    return parseCoverageQuotient(shift(@_), $coverageNotNColumn);
+    return parseCoverageQuotient(shift(@_), $coverageNotNQuotientColumn);
 }
 
 
 sub coverageAllQuotient($) {
-    return parseCoverageQuotient(shift(@_), $coverageAllColumn);
+    return parseCoverageQuotient(shift(@_), $coverageAllQuotientColumn);
 }
 
 sub assertTableColumns($$) {
@@ -282,10 +293,10 @@ sub assertTableColumns($$) {
     my %header = map { $_ => 1 } @$header;
     if (! exists($header{$chromosomeColumn})) {
         croak "File does not contain '$chromosomeColumn' column: '$fileName'"
-    } elsif (! exists($header{$coverageNotNColumn})) {
-        croak "File does not contain '$coverageNotNColumn' column: '$fileName'"
-    } elsif (!exists($header{$coverageAllColumn})) {
-        croak "File does not contain '$$coverageAllColumn' column: '$fileName'"
+    } elsif (! exists($header{$coverageNotNQuotientColumn})) {
+        croak "File does not contain '$coverageNotNQuotientColumn' column: '$fileName'"
+    } elsif (!exists($header{$coverageAllQuotientColumn})) {
+        croak "File does not contain '$$coverageAllQuotientColumn' column: '$fileName'"
     }
 }
 
@@ -389,9 +400,22 @@ sub aggregateByChromoseSet($$) {
 sub printAggregatedValues($$) {
     my ($long, $short) = @_;
     my $delimiter = "\t";
-    print join($delimiter, ($chromosomeColumn,                       $coverageAllColumn,                             $coverageNotNColumn))  . "\n";
-    print join($delimiter, ("long",  coverageQuotientString( $long->{-coverageAll}), coverageQuotientString( $long->{-coverageNotN}))) . "\n";
-    print join($delimiter, ("short", coverageQuotientString($short->{-coverageAll}), coverageQuotientString($short->{-coverageNotN}))) . "\n";
+    print join($delimiter, (
+        $chromosomeColumn,
+        $coverageAllColumn,
+        $coverageAllQuotientColumn,
+        $coverageNotNColumn,
+        $coverageNotNQuotientColumn))  . "\n";
+    print join($delimiter, ("long",
+        coverageString( $long->{-coverageAll}),
+        coverageQuotientString( $long->{-coverageAll}),
+        coverageString( $long->{-coverageNotN}),
+        coverageQuotientString( $long->{-coverageNotN}))) . "\n";
+    print join($delimiter, ("short",
+        coverageString($short->{-coverageAll}),
+        coverageQuotientString($short->{-coverageAll}),
+        coverageString($short->{-coverageNotN}),
+        coverageQuotientString($short->{-coverageNotN}))) . "\n";
 }
 
 
