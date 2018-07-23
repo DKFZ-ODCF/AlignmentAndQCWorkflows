@@ -94,3 +94,12 @@ It depends on the set of parameters, which BAM file is used as input, e.g. when 
 
 Read group IDs in BAMs are determined (input files) from or stored in (output files) the `ID` attribute in `@RG` header lines. Usually, read group IDs in FASTQ files are determined from filenames using the patterns `${RUN}_${LANE}`. With a metadata input table you can provide FASTQ files with arbitrary file names, because the metadata is taken from the table's columns. 
 
+# Release Branches
+
+Various versions are in continued production mode at the DKFZ/ODCF. These get dedicated release branches named "ReleaseBranch_$major.$minor.$patch", in which only certain changes are made.
+
+  * No changes that alter previous output. 
+  * New important features are sometimes backported -- as long as they do not change the previous results.
+  * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
+  
+Note that ReleaseBranch_1.2.182 is not the newest branch, but the oldest! It was derived from a very old version of the workflow (QualityControlWorkflows_1.0.182). Sorry, we didn't get the versioning scheme right. In the future this won't happen again, as we now adopted semantic versioning for all our projects.

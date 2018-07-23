@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #
-# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 
 # example script call: R -f structVarPlot.R --no-save --no-restore --args "/ngs/s_1_paired_mappedToDiffChr.txt" "/plots/" "52167542"

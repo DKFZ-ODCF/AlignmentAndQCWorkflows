@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #
-# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 
 # The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort.
