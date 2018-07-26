@@ -263,12 +263,12 @@ mv "$FILENAME_GROUPED_GENOME_COVERAGE.tmp" "$FILENAME_GROUPED_GENOME_COVERAGE" |
 # Produce qualitycontrol.json for OTP.
 ${PERL_BINARY} ${TOOL_QC_JSON} \
     ${FILENAME_GENOME_COVERAGE} \
-    ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_GROUPED_GENOME_COVERAGE} \
+    ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
     > ${FILENAME_QCJSON}.tmp \
-    || throw 25 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
+    || throw 25 "Error when compiling qualitycontrol.json '${FILENAME_QCJSON}', stopping here"
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey

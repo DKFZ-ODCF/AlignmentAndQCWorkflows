@@ -205,14 +205,14 @@ THE_END
 sub unique (@) {
     my @list = @_;
     my %index = map { $_ => 1 } @list;
-    return grep { exists $index{$_}; $index{$_}-- > 0; } @list;
+    return grep { $index{$_}-- > 0; } @list;
 }
 
 sub parseChromosomeIndexList($) {
     my ($listString) = @_;
     my @result = split(",", $listString);
     if (!scalar(@result)) {
-        carp "Chromosome index list is empty";
+        croak "Chromosome index list is empty";
     }
     return unique @result;
 }

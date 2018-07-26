@@ -12,10 +12,10 @@ import de.dkfz.roddy.plugins.BasePlugin;
 
  * TODO Recreate class. Put in dependencies to other workflows, descriptions, capabilities (like ui settings, components) etc.
  */
-public class QualityControlWorkflowPlugin extends BasePlugin {
+public class AlignmentAndQCWorkflowsPlugin extends BasePlugin {
 
-	public static final String CURRENT_VERSION_STRING = "1.2.77";
-	public static final String CURRENT_VERSION_BUILD_DATE = "Fri Jun 22 11:43:11 CEST 2018";
+	public static final String CURRENT_VERSION_STRING = "1.2.80";
+	public static final String CURRENT_VERSION_BUILD_DATE = "Thu Jul 26 11:38:57 CEST 2018";
 
     @Override
     public String getVersionInfo() {

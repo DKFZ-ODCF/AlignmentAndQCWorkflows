@@ -236,7 +236,19 @@ removeRoddyBigScratch
 # QC summary
 # remove old warnings file if it exists (due to errors in run such as wrong chromsizes file)
 [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]] && rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
-(${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE -w ${FILENAME_QCSUMMARY}_WARNINGS.txt -f $FILENAME_FLAGSTATS -d $FILENAME_DIFFCHROM_STATISTICS -i $FILENAME_ISIZES_STATISTICS -c $FILENAME_GENOME_COVERAGE > ${FILENAME_QCSUMMARY}_temp && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY) || ( echo "Error from writeQCsummary.pl" && exit 12)
+${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY \
+    -p $PID \
+    -s $SAMPLE \
+    -r $RUN \
+    -l $LANE \
+    -w ${FILENAME_QCSUMMARY}_WARNINGS.txt \
+    -f $FILENAME_FLAGSTATS \
+    -d $FILENAME_DIFFCHROM_STATISTICS \
+    -i $FILENAME_ISIZES_STATISTICS \
+    -c $FILENAME_GENOME_COVERAGE \
+    > ${FILENAME_QCSUMMARY}_temp \
+    && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY \
+    || throw 12 "Error from writeQCsummary.pl"
 
 groupLongAndShortChromosomeNames "$FILENAME_GENOME_COVERAGE" \
     > "$FILENAME_GROUPED_GENOME_COVERAGE.tmp"  \
@@ -251,7 +263,7 @@ ${PERL_BINARY} ${TOOL_QC_JSON} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
     > ${FILENAME_QCJSON}.tmp \
-    || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME}, stopping here"
+    || throw 26 "Error when compiling qualitycontrol.json for ${FILENAME_QCJSON}, stopping here"
 mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 
 # plots are only made for paired end and not on convey

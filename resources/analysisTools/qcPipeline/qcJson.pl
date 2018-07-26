@@ -596,9 +596,6 @@ qcJson.pl     Read in a number of QC and statistics files and compile (some of) 
 
 qcJson.pl test
 
-<<<<<<< HEAD
-qcJson.pl depthOfCoverageFile insertSizeFile flagstatsFile diffChromFile > outFile
-=======
 qcJson.pl genomeCoverageFile groupedGenomeCoverage insertSizeFile flagstatsFile diffChromFile > outFile
 
 genomeCoverageFile          output of genomeCoverage.d
@@ -606,7 +603,6 @@ groupedGenomeCoverage       derived from output of genomeCovarege.d, with covera
                             aggregated
 flagstatsFile               samtools flagstat output
 diffChromFile               _DiffChroms.png_qcValues.txt file
->>>>>>> c1fc604... Added coverage columns to groupedGenomeCoverage.pl and added all this data to the qcJson.pl. Latter one also prints now QC bases excluding Ns and coverage including Ns.
 
 =head1 BACKGROUND
 

@@ -36,7 +36,7 @@
         <cvalue name='CHR_PREFIX' value="" description="Set this to e.g. chrMmu if you have xenograft data."/>
         <cvalue name='CHR_SUFFIX' value="" description="Usually empty."/>
         <cvalue name='CHROMOSOME_INDICES' value='( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT )' type='bashArray'
-                description="Bash array (enclosed in parens) of chromosome identifiers as found in the BAM header. Mind 'chr' prefixes! See also CHROM_SIZES_FILE. Needed for grouping data by short and long chromosome names, where long names match '$CHR_PREFIX$chr$CHR_SUFFIX'."/>
+                description="Bash array (enclosed in parentheses) of chromosome identifiers as found in the BAM header. Mind 'chr' prefixes! See also CHROM_SIZES_FILE. Needed for grouping data by short and long chromosome names, where long names match '$CHR_PREFIX$chr$CHR_SUFFIX'."/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
