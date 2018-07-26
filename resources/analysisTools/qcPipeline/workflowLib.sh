@@ -270,5 +270,15 @@ getMissingReadGroups() {
     echo "$readGroupsToMerge"
 }
 
+groupLongAndShortChromosomeNames() {
+    local genomeCoverageFile="${1:-/dev/stdin}"
+    declare -a chromosomeIndices="$CHROMOSOME_INDICES"
+    $TOOL_GROUPED_GENOME_COVERAGES \
+        "$genomeCoverageFile" \
+        "$CHR_PREFIX" \
+        $(stringJoin ',' "${chromosomeIndices}") \
+        "$CHR_SUFFIX"
+}
+
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"
