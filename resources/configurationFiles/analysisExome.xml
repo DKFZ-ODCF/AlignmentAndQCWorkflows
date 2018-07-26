@@ -5,7 +5,6 @@
                runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
                imports='qcAnalysis'
                canCreateTestdata='true'
-               listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,readBinsCoverage,qcSummary,onTargetCoverage,onTargetCoveragePlotter,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff,targetExtractCoverageSlim"
                usedToolFolders="qcPipeline,qcPipelineTools,exomePipeline,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
@@ -61,7 +60,7 @@
                 <output type="file" variable="insertSizesMatrixFile" fnpatternselectiontag="targetExtract" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX" />
                 <output type="file" variable="insertSizesPlotFile" fnpatternselectiontag="targetExtract" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT" />
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE" />
-                <output type="file" variable="groupedGenomeCoverageTextFile" fnpatternselectiontag="groupedGenomeCoverage" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="targetsWithCoverageTextFile" fnpatternselectiontag="targetsWithCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_TARGETS_WITH_COVERAGE_TEXT" />
                 <output type="file" variable="qcSummaryFile" fnpatternselectiontag="targetExtract" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY" />
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON" />
@@ -75,4 +74,10 @@
         <tool name="correctGc" value="correct_gc_bias.sh" basepath="qcPipeline"/>
 
     </processingTools>
+    <filenamepatterns>
+        <filename class='CoverageTextFile' onScriptParameter='targetExtractCoverageSlim:FILENAME_GROUPED_GENOME_COVERAGE'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target_Grouped.txt'/>
+    </filenamepatterns>
+
+
 </configuration>

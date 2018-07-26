@@ -4,7 +4,6 @@
                runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
                imports="commonCOWorkflowsSettings"
                canCreateTestdata='true'
-               listOfUsedTools="alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,qcSummary,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
@@ -39,13 +38,6 @@
         <cvalue name='CHROMOSOME_INDICES' value='( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT )' type='bashArray'
                 description="Bash array (enclosed in parens) of chromosome identifiers as found in the BAM header. Mind 'chr' prefixes! See also CHROM_SIZES_FILE. Needed for grouping data by short and long chromosome names, where long names match '$CHR_PREFIX$chr$CHR_SUFFIX'."/>
 
-        <!-- Directories -->
-        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
-        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
-
-        <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
-        <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
-
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
 
@@ -59,7 +51,6 @@
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
         <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'
                 description="Directory containing the FASTQ files."/>
-
 
         <!-- Reference Files -->
         <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
@@ -183,7 +174,6 @@
                 <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FASTQ_QC_STATUS"/>
             </output>
         </tool>
-        <tool name='adaptorTrimming' value='trimmomatic/trimmomatic-0.30.jar' basepath="qcPipelineTools"/>
         <tool name='alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
@@ -215,13 +205,14 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
             </output>
         </tool>
-        <tool name='accelerated:alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
+        <tool name='accelerated_alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
                 <rset size="t" memory="126" cores="12" nodes="1" walltime="00:10:00" queue="convey_fast"/>
@@ -247,6 +238,7 @@
                 <output type="file" variable="insertSizesStatisticsFile" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAME_ISIZES_STATISTICS"/>
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
@@ -392,7 +384,7 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
-                <output type="file" variable="groupedGenomeCoverageTextFile" fnpatternselectiontag="groupedGenomeCoverage" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" fnpatternselectiontag="groupedGenomeCoverage" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
@@ -426,6 +418,7 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" fnpatternselectiontag="groupedGenomeCoverage" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
@@ -459,7 +452,7 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
-                <output type="file" variable="groupedGenomeCoverageTextFile" fnpatternselectiontag="groupedGenomeCoverage" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" fnpatternselectiontag="groupedGenomeCoverage" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
@@ -572,21 +565,29 @@
         <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png_qcValues.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="groupedGenomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+
+        <filename class='TextFile' onScriptParameter='accelerated_alignAndPairSlim:FILENAME_GROUPED_GENOME_COVERAGE'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+        <filename class='TextFile' onScriptParameter='alignAndPairSlim:FILENAME_GROUPED_GENOME_COVERAGE'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+        <filename class='TextFile' onScriptParameter='mergeAndRemoveDuplicatesSlimSambamba:FILENAME_GROUPED_GENOME_COVERAGE' selectiontag="groupedGenomeCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+        <filename class='TextFile' onScriptParameter='mergeAndRemoveDuplicatesSlimPicard:FILENAME_GROUPED_GENOME_COVERAGE' selectiontag="groupedGenomeCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+        <filename class='TextFile' onScriptParameter='mergeAndRemoveDuplicatesSlimBiobambam:FILENAME_GROUPED_GENOME_COVERAGE' selectiontag="groupedGenomeCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
 
         <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
-        <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="groupedGenomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
         <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
-        <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="groupedGenomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.calcReadBinsCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.calcCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.rawBamCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_RawBamFile.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.targetCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}.DepthOfCoverage_Target.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="targetsWithCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_TargetsWithCov.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="groupedGenomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target_Grouped.txt'/>
+
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="extendedFlagstats" pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
 
         <filename class='OnTargetCoverageTextFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}_TargetsWithCov.txt'/>

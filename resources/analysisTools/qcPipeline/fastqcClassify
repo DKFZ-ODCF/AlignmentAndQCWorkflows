@@ -1,4 +1,4 @@
-#!/usr/bin/env gawk -f
+#!/bin/gawk -f
 #
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #

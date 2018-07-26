@@ -40,6 +40,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     private CoverageTextFile rawBamCoverageTextFile;
     private CoverageTextFile readBinsCoverageTextFile;
     private CoverageTextFile targetsWithCoverageTextFile;
+    private TextFile groupedGenomeCoverageTextFile;
     private BamMetricsFile bamMetricsFile;
     private BamFile targetExtractedBamFile;
     private boolean _isTargetExractedFile;
@@ -49,6 +50,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     private MethylationMetaCheckpointFile methylationMetaCheckpointFile;
     private MethylationMetaMetricsCheckpointFile methylationMetaMetricsCheckpointFile;
     private TextFile fingerprintsFile;
+
 
     public BamFile(ConstructionHelperForBaseFiles helper) {
         super(helper);
@@ -177,9 +179,9 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
         return chromosomeDiffFileGroup;
     }
 
-    public CoverageTextFile getGenomeCoverageTextFile() {
-        return genomeCoverageTextFile;
-    }
+    public CoverageTextFile getGenomeCoverageTextFile() { return genomeCoverageTextFile; }
+
+    public TextFile getGroupedGenomeCoverageTextFile() { return groupedGenomeCoverageTextFile; }
 
     public FlagstatsFile getFlagstatsFile() {
         return flagstatsFile;
@@ -250,6 +252,8 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     public void setGenomeCoverageTextFile(CoverageTextFile genomeCoverageTextFile) {
         this.genomeCoverageTextFile = genomeCoverageTextFile;
     }
+
+    public void setGroupedGenomeCoverageTextFile(TextFile groupedGenomeCoverageTextFile) { this.groupedGenomeCoverageTextFile = groupedGenomeCoverageTextFile; }
 
     public void setReadBinsCoverageTextFile(CoverageTextFile readBinsCoverageTextFile) {
         this.readBinsCoverageTextFile = readBinsCoverageTextFile;
