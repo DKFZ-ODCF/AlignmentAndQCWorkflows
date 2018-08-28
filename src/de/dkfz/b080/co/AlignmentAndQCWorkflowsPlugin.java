@@ -15,7 +15,7 @@ import de.dkfz.roddy.plugins.BasePlugin;
 public class AlignmentAndQCWorkflowsPlugin extends BasePlugin {
 
 	public static final String CURRENT_VERSION_STRING = "1.2.80";
-	public static final String CURRENT_VERSION_BUILD_DATE = "Fri Aug 24 11:18:57 CEST 2018";
+	public static final String CURRENT_VERSION_BUILD_DATE = "Tue Aug 28 19:03:51 CEST 2018";
 
     @Override
     public String getVersionInfo() {

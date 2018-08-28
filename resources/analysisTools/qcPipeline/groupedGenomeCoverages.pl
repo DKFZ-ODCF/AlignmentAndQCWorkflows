@@ -130,9 +130,10 @@ sub runTests() {
     };
 
     subtest "parseGroupSpec" => sub {
-        my @specs = ("short=1,2,3", "long=chr1,chr2,chrX");
+        my @specs = ("short=1,2,3", "long=chr1,chr2,chrX", "empty=");
         is_deeply(parseGroupSpec($specs[0]), { "short" => ["1", "2", "3"] }, "parse short group spec");
         is_deeply(parseGroupSpec($specs[1]), { "long" => ["chr1", "chr2", "chrX"] }, "parse short group spec");
+        is_deeply(parseGroupSpec($specs[1]), { "empty" => [] }, "parse empty group spec");
     };
 
     is_deeply([parseChromosomeIndexList("1,2,3,MT")], ["1", "2", "3", "MT"], "parsing chromosome index list");
@@ -215,7 +216,7 @@ sub parseChromosomeIndexList($) {
     my ($listString) = @_;
     my @result = split(",", $listString);
     if (!scalar(@result)) {
-        carp "Chromosome index list is empty";
+        print STDERR "Chromosome index list is empty!\n";
     }
     return unique @result;
 }
@@ -271,7 +272,11 @@ sub coverageQuotientString($) {
 
 sub coverageString($) {
     my ($hash) = @_;
-    return sprintf("%1.2fx", $hash->{-coverageBases}  / $hash->{-totalBases});
+    if ($hash->{-totalBases} == 0) {
+        return "NA";
+    } else {
+        return sprintf("%1.2fx", $hash->{-coverageBases} / $hash->{-totalBases});
+    }
 }
 
 sub sumCoverageQuotient($$) {
@@ -427,7 +432,7 @@ sub printAggregatedValues($) {
 
 sub parseGroupSpec($) {
     my ($specString) = @_;
-    if ($specString =~ /([^=]+)=(.+)/) {
+    if ($specString =~ /([^=]+)=(.*)/) {
         return { $1 => [parseChromosomeIndexList($2)] };
     } else {
         croak "Could not parse group name from '$specString'";

@@ -110,6 +110,9 @@ testSampleType() {
 }
 
 testMatchesShortChromosomeName() {
+    assertEquals "true" $(matchesShortChromosomeName 1)
+    assertEquals "true" $(matchesShortChromosomeName chr1)
+
     local CHR_PREFIX=chrMmu
     assertEquals "true"  $(matchesShortChromosomeName 1)
     assertEquals "true"  $(matchesShortChromosomeName 1xxx)
@@ -127,6 +130,9 @@ testMatchesShortChromosomeName() {
 
 
 testMatchesLongChromosomeName() {
+    assertEquals "false" $(matchesLongChromosomeName 1)
+    assertEquals "false" $(matchesLongChromosomeName chr1)
+
     local CHR_PREFIX=chrMmu
     assertEquals "false" $(matchesLongChromosomeName 1)
     assertEquals "false" $(matchesLongChromosomeName 1xxx)

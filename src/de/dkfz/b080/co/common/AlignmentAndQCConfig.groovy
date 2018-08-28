@@ -6,7 +6,6 @@
 
 package de.dkfz.b080.co.common
 
-import de.dkfz.b080.co.files.COConstants
 import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.execution.io.ExecutionService

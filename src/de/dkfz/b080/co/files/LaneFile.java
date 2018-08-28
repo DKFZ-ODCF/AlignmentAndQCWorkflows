@@ -6,10 +6,7 @@
 
 package de.dkfz.b080.co.files;
 
-import de.dkfz.b080.co.common.AlignmentAndQCConfig;
-import de.dkfz.b080.co.common.IndexID;
-import de.dkfz.b080.co.common.LaneID;
-import de.dkfz.b080.co.common.RunID;
+import de.dkfz.b080.co.common.*;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.io.ExecutionResult;

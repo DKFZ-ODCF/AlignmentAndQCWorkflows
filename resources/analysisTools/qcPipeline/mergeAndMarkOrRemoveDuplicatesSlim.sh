@@ -372,7 +372,7 @@ ${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY \
 
 groupLongAndShortChromosomeNames "$FILENAME_GENOME_COVERAGE" \
     > "$FILENAME_GROUPED_GENOME_COVERAGE.tmp"  \
-    || throw 43 "Error grouping reads by having (=long) or not having (=short) prefix/suffix"
+    || throw 43 "Error grouping reads by matching (=long) or not matching (=short) pattern '${CHR_PREFIX:-}*${CHR_SUFFIX:-}'"
 mv "$FILENAME_GROUPED_GENOME_COVERAGE.tmp" "$FILENAME_GROUPED_GENOME_COVERAGE" || throw 27 "Could not move file"
 
 # Produced qualitycontrol.json for OTP.

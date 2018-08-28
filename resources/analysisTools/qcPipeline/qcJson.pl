@@ -33,7 +33,7 @@ sub runTests () {
 
 
     my @readLines = readFile($0);
-    is($readLines[0], "#!/usr/bin/perl", "readLines");
+    is($readLines[0], "#!/usr/bin/env perl", "readLines");
 
     subtest 'parseGenomeCoverage' => sub {
 		my $docRes = parseGenomeCoverage(@testGenomeCoverage);
@@ -218,15 +218,21 @@ sub runTests () {
 	my $exp1 = {
           '1' => {
                    'genomeWithoutNCoverageQcBases' => '0.01',
-                   'chromosome' => '1',
+			       'genomeWithoutNReferenceLength' => '225280621',
+   			       'genomeWithoutNQcBasesMapped' => '2885357',
+			       'chromosome' => '1',
                    'referenceLength' => '249250621',
-                   'qcBasesMapped' => '2885357'
+                   'qcBasesMapped' => '2885357',
+			       'coverageQcBases' => '0.01',
                  },
           'Y' => {
                    'chromosome' => 'Y',
                    'referenceLength' => '59373566',
                    'genomeWithoutNCoverageQcBases' => '0.02',
-                   'qcBasesMapped' => '114475'
+			       'genomeWithoutNReferenceLength' => '22984529',
+   			       'genomeWithoutNQcBasesMapped' => '114475',
+                   'qcBasesMapped' => '114475',
+			       'coverageQcBases' => '0.00'
                  },
           'all' => {
                      'withMateMappedToDifferentChr' => '33635',
@@ -247,6 +253,9 @@ sub runTests () {
                      'percentageMatesOnDifferentChr' => '1.55',
                      'referenceLength' => '3095677412',
                      'genomeWithoutNCoverageQcBases' => '46.03',
+			         'genomeWithoutNReferenceLength' => '2858658094',
+			  		 'genomeWithoutNQcBasesMapped' => '35857865',
+			  	     'coverageQcBases' => '0.01',
                      'withMateMappedToDifferentChrMaq' => '6161',
                      'pairedRead2' => '212163'
                    }
@@ -332,7 +341,7 @@ sub zip ($$) {
 
 sub ensureInt ($) {
     my ($val) = @_;
-    if ($val !~ /^\d$/) {
+    if ($val !~ /^(?:\d|NaN|NA)$/) {
 		confess("Expected integer, got '$val'!");
     }
     return $val;
@@ -341,7 +350,7 @@ sub ensureInt ($) {
 
 sub ensureFloat ($) {
     my ($val) = @_;
-    if ($val !~ /^(?:-?\d+(?:\.\d+)?|\d(?:\.\d+)?(?:[eE]-?\d+)?)$/) {
+    if ($val !~ /^(?:-?\d+(?:\.\d+)?|\d(?:\.\d+)?(?:[eE]-?\d+)?|NaN|NA)$/) {
 		confess("Expected float, got '$val'!");
     }
     return $val;

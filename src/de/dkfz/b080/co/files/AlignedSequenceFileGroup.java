@@ -7,6 +7,7 @@
 package de.dkfz.b080.co.files;
 
 import de.dkfz.b080.co.common.AlignmentAndQCConfig;
+import de.dkfz.b080.co.common.COConstants;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.jobs.BEJobResult;

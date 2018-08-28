@@ -4,7 +4,7 @@
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 ##############################################################################
-## Domain-specific code (maybe put this into a dedicated library file)
+## Domain-specific code
 ##############################################################################
 ##
 ## Include into your code with: source "$TOOL_WORKFLOW_LIB"
@@ -282,8 +282,12 @@ matchesShortChromosomeName() {
 
 matchesLongChromosomeName() {
     local val="${1:?No value to match long chromosome pattern against}"
-    if [[ "${val##${CHR_PREFIX:-}*${CHR_SUFFIX:-}}" == "" ]]; then
-        echo "true"
+    if [[ "${CHR_PREFIX:-}" != "" || "${CHR_SUFFIX:-}" != "" ]]; then
+        if [[ "${val##${CHR_PREFIX:-}*${CHR_SUFFIX:-}}" == "" ]]; then
+            echo "true"
+        else
+            echo "false"
+        fi
     else
         echo "false"
     fi
@@ -295,10 +299,11 @@ shortChromosomeGroupSpec() {
     declare -a shorts=()
     for chr in "${chromosomeIndices[@]}"; do
         if [[ $(matchesShortChromosomeName "$chr") == "true" ]]; then
+            set +u
             shorts=("${shorts[@]}" "$chr")
         fi
     done
-    echo $(stringJoin "," "${shorts[@]}")
+    echo $(set +u; stringJoin "," "${shorts[@]}")
 }
 
 longChromosomeGroupSpec() {
@@ -307,10 +312,11 @@ longChromosomeGroupSpec() {
     declare -a longs=()
     for chr in "${chromosomeIndices[@]}"; do
         if [[ $(matchesLongChromosomeName "$chr") == "true" ]]; then
+            set +u
             longs=("${longs[@]}" "$chr")
         fi
     done
-    echo $(stringJoin "," "${longs[@]}")
+    echo $(set +u; stringJoin "," "${longs[@]}")
 }
 
 groupLongAndShortChromosomeNames() {
