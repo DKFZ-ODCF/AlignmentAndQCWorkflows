@@ -6,6 +6,7 @@
 
 package de.dkfz.b080.co.files;
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.io.ExecutionResult;
@@ -77,7 +78,7 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
     }
 
     public FastqcGroup calcFastqcForAll(Map<String, String> parameters) {
-        final boolean useSingleEndProcessing = getExecutionContext().getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING, false);
+        final boolean useSingleEndProcessing = getExecutionContext().getConfiguration().getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_SINGLE_END_PROCESSING, false);
 
         LinkedList<FastqcFile> files = new LinkedList<FastqcFile>();
         for (LaneFile f : filesInGroup) {
@@ -94,7 +95,7 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
     }
 
     public AlignedSequenceFileGroup alignAll() {
-        final boolean useSingleEndProcessing = getExecutionContext().getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING, false);
+        final boolean useSingleEndProcessing = getExecutionContext().getConfiguration().getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_SINGLE_END_PROCESSING, false);
         LinkedList<AlignedSequenceFile> files = new LinkedList<AlignedSequenceFile>();
         int i = 0;
         for (LaneFile f : filesInGroup) {
@@ -121,7 +122,7 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
     public BamFile alignAndPairSlim(Map<String, String> parameters) {
         ExecutionContext context = getExecutionContext();
         Configuration configuration = context.getConfiguration();
-        boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ACCELERATED_HARDWARE);
+        boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_ACCELERATED_HARDWARE);
 
         // Bad hack: Decrease the file stage level by one!
         LaneFile laneFile0 = filesInGroup.get(0).getFSDecreasedCopy();
@@ -137,7 +138,7 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
         String laneId0 = "RAW_SEQ_FILE_1_INDEX=" + ((COFileStageSettings) laneFile0.getFileStage()).getNumericIndex();
         String laneId1 = "RAW_SEQ_FILE_2_INDEX=" + ((COFileStageSettings) laneFile1.getFileStage()).getNumericIndex();
 
-        final String TOOL = useAcceleratedHardware ? COConstants.TOOL_ACCELERATED_ALIGNANDPAIR_SLIM.replace(':', '_') : COConstants.TOOL_ALIGNANDPAIR_SLIM;
+        final String TOOL = useAcceleratedHardware ? AlignmentAndQCConfig.TOOL_ACCELERATED_ALIGNANDPAIR_SLIM.replace(':', '_') : AlignmentAndQCConfig.TOOL_ALIGNANDPAIR_SLIM;
         BamFile bamFile = GenericMethod.callGenericTool(TOOL, laneFile0, laneFile1, parameters,
                 "SAMPLE=" + sampleName, "sample=" + sampleName,
                 "RUN=" + run, "run=" + run,
@@ -160,11 +161,11 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
 
         //Which info is necessary? File timestamp, maybe svn version, last changes, last file, parameters?
         String libString = configuration.getConfigurationValues().getString(COConstants.PRM_CVAL_LIBRARY);
-        boolean useAdaptorTrimming = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ADAPTOR_TRIMMING, false);
-        boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ACCELERATED_HARDWARE);
-        boolean useBioBamBamSort = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_BIOBAMBAM_SORT);
+        boolean useAdaptorTrimming = configuration.getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_ADAPTOR_TRIMMING, false);
+        boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_ACCELERATED_HARDWARE);
+        boolean useBioBamBamSort = configuration.getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_BIOBAMBAM_SORT);
         boolean indexCreated = !useAcceleratedHardware;
-        final String TOOL = useAcceleratedHardware ? COConstants.TOOL_ACCELERATED_ALIGNANDPAIR : COConstants.TOOL_ALIGNANDPAIR;
+        final String TOOL = useAcceleratedHardware ? AlignmentAndQCConfig.TOOL_ACCELERATED_ALIGNANDPAIR : AlignmentAndQCConfig.TOOL_ALIGNANDPAIR;
 
         String sampleName = laneFile0.getSample().getName();
         String pid = run.getDataSet().getId();

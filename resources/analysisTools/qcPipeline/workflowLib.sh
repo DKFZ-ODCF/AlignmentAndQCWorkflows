@@ -270,14 +270,56 @@ getMissingReadGroups() {
     echo "$readGroupsToMerge"
 }
 
+
+matchesShortChromosomeName() {
+    local val="${1:?No value to match short chromosome pattern against}"
+    if [[ $(matchesLongChromosomeName "$val") == "true" ]]; then
+        echo "false"
+    else
+        echo "true"
+    fi
+}
+
+matchesLongChromosomeName() {
+    local val="${1:?No value to match long chromosome pattern against}"
+    if [[ "${val##${CHR_PREFIX:-}*${CHR_SUFFIX:-}}" == "" ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+shortChromosomeGroupSpec() {
+    declare -a chromosomeIndices="$CHROMOSOME_INDICES"
+    echo -n "${SHORT_CHROMOSOME_NAME_GROUP:-short}="
+    declare -a shorts=()
+    for chr in "${chromosomeIndices[@]}"; do
+        if [[ $(matchesShortChromosomeName "$chr") == "true" ]]; then
+            shorts=("${shorts[@]}" "$chr")
+        fi
+    done
+    echo $(stringJoin "," "${shorts[@]}")
+}
+
+longChromosomeGroupSpec() {
+    declare -a chromosomeIndices="$CHROMOSOME_INDICES"
+    echo -n "${LONG_CHROMOSOME_NAME_GROUP:-long}="
+    declare -a longs=()
+    for chr in "${chromosomeIndices[@]}"; do
+        if [[ $(matchesLongChromosomeName "$chr") == "true" ]]; then
+            longs=("${longs[@]}" "$chr")
+        fi
+    done
+    echo $(stringJoin "," "${longs[@]}")
+}
+
 groupLongAndShortChromosomeNames() {
     local genomeCoverageFile="${1:-/dev/stdin}"
     declare -a chromosomeIndices="$CHROMOSOME_INDICES"
     $PERL_BINARY $TOOL_GROUPED_GENOME_COVERAGES \
         "$genomeCoverageFile" \
-        "$CHR_PREFIX" \
-        $(stringJoin ',' "${chromosomeIndices}") \
-        "$CHR_SUFFIX"
+        $(shortChromosomeGroupSpec) \
+        $(longChromosomeGroupSpec)
 }
 
 

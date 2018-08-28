@@ -33,10 +33,15 @@
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
 
-        <cvalue name='CHR_PREFIX' value="" description="Set this to e.g. chrMmu if you have xenograft data."/>
+        <cvalue name='CHR_PREFIX' value=""
+                description="Set this to e.g. chrMmu if you have xenograft data with mouse chromosomes prefixed by 'chrMmu' and human chromosomes without that prefix."/>
         <cvalue name='CHR_SUFFIX' value="" description="Usually empty."/>
         <cvalue name='CHROMOSOME_INDICES' value='( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT )' type='bashArray'
-                description="Bash array (enclosed in parentheses) of chromosome identifiers as found in the BAM header. Mind 'chr' prefixes! See also CHROM_SIZES_FILE. Needed for grouping data by short and long chromosome names, where long names match '$CHR_PREFIX$chr$CHR_SUFFIX'."/>
+                description="Bash array (enclosed in parentheses) of chromosome identifiers as found in the BAM headers. Include 'chr' prefixes! See also CHROM_SIZES_FILE. Needed for grouping data by short and long chromosome names, where long names match '$CHR_PREFIX$chr$CHR_SUFFIX'. For xenograft this may be e.g. '(1 2 chrMmu1 chrMmu2)'"/>
+        <cvalue name="SHORT_CHROMOSOME_NAME_GROUP" value="short"
+                description="Name of the short chromosome-name group, i.e. chr.-names not matching the $CHR_PREFIX*$CHR_SUFFIX pattern. E.g. 'human'. Default: short"/>
+        <cvalue name="LONG_CHROMOSOME_NAME_GROUP" value="long"
+                description="Name of the long chromosome-name group, i.e. chr.-names matching the $CHR_PREFIX*$CHR_SUFFIX pattern. E.g. 'mouse'. Default: long"/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
@@ -57,7 +62,7 @@
         <cvalue name="assembliesHG191000GenomesDirectory" value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes" type="path"/>
 
         <cvalue name="CHROM_SIZES_FILE" value="${assembliesHG191000GenomesDirectory}/stats/hs37d5.fa.chrLenOnlyACGT_realChromosomes.tab"
-                description="Number of A, T, C, G, but not N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
+                description="Chromosome sizes including only A, T, C, G, i.e. excluding N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
         <cvalue name="INDEX_PREFIX" value="${assembliesHG191000GenomesDirectory}/indexes/bwa/bwa06_1KGRef/hs37d5.fa"
                 description="Path to the genome FASTA file. The same directory should contain the BWA index. The prefix (-p) used for `bwa index` should be the same as the FASTA file, i.e. including the FASTA suffix."/>
         <cvalue name='CLIP_INDEX' value='' type="path"

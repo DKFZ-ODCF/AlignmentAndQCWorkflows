@@ -6,6 +6,7 @@
 
 package de.dkfz.b080.co.files;
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig;
 import de.dkfz.b080.co.common.IndexID;
 import de.dkfz.b080.co.common.LaneID;
 import de.dkfz.b080.co.common.RunID;
@@ -83,12 +84,12 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
         ExecutionContext context = getExecutionContext();
         AlignedSequenceFile alignedSequenceFile = new AlignedSequenceFile(this);
         Configuration configuration = context.getConfiguration();
-        boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ACCELERATED_HARDWARE);
-        boolean useAdaptorTrimming = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ADAPTOR_TRIMMING, false);
+        boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_ACCELERATED_HARDWARE);
+        boolean useAdaptorTrimming = configuration.getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_ADAPTOR_TRIMMING, false);
 
         List<BaseFile> pFiles = new LinkedList<>();
 
-        final String TOOL = useAcceleratedHardware ? COConstants.TOOL_ACCELERATED_ALIGNMENT : COConstants.TOOL_ALIGNMENT;
+        final String TOOL = useAcceleratedHardware ? AlignmentAndQCConfig.TOOL_ACCELERATED_ALIGNMENT : AlignmentAndQCConfig.TOOL_ALIGNMENT;
 
         Map<String, Object> parameters = context.getDefaultJobParameters(TOOL);
         parameters.put(COConstants.PRM_RAW_SEQ, getPath().getAbsolutePath());

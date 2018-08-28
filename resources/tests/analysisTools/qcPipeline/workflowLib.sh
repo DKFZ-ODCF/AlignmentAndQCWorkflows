@@ -109,4 +109,58 @@ testSampleType() {
     assertEquals tumor $(bash -c 'sampleType tA')
 }
 
+testMatchesShortChromosomeName() {
+    local CHR_PREFIX=chrMmu
+    assertEquals "true"  $(matchesShortChromosomeName 1)
+    assertEquals "true"  $(matchesShortChromosomeName 1xxx)
+    assertEquals "false" $(matchesShortChromosomeName chrMmu1)
+    assertEquals "false" $(matchesShortChromosomeName chrMmu1xxx)
+
+    local CHR_SUFFIX=bla
+    assertEquals "true"  $(matchesShortChromosomeName 1)
+    assertEquals "true"  $(matchesShortChromosomeName 1xxx)
+    assertEquals "true"  $(matchesShortChromosomeName 1bla)
+    assertEquals "true"  $(matchesShortChromosomeName chrMmu1)
+    assertEquals "true"  $(matchesShortChromosomeName chrMmu1xxx)
+    assertEquals "false" $(matchesShortChromosomeName chrMmu1bla)
+}
+
+
+testMatchesLongChromosomeName() {
+    local CHR_PREFIX=chrMmu
+    assertEquals "false" $(matchesLongChromosomeName 1)
+    assertEquals "false" $(matchesLongChromosomeName 1xxx)
+    assertEquals "true"  $(matchesLongChromosomeName chrMmu1)
+    assertEquals "true"  $(matchesLongChromosomeName chrMmu1xxx)
+
+    local CHR_SUFFIX=bla
+    assertEquals "false" $(matchesLongChromosomeName 1)
+    assertEquals "false" $(matchesLongChromosomeName 1xxx)
+    assertEquals "false" $(matchesLongChromosomeName 1bla)
+    assertEquals "false" $(matchesLongChromosomeName chrMmu1)
+    assertEquals "false" $(matchesLongChromosomeName chrMmu1xxx)
+    assertEquals "true"  $(matchesLongChromosomeName chrMmu1bla)
+}
+
+testShortChromosomeGroupSpec() {
+    local CHROMOSOME_INDICES="(1 2 3 chrMmu1 chrMmuX)"
+    local CHR_PREFIX=chrMmu
+
+    assertEquals "short=1,2,3" $(shortChromosomeGroupSpec)
+
+    SHORT_CHROMOSOME_NAME_GROUP=human
+    assertEquals "human=1,2,3" $(shortChromosomeGroupSpec)
+
+}
+
+testLongChromosomeGroupSpec() {
+    local CHROMOSOME_INDICES="(1 2 3 chrMmu1 chrMmuX)"
+    local CHR_PREFIX=chrMmu
+
+    assertEquals "long=chrMmu1,chrMmuX" $(longChromosomeGroupSpec)
+
+    LONG_CHROMOSOME_NAME_GROUP=mouse
+    assertEquals "mouse=chrMmu1,chrMmuX" $(longChromosomeGroupSpec)
+}
+
 source ${SHUNIT2:?Oops}

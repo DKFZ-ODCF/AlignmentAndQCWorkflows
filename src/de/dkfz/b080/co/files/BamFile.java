@@ -6,6 +6,7 @@
 
 package de.dkfz.b080.co.files;
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig;
 import de.dkfz.b080.co.methods.Common;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
@@ -348,14 +349,14 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     @ScriptCallingMethod
     public BamIndexFile index() {
         if (indexFile == null)
-            indexFile = GenericMethod.callGenericTool(COConstants.TOOL_SAMTOOLS_INDEX, this);
+            indexFile = GenericMethod.callGenericTool(AlignmentAndQCConfig.TOOL_SAMTOOLS_INDEX, this);
         return indexFile;
     }
 
     @ScriptCallingMethod
     public FlagstatsFile flagstat() {
         if (flagstatsFile == null)
-            flagstatsFile = GenericMethod.callGenericTool(COConstants.TOOL_SAMTOOLS_FLAGSTAT, this);
+            flagstatsFile = GenericMethod.callGenericTool(AlignmentAndQCConfig.TOOL_SAMTOOLS_FLAGSTAT, this);
         return flagstatsFile;
     }
 
@@ -382,7 +383,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
 
     @ScriptCallingMethod
     public TextFile performPurityAnalysis(BamFile bamControlMerged) {
-        return GenericMethod.callGenericTool(COConstants.TOOL_PURITY_ESTIMATION, this, bamControlMerged);
+        return GenericMethod.callGenericTool(AlignmentAndQCConfig.TOOL_PURITY_ESTIMATION, this, bamControlMerged);
     }
 
     @ScriptCallingMethod
@@ -395,7 +396,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
 
         List<BaseFile> pFiles = Arrays.asList((BaseFile) this);
 
-        final String TOOL = COConstants.TOOL_COLLECT_BAM_METRICS;
+        final String TOOL = AlignmentAndQCConfig.TOOL_COLLECT_BAM_METRICS;
         Map<String, Object> parameters = run.getDefaultJobParameters(TOOL);
         parameters.put("FILENAME", this.getPath().getAbsolutePath());
         parameters.put("DIR_METRICS", run.getRuntimeService().getDirectory(metricsOutputDirectory, run).getAbsolutePath());
@@ -452,7 +453,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     @ScriptCallingMethod
     public BamFile extractTargetsCalculateCoverage() {
         if (targetExtractedBamFile == null)
-            targetExtractedBamFile = GenericMethod.callGenericTool(COConstants.TARGET_EXTRACTION_AND_COVERAGE_SLIM, this, this.getGenomeCoverageTextFile(), "SAMPLE=" + getSample().getName());
+            targetExtractedBamFile = GenericMethod.callGenericTool(AlignmentAndQCConfig.TARGET_EXTRACTION_AND_COVERAGE_SLIM, this, this.getGenomeCoverageTextFile(), "SAMPLE=" + getSample().getName());
         return targetExtractedBamFile;
     }
 

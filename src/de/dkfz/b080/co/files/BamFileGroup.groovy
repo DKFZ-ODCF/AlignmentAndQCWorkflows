@@ -6,6 +6,7 @@
 
 package de.dkfz.b080.co.files
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig
 import de.dkfz.b080.co.common.COProjectsRuntimeService
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
 import de.dkfz.roddy.core.ExecutionContext
@@ -55,12 +56,12 @@ class BamFileGroup extends FileGroup<BamFile> {
     BamFile baseMergeAndRemoveDuplicatesSlim(Sample sample, Object... additionalMergeParameters) {
         if (mergedBam == null) {
             RecursiveOverridableMapContainerForConfigurationValues cvalues = executionContext.getConfiguration().getConfigurationValues()
-            boolean useBioBamBamMarkDuplicates = cvalues.getBoolean(COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES, true);
-            String markDuplicatesVariant = cvalues.getString(COConstants.CVALUE_MARK_DUPLICATES_VARIANT, null);
+            boolean useBioBamBamMarkDuplicates = cvalues.getBoolean(AlignmentAndQCConfig.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES, true);
+            String markDuplicatesVariant = cvalues.getString(AlignmentAndQCConfig.CVALUE_MARK_DUPLICATES_VARIANT, null);
             String toolId
 
             if (markDuplicatesVariant == null || markDuplicatesVariant == "") {
-                logger.postSometimesInfo("${COConstants.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES} is deprecated. Use ${COConstants.CVALUE_MARK_DUPLICATES_VARIANT}.")
+                logger.postSometimesInfo("${AlignmentAndQCConfig.FLAG_USE_BIOBAMBAM_MARK_DUPLICATES} is deprecated. Use ${AlignmentAndQCConfig.CVALUE_MARK_DUPLICATES_VARIANT}.")
                 toolId = useBioBamBamMarkDuplicates ? MERGEANDMORMDUP_SLIM_BIOBAMBAM : MERGEANDMORMDUP_SLIM_PICARD
             } else {
                 switch (markDuplicatesVariant.toLowerCase()) {

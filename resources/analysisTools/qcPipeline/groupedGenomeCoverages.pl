@@ -23,10 +23,9 @@ my $coverageNotNColumn = "genome_w/o_N coverage QC bases";
 my $coverageNotNQuotientColumn = "#QC bases/#total not_N bases";
 
 our $USAGE = "
-Read in the output table of genomeCoverage.d and sum up the values in specific columns for the rows (chromosomes) matching or not matching
-the '\$prefix\$chr\$suffix' pattern with '\$chr' from a list of chromosomes. This way it is possible to get separate values for human and mouse
-chromosomes in xenograft samples. Whether the matching or non-matching chromosome-set are mouse or human depends on the assembly. The only
-assumption is that in xenograft, of host and xenograft genomes one has chromosome names matching, the other has names not matching the pattern.
+Read in the output table of genomeCoverage.d and sum up the values in specified groups of chromosomes. This way it is possible to get separate values
+for human and mouse chromosomes in xenograft samples, as one of the groups usually (in our use cases) has a 'chr' or 'chrMmu' prefix and the other not.
+Which groups has which chromosome name format is defined by the calling script.
 
 Run
 
@@ -34,12 +33,10 @@ $0 test
 
 to run the tests, or
 
-$0 coverageTable prefix chromosomeIndexList [suffix]
+$0 coverageTable groupSpec groupSpec*
 
 coverageTable         The output file of coverageQc[.d]. Usually suffixed by '.DepthOfCoverage_Genome.txt'
-prefix                e.g. '' or 'chr'
-chromosomeIndexList   e.g. '1,2,3', chromosome identifiers without any prefix
-suffix                optional suffix. Defaults to ''
+groupSpec             Of the format groupName=chromosomeName{,chromosomeName}*
 
 ";
 
@@ -132,6 +129,12 @@ sub runTests() {
             "count non-existent sets as 0");
     };
 
+    subtest "parseGroupSpec" => sub {
+        my @specs = ("short=1,2,3", "long=chr1,chr2,chrX");
+        is_deeply(parseGroupSpec($specs[0]), { "short" => ["1", "2", "3"] }, "parse short group spec");
+        is_deeply(parseGroupSpec($specs[1]), { "long" => ["chr1", "chr2", "chrX"] }, "parse short group spec");
+    };
+
     is_deeply([parseChromosomeIndexList("1,2,3,MT")], ["1", "2", "3", "MT"], "parsing chromosome index list");
     is_deeply([parseChromosomeIndexList("1,2,3,2,MT,3")], ["1", "2", "3", "MT"], "remove duplicates from parsed chromosome index list");
 
@@ -205,14 +208,14 @@ THE_END
 sub unique (@) {
     my @list = @_;
     my %index = map { $_ => 1 } @list;
-    return grep { $index{$_}-- > 0; } @list;
+    return grep { exists $index{$_}; $index{$_}-- > 0; } @list;
 }
 
 sub parseChromosomeIndexList($) {
     my ($listString) = @_;
     my @result = split(",", $listString);
     if (!scalar(@result)) {
-        croak "Chromosome index list is empty";
+        carp "Chromosome index list is empty";
     }
     return unique @result;
 }
@@ -396,56 +399,57 @@ sub aggregateByChromoseSet($$) {
     return \%result;
 }
 
-# Produce a reduced version of the input table with the aggregated values for matching and non-matching rows.
-sub printAggregatedValues($$) {
-    my ($long, $short) = @_;
-    my $delimiter = "\t";
-    print join($delimiter, (
-        $chromosomeColumn,
-        $coverageAllColumn,
-        $coverageAllQuotientColumn,
-        $coverageNotNColumn,
-        $coverageNotNQuotientColumn))  . "\n";
-    print join($delimiter, ("long",
-        coverageString( $long->{-coverageAll}),
-        coverageQuotientString( $long->{-coverageAll}),
-        coverageString( $long->{-coverageNotN}),
-        coverageQuotientString( $long->{-coverageNotN}))) . "\n";
-    print join($delimiter, ("short",
-        coverageString($short->{-coverageAll}),
-        coverageQuotientString($short->{-coverageAll}),
-        coverageString($short->{-coverageNotN}),
-        coverageQuotientString($short->{-coverageNotN}))) . "\n";
+# Produce a reduced version of the input table with the aggregated values for each group.
+sub printAggregatedValues($) {
+    my ($aggregatedValues) = @_;
+
+    sub headerLine() {
+        join("\t", (
+             $chromosomeColumn,
+             $coverageAllColumn,
+             $coverageAllQuotientColumn,
+             $coverageNotNColumn,
+             $coverageNotNQuotientColumn)) . "\n";
+    }
+
+    sub groupLine($$) {
+        my ($name, $values) = @_;
+        join("\t", ($name,
+             coverageString($values->{-coverageAll}),
+             coverageQuotientString($values->{-coverageAll}),
+             coverageString($values->{-coverageNotN}),
+             coverageQuotientString($values->{-coverageNotN}))) . "\n";
+    }
+
+    print headerLine();
+    print join("", map { groupLine($_, $aggregatedValues->{$_}) } sort keys %$aggregatedValues );
 }
 
-
-
-
+sub parseGroupSpec($) {
+    my ($specString) = @_;
+    if ($specString =~ /([^=]+)=(.+)/) {
+        return { $1 => [parseChromosomeIndexList($2)] };
+    } else {
+        croak "Could not parse group name from '$specString'";
+    }
+}
 
 my ($coverageTableFile,
-    $prefix,
-    $shortChromosomeNames,
-    $suffix) = @ARGV;
+    @groupSpecs) = @ARGV;
 
 if (defined($coverageTableFile) && lc($coverageTableFile) eq "test") {
     exit runTests();
-} elsif (!defined $shortChromosomeNames) {
+} elsif (!scalar(@groupSpecs)) {
     print STDERR "Not enough arguments:\n$USAGE";
     exit 1;
 }
-if (!defined $suffix) {
-    $suffix = "";
-}
 
-my %chromosomeSets = (
-  "long" =>  [getLongChromosomeNames($prefix, [parseChromosomeIndexList($shortChromosomeNames)], $suffix)],
-  "short" => [parseChromosomeIndexList($shortChromosomeNames)]
-);
+my %chromosomeSets = map { %{ parseGroupSpec($_) } } @groupSpecs;
 
 my %table = readTsvFile($coverageTableFile);
 
 my $aggregationResult = aggregateByChromoseSet(\%table, \%chromosomeSets);
-printAggregatedValues($aggregationResult->{"long"}, $aggregationResult->{"short"});
+printAggregatedValues($aggregationResult);
 
 
 1;

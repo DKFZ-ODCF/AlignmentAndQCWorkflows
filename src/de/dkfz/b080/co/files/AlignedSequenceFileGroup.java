@@ -6,6 +6,7 @@
 
 package de.dkfz.b080.co.files;
 
+import de.dkfz.b080.co.common.AlignmentAndQCConfig;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.jobs.BEJobResult;
@@ -72,10 +73,10 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
 
         // Which info is necessary? File timestamp, maybe svn version, last changes, last file, parameters?
         String libString = configuration.getConfigurationValues().get(COConstants.PRM_CVAL_LIBRARY).toString();
-        boolean useAdaptorTrimming = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ADAPTOR_TRIMMING, false);
+        boolean useAdaptorTrimming = configuration.getConfigurationValues().getBoolean(AlignmentAndQCConfig.FLAG_USE_ADAPTOR_TRIMMING, false);
 
         // All parameters via config
-        Map<String, Object> parameters = context.getDefaultJobParameters( COConstants.TOOL_SAMPESORT);
+        Map<String, Object> parameters = context.getDefaultJobParameters( AlignmentAndQCConfig.TOOL_SAMPESORT);
         parameters.put(COConstants.PRM_FILENAME_SORTED_BAM, bamFile.getAbsolutePath());
         parameters.put(COConstants.PRM_FILENAME_SEQ_1, seqFile0.getAbsolutePath());
         parameters.put(COConstants.PRM_FILENAME_SEQ_2, seqFile1.getAbsolutePath());
@@ -96,7 +97,7 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
 
         List<BaseFile> parentFiles = new LinkedList<BaseFile>();
         parentFiles.addAll(filesInGroup);
-        Job job = new Job(context, context.createJobName(parentFiles.get(0), COConstants.TOOL_SAMPESORT, true), COConstants.TOOL_SAMPESORT, null, parameters, parentFiles, Arrays.asList((BaseFile)bamFile, indexFile, flagstatsFile));
+        Job job = new Job(context, context.createJobName(parentFiles.get(0), AlignmentAndQCConfig.TOOL_SAMPESORT, true), AlignmentAndQCConfig.TOOL_SAMPESORT, null, parameters, parentFiles, Arrays.asList((BaseFile)bamFile, indexFile, flagstatsFile));
         BEJobResult jobResult = job.run();
 
         flagstatsFile.setCreatingJobsResult(jobResult);
