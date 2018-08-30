@@ -109,6 +109,15 @@ testSampleType() {
     assertEquals tumor $(bash -c 'sampleType tA')
 }
 
+chromosomeSizesFile() {
+    echo "$(dirname ${BASH_SOURCE[0]})/chrom-sizes-file.tsv"
+}
+
+testChromosomeIndices() {
+    local CHROM_SIZES_FILE=$(chromosomeSizesFile)
+    assertEquals "1 2 3 chrMmu1 chrMmuX" "$(chromosomeIndices)"
+}
+
 testMatchesShortChromosomeName() {
     assertEquals "true" $(matchesShortChromosomeName 1)
     assertEquals "true" $(matchesShortChromosomeName chr1)
@@ -149,7 +158,7 @@ testMatchesLongChromosomeName() {
 }
 
 testShortChromosomeGroupSpec() {
-    local CHROMOSOME_INDICES="(1 2 3 chrMmu1 chrMmuX)"
+    local CHROM_SIZES_FILE=$(chromosomeSizesFile)
     local CHR_PREFIX=chrMmu
 
     assertEquals "short=1,2,3" $(shortChromosomeGroupSpec)
@@ -160,7 +169,7 @@ testShortChromosomeGroupSpec() {
 }
 
 testLongChromosomeGroupSpec() {
-    local CHROMOSOME_INDICES="(1 2 3 chrMmu1 chrMmuX)"
+    local CHROM_SIZES_FILE=$(chromosomeSizesFile)
     local CHR_PREFIX=chrMmu
 
     assertEquals "long=chrMmu1,chrMmuX" $(longChromosomeGroupSpec)

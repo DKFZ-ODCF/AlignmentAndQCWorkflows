@@ -92,13 +92,43 @@ It depends on the set of parameters, which BAM file is used as input, e.g. when 
 
 ## Read Group Identifiers
 
-Read group IDs in BAMs are determined (input files) from or stored in (output files) the `ID` attribute in `@RG` header lines. Usually, read group IDs in FASTQ files are determined from filenames using the patterns `${RUN}_${LANE}`. With a metadata input table you can provide FASTQ files with arbitrary file names, because the metadata is taken from the table's columns. 
+Read group IDs in BAMs are determined (input files) from or stored in (output files) the `ID` attribute in `@RG` header lines. Usually, read group IDs in FASTQ files are determined from filenames using the patterns `${RUN}_${LANE}`. With a metadata input table you can provide FASTQ files with arbitrary file names, because the metadata is taken from the table's columns.
+
+# Running the Workflow
+
+The most important parameters are:
+
+| Parameter  | Example      | Description                            |
+|------------|--------------|----------------------------------------|
+| INDEX_PREFIX | /path/to/assembly/assembly.fa | The path to the fasta file with the assembled genome(s). Note that the BWA index needs to be this directly and use the string 'assembly.fa' as prefix |
+| CHROM_SIZES_FILE | /path/to/assembly/sizes.tsv | A two-column TSV file with chromosome identifiers (1) and number of bases (2). Usually you want the number of bases just be from the set {A, T, C, G}, to ignore in the statictics all lower-quality bases in the genome. | 
+| CHR_PREFIX | chrMmu       | With xenograft data used to discern 'long' and 'short' identifiers which match the /$CHR_PREFIX$chr$CHR_SUFFIX/ pattern or not, respectively. Also used for WGBS. |
+| CHR_SUFFIX | _contig      | See CHR_PREFIX. |
+| SHORT_CHROMOSOME_NAME_GROUP | | See CHR_PREFIX. |
+| LONG_CHROMOSOME_NAME_GROUP | | See CHR_PREFIX. |
+| CHROMOSOME_INDICES | "( 1 2 3 )" | Needed for the WGBS workflow to select chromosomes to be processed. The should be a quoted bash array, i.e. with spaces as element separators and including the parentheses. |
+
+A full description of all options in the different workflows can be found in the XML files in `resources/configurationFiles`. Note that workflow configurations inherit from each other in the order "WGS" <- "WES" <- "WGBS". Thus the WGS configuration (analysisQc.xml) contains variables that are overridden by values in the WES configuration (analysisExome.xml), and so forth.
+
+## Xenograft
+
+The WGS and WES workflows can deal with xenograft data. To process xenograft data you need a combined FASTA file and genome index plus a matching "chromosome sizes file". The chromosomes of one of the two species needs to be prefixed (`CHR_PREFIX`) and/or suffixed (`CHR_SUFFIX`). For instance you may use a FASTA file with the human chromosomes without (explicitly configured) prefixes, e.g. with chromosomes 1, 2, ..., X, Y, MT and mouse chromosomes prefixed by 'chrMmu'. In this situation use the following configuration values:
+
+* `CHR_PREFIX`=chrMmu
+* `CHROMOSOME_INDICES`="(1 2 ... X Y MT chrMmu1 ... chrMmuMT)"
+* `LONG_CHROMOSOME_NAME_GROUP`=mouse
+* `SHORT_CHROMOSOME_NAME_GROUP`=human
+* `INDEX_PREFIX` and `CHROM_SIZES_FILE` need to be set to the paths of the FASTA file (and BWA index) and the "stats" containing the chromosome sizes. Note that for xenograft the `CHROM_SIZES_FILE` should include also the chromosomes of the host (mouse).
+
+This will do an alignment of all reads against the combined genomes and collect statistics in the quality-control JSON for the chromosomes in human (long, i.e. without the prefix and suffix) and mouse (long, i.e. matching the "chrMmu" prefix) groups.
+
+*NOTE:* Currently, the WGBS workflow variant uses the `CHR_PREFIX`-variable for another purpose and can therefore not collect dedicated statistics for xenograft data.   
 
 # Release Branches
 
-Various versions are in continued production mode at the DKFZ/ODCF. These get dedicated release branches named "ReleaseBranch_$major.$minor.$patch", in which only certain changes are made.
+Various versions are in continued production mode at the DKFZ/ODCF. These get dedicated release branches named "ReleaseBranch_$major.$minor\[.$patch\]", in which only certain changes are made.
 
-  * No changes that alter previous output. 
+  * No changes that alter previous output.
   * New important features are sometimes backported -- as long as they do not change the previous results.
   * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
   

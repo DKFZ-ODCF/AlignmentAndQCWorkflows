@@ -293,8 +293,15 @@ matchesLongChromosomeName() {
     fi
 }
 
+chromosomeIndices() {
+    if [[ ! -v ___chromosomeIndices ]]; then
+        declare -g -a ___chromosomeIndices=( $(cut -f 1 "$CHROM_SIZES_FILE") )
+    fi
+    echo "${___chromosomeIndices[@]}"
+}
+
 shortChromosomeGroupSpec() {
-    declare -a chromosomeIndices="$CHROMOSOME_INDICES"
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
     echo -n "${SHORT_CHROMOSOME_NAME_GROUP:-short}="
     declare -a shorts=()
     for chr in "${chromosomeIndices[@]}"; do
@@ -307,7 +314,7 @@ shortChromosomeGroupSpec() {
 }
 
 longChromosomeGroupSpec() {
-    declare -a chromosomeIndices="$CHROMOSOME_INDICES"
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
     echo -n "${LONG_CHROMOSOME_NAME_GROUP:-long}="
     declare -a longs=()
     for chr in "${chromosomeIndices[@]}"; do
@@ -321,7 +328,7 @@ longChromosomeGroupSpec() {
 
 groupLongAndShortChromosomeNames() {
     local genomeCoverageFile="${1:-/dev/stdin}"
-    declare -a chromosomeIndices="$CHROMOSOME_INDICES"
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
     $PERL_BINARY $TOOL_GROUPED_GENOME_COVERAGES \
         "$genomeCoverageFile" \
         $(shortChromosomeGroupSpec) \
