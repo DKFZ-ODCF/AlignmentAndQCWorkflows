@@ -74,10 +74,10 @@
         <tool name="correctGc" value="correct_gc_bias.sh" basepath="qcPipeline"/>
 
     </processingTools>
-    <filenamepatterns>
-        <filename class='CoverageTextFile' onScriptParameter='targetExtractCoverageSlim:FILENAME_GROUPED_GENOME_COVERAGE'
+    <filenames>
+        <filename class='TextFile' onScriptParameter='targetExtractCoverageSlim:FILENAME_GROUPED_GENOME_COVERAGE'
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target_Grouped.txt'/>
-    </filenamepatterns>
+    </filenames>
 
 
 </configuration>
