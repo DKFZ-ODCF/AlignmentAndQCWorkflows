@@ -27,7 +27,6 @@
     <orderEntry type="module" module-name="RoddyToolLib" />
     <orderEntry type="library" name="Gradle: com.google.guava:guava:23.0" level="project" />
     <orderEntry type="module" module-name="Roddy" />
-    <orderEntry type="module" module-name="COWorkflowsBasePlugin" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="" />

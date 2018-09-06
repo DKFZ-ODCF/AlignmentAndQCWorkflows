@@ -35,6 +35,12 @@ sub runTests () {
     my @readLines = readFile($0);
     is($readLines[0], "#!/usr/bin/env perl", "readLines");
 
+	eval {
+		readFile("nonEXISTINGfail");
+	}; if ($@) {
+		like($@, qr/Cannot\sopen\sfile\s'nonEXISTINGfail'/, "non-existing file");
+	}
+
     subtest 'parseGenomeCoverage' => sub {
 		my $docRes = parseGenomeCoverage(@testGenomeCoverage);
 		is(ref($docRes), "HASH", "return hash");
