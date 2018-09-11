@@ -38,10 +38,10 @@
         <cvalue name='CHR_SUFFIX' value="" description="Usually empty."/>
         <cvalue name='CHROMOSOME_INDICES' value='( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT )' type='bashArray'
                 description="Bash array (enclosed in parentheses) of chromosome identifiers as found in the BAM headers. Include 'chr' prefixes! See also CHROM_SIZES_FILE. Needed for grouping data by short and long chromosome names, where long names match '$CHR_PREFIX$chr$CHR_SUFFIX'. For xenograft this may be e.g. '(1 2 chrMmu1 chrMmu2)'"/>
-        <cvalue name="SHORT_CHROMOSOME_NAME_GROUP" value="short"
-                description="Name of the short chromosome-name group, i.e. chr.-names not matching the $CHR_PREFIX*$CHR_SUFFIX pattern. E.g. 'human'. Default: short"/>
-        <cvalue name="LONG_CHROMOSOME_NAME_GROUP" value="long"
-                description="Name of the long chromosome-name group, i.e. chr.-names matching the $CHR_PREFIX*$CHR_SUFFIX pattern. E.g. 'mouse'. Default: long"/>
+        <cvalue name="CHR_GROUP_MATCHING" value="nonmatching"
+                description="Name of the short chromosome-name group, i.e. chr.-names not matching the $CHR_PREFIX*$CHR_SUFFIX pattern. E.g. 'human'. Default: nonmatching"/>
+        <cvalue name="CHR_GROUP_NOT_MATCHING" value="matching"
+                description="Name of the long chromosome-name group, i.e. chr.-names matching the $CHR_PREFIX*$CHR_SUFFIX pattern. E.g. 'mouse'. Default: matching"/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
@@ -310,36 +310,15 @@
                 <output type="file" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAMEV"/>
             </output>
         </tool>
-        <tool name='genomeCoverage' value='genomeCoverage.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="0.05" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="s" memory="0.05" cores="4" nodes="1" walltime="1"/>
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="FILENAME_INDEX"/>
-            <input type="string" setby="callingCode" scriptparameter="COVERAGE_TYPE"/>
-            <output type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_COVERAGE"/>
-        </tool>
+        <tool name='genomeCoverage' value='genomeCoverage.sh' basepath='qcPipeline'/>
         <tool name='plotDiffchrom' value='chrom_diff.r' basepath='qcPipeline'/>
         <tool name='coverageQc' value='coverageQc.py' basepath='qcPipeline'/>
         <tool name='filterReadBins' value='filter_readbins.pl' basepath='qcPipeline'/>
         <tool name='genomeCoveragePyScript' value='genomeCoverage.py' basepath='qcPipeline'/>
         <tool name='coverageQcDImpl' value='coverageQcD/coverageQc' basepath="qcPipelineTools"/>
         <tool name='genomeCoverageDImpl' value='genomeCoverage/genomeCoverage' basepath="qcPipelineTools"/>
+        <tool name='readBinsCoverage' value='genomeCoverageReadBins.sh' basepath='qcPipeline'/>
 
-        <tool name='readBinsCoverage' value='genomeCoverageReadBins.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="0.05" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <output type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="OUTFILENAME"/>
-        </tool>
         <tool name='coveragePlot' value='genomeCoveragePlots.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->

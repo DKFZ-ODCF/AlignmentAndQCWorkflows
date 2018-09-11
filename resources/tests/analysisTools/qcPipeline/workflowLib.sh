@@ -161,9 +161,9 @@ testShortChromosomeGroupSpec() {
     local CHROM_SIZES_FILE=$(chromosomeSizesFile)
     local CHR_PREFIX=chrMmu
 
-    assertEquals "short=1,2,3" $(shortChromosomeGroupSpec)
+    assertEquals "nonmatching=1,2,3" $(shortChromosomeGroupSpec)
 
-    SHORT_CHROMOSOME_NAME_GROUP=human
+    CHR_GROUP_NOT_MATCHING=human
     assertEquals "human=1,2,3" $(shortChromosomeGroupSpec)
 
 }
@@ -172,9 +172,9 @@ testLongChromosomeGroupSpec() {
     local CHROM_SIZES_FILE=$(chromosomeSizesFile)
     local CHR_PREFIX=chrMmu
 
-    assertEquals "long=chrMmu1,chrMmuX" $(longChromosomeGroupSpec)
+    assertEquals "matching=chrMmu1,chrMmuX" $(longChromosomeGroupSpec)
 
-    LONG_CHROMOSOME_NAME_GROUP=mouse
+    CHR_GROUP_MATCHING=mouse
     assertEquals "mouse=chrMmu1,chrMmuX" $(longChromosomeGroupSpec)
 }
 

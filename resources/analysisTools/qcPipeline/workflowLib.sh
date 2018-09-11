@@ -302,7 +302,7 @@ chromosomeIndices() {
 
 shortChromosomeGroupSpec() {
     declare -a chromosomeIndices=( $(chromosomeIndices) )
-    echo -n "${SHORT_CHROMOSOME_NAME_GROUP:-short}="
+    echo -n "${CHR_GROUP_NOT_MATCHING:-nonmatching}="
     declare -a shorts=()
     for chr in "${chromosomeIndices[@]}"; do
         if [[ $(matchesShortChromosomeName "$chr") == "true" ]]; then
@@ -315,7 +315,7 @@ shortChromosomeGroupSpec() {
 
 longChromosomeGroupSpec() {
     declare -a chromosomeIndices=( $(chromosomeIndices) )
-    echo -n "${LONG_CHROMOSOME_NAME_GROUP:-long}="
+    echo -n "${CHR_GROUP_MATCHING:-matching}="
     declare -a longs=()
     for chr in "${chromosomeIndices[@]}"; do
         if [[ $(matchesLongChromosomeName "$chr") == "true" ]]; then

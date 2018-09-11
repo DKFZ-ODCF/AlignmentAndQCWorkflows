@@ -34,14 +34,14 @@ class QCPipeline extends Workflow {
         AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
         aqcfg.extractSamplesFromOutputFiles = false
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.runtimeService
 
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() == 0)
             return false
 
         BamFileGroup mergedBamFiles = new BamFileGroup()
-        Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>()
+        LinkedHashMap<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample : samples) {
             BamFileGroup sortedBamFiles = createLaneBams(aqcfg, runtimeService, sample)
@@ -55,7 +55,6 @@ class QCPipeline extends Workflow {
             if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics()
 
             if (aqcfg.runExomeAnalysis) {
-                mergedBam.rawBamCoverage()
                 mergedBam.extractTargetsCalculateCoverage()
             }
 
