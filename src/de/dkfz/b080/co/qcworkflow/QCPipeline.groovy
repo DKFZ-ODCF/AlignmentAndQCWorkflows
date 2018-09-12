@@ -107,18 +107,9 @@ class QCPipeline extends Workflow {
                 if (aqcfg.runFastQCOnly)
                     continue
 
-                BamFile bamFile = null
+                BamFile bamFile = rawSequenceGroup.alignAndPairSlim()
 
-                if (aqcfg.useCombinedAlignAndSampe) { //I.e. bwa mem
-                    bamFile = rawSequenceGroup.alignAndPairSlim()
-                } else { //I.e. bwa align
-                    rawSequenceGroup.alignAll()
-                    bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim()
-                }
-
-                // @Michael: The comment suggests that this should only be called in the else branch above!?
-                // @Michael: Why should BAM files created with sai files be temporary? Because they are lane BAMs?
-                bamFile.setAsTemporaryFile()  // Bam files created with sai files are only temporary.
+                bamFile.setAsTemporaryFile()
                 sortedBamFiles.addFile(bamFile)
             }
 
@@ -345,23 +336,4 @@ class QCPipeline extends Workflow {
         return result
     }
 
-    boolean createTestdata(ExecutionContext context) {
-        boolean allOk = true
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
-
-        List<Sample> samples = runtimeService.getSamplesForContext(context)
-        for (Sample sample : samples) {
-            List<LaneFile> files = new LinkedList<LaneFile>()
-            LaneFileGroup allLaneFiles = new LaneFileGroup(context, "allLaneFiles", "noSpecificRun", sample, files)
-
-            List<LaneFileGroup> rawSequenceGroups = runtimeService.getLanesForSample(context, sample)
-            for (LaneFileGroup lfg : rawSequenceGroups) {
-                for (LaneFile lf : lfg.getFilesInGroup()) {
-                    allLaneFiles.addFile(lf)
-                }
-            }
-            allLaneFiles.createTestDataForLaneFiles()
-        }
-        return allOk
-    }
 }
