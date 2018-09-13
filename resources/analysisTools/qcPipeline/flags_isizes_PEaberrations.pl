@@ -303,11 +303,22 @@ else
 		$devsqsum += $howmany * (($i - $average)**2);
 	}
 
-	my $stddev = sqrt($devsqsum/($ctr-1));
-	my $sdrd=int($stddev+0.5);
+	my $stddev;
+	my $sdrd;
+	my $sdperc;
+	my $rounded;
+	if ($ctr - 1 == 0) { # Cannot calculate SD and derived values due to lack of data.
+		$stddev = "NA";
+		$sdrd = "NA";
+		$sdperc = "NA";
+		$rounded = "NA";
+	} else {
+		$stddev = sqrt($devsqsum/($ctr-1));
+		$sdrd = int($stddev+0.5);
+		$sdperc = $stddev/$median*100;
+		$rounded = int($sdperc+0.5);
+	}
 	print STDERR "stddev: $stddev; rounded: $sdrd\n";
-	my $sdperc = $stddev/$median*100;
-	my $rounded = int($sdperc+0.5);
 	print STDERR "median: $median; SDpercent: $sdperc; rounded: $rounded\n";
 	print IS "$median\n$rounded\n$sdrd\n";
 
