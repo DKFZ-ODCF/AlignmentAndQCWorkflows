@@ -42,6 +42,10 @@
 # format specifications, happens if there are many converted positions,
 # sequencing artifact), the read is not converted.
 
+def parseFastqId(header):
+	directId = header.split()[0].split("#")[0] # BWA only uses id up to first space, clip # (not picard-compatible?)
+	return directId.split("/")[0]                 # Additionally, let's strip of read-numbers "/1", "/2"
+
 
 def mod_fqconv(sysargv):
 	import sys
@@ -107,7 +111,7 @@ def mod_fqconv(sysargv):
 				
 		if n == 1:															# line 1: name
 			c[0] += 1
-			id1 = l1.split()[0].split("#")[0]								# BWA only uses id up to first space, clip # (not picard-compatible?)
+			id1 = parseFastqId(l1)
 			
 		elif n == 2:														# line 2: sequence
 			seq1 = l1
