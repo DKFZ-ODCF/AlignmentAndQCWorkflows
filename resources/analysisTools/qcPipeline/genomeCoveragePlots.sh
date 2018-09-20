@@ -14,7 +14,7 @@
 #OUTFILENAME=$DIR_COVERAGE/tumor_AvD_59208_readCoverage_${WINDOW_SIZE}kb_windows.txt
 
 # plotting: eigener Job, nodes=1:ppn=1,walltime=00:20:00,mem=1g
-# control vs. tumor (dependency auf alleset -xv genomeCoverage.py-Jobs)
+# control vs. tumor
 # mehrere: am besten in einem Job: control vs. tumor_01 control vs. tumor_02, control vs. tumor_03, ... (control immer als erstes Argument)
 
 #$DIR_COVERAGE/control_AvD_59208_vs_tumor_AvD_59208_readCoverage_${WINDOW_SIZE}kb_windows.png

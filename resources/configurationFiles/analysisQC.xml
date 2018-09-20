@@ -253,24 +253,20 @@
 
         <tool name='commonAlignmentSettingsScript' value='bwaCommonAlignmentSettings.sh' basepath='qcPipeline'/>
 
-        <tool name='insilicoGenotyperScript' value='insilicoGenotyper.py' basepath='qcPipeline'/>
-        <tool name='pairedEndReadAberrationsScript' value='pairedEndReadAberrations.py' basepath='qcPipeline'/>
         <tool name='coveragePlotScript' value='coveragePlot.R' basepath='qcPipeline'/>
-        <tool name='insertSizesBucketSortScript' value='isizes_bucketsort.pl' basepath='qcPipeline'/>
         <tool name='insertSizePlotScript' value='insertsizePlot.R' basepath='qcPipeline'/>
         <tool name='writeQcSummary' value='writeQCsummary.pl' basepath='qcPipeline'/>
         <tool name='qcJson' value='qcJson.pl' basepath='qcPipeline'/>
+        <tool name='sequencerDetection' value='PhredOrIllumina.pl' basepath='qcPipeline'/>
+	    <tool name='convertIlluminaScores' value='Illumina2PhredScore.pl' basepath='qcPipeline'/>
 
-        <tool name='samtoolsIndex' value='samtoolsIndexBamfile.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="l" memory="1" cores="1" nodes="1" walltime="5"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter='FILENAME'/>
-            <output type="file" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="IDX_FILE"/>
-        </tool>
+        <tool name='genomeCoverage' value='genomeCoverage.sh' basepath='qcPipeline'/>
+        <tool name='plotDiffchrom' value='chrom_diff.r' basepath='qcPipeline'/>
+        <tool name='filterReadBins' value='filter_readbins.pl' basepath='qcPipeline'/>
+        <tool name='coverageQcDImpl' value='coverageQcD/coverageQc' basepath="qcPipelineTools"/>
+        <tool name='genomeCoverageDImpl' value='genomeCoverage/genomeCoverage' basepath="qcPipelineTools"/>
+
+        <!-- Consider removing this tool. -->
         <tool name='collectBamMetrics' value='picardCollectMetrics.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
@@ -279,52 +275,13 @@
                 <rset size="l" memory="3" cores="1" nodes="1" walltime="5"/>
             </resourcesets>
         </tool>
-        <tool name='samtoolsFlagstat' value='samtoolsFlagstatBamfile.sh' basepath='qcPipeline'>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter='FILENAME' />
-                <!--<constraint method="hasIndex" methodonfail="index"/>-->
-            <!--</input>-->
-            <output type="file" typeof="de.dkfz.b080.co.files.FlagstatsFile" scriptparameter='FILENAME_FLAGSTAT'/>
-        </tool>
-        <tool name='sequencerDetection' value='PhredOrIllumina.pl' basepath='qcPipeline'/>
-	<tool name='convertIlluminaScores' value='Illumina2PhredScore.pl' basepath='qcPipeline'/>
-        <tool name='insertSizes' value='insertSizeDistribution.sh' basepath='qcPipeline'>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <output type="filegroup" typeof="de.dkfz.b080.co.files.InsertSizesFileGroup">
-                <output type="file" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAMED"/>
-                <output type="file" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAMEP"/>
-                <output type="file" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAMEV"/>
-            </output>
-        </tool>
-        <tool name='chromosomeDiff' value='differentiateChromosomes.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="s" memory="1" cores="1" nodes="1" walltime="1"/>
-                <rset size="l" memory="25" cores="1" nodes="1" walltime="5"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <output type="filegroup" typeof="de.dkfz.b080.co.files.ChromosomeDiffFileGroup">
-                <output type="file" typeof="de.dkfz.b080.co.files.ChromosomeDiffTextFile" scriptparameter="FILENAMED"/>
-                <output type="file" typeof="de.dkfz.b080.co.files.ChromosomeDiffPlotFile" scriptparameter="FILENAMEP"/>
-                <output type="file" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAMEV"/>
-            </output>
-        </tool>
-        <tool name='genomeCoverage' value='genomeCoverage.sh' basepath='qcPipeline'/>
-        <tool name='plotDiffchrom' value='chrom_diff.r' basepath='qcPipeline'/>
-        <tool name='coverageQc' value='coverageQc.py' basepath='qcPipeline'/>
-        <tool name='filterReadBins' value='filter_readbins.pl' basepath='qcPipeline'/>
-        <tool name='genomeCoveragePyScript' value='genomeCoverage.py' basepath='qcPipeline'/>
-        <tool name='coverageQcDImpl' value='coverageQcD/coverageQc' basepath="qcPipelineTools"/>
-        <tool name='genomeCoverageDImpl' value='genomeCoverage/genomeCoverage' basepath="qcPipelineTools"/>
-        <tool name='readBinsCoverage' value='genomeCoverageReadBins.sh' basepath='qcPipeline'/>
 
         <tool name='coveragePlot' value='genomeCoveragePlots.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="0.05" cores="4" nodes="1" queue="devel"/>
+                <rset size="t" memory="1" cores="4" nodes="1" queue="devel"/>
                 <!-- Production -->
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
+                <rset size="l" memory="5" cores="4" nodes="1" walltime="6"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_CONTROL"/>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_TUMOR"/>
@@ -333,9 +290,9 @@
         <tool name='coveragePlotSingle' value='genomeCoveragePlots.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="0.05" cores="4" nodes="1" walltime="00:10:00" queue="devel"/>
+                <rset size="t" memory="1" cores="4" nodes="1" walltime="00:10:00" queue="devel"/>
                 <!-- Production -->
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
+                <rset size="l" memory="5" cores="4" nodes="1" walltime="6"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_CONTROL"/>
             <output type="file" fnpatternselectiontag="singlePlot" typeof="de.dkfz.b080.co.files.GenomeCoveragePlotFile" scriptparameter="PLOTFILE"/>
@@ -449,8 +406,6 @@
 
         <tool name="printMissingReadGroups" value="missingReadGroups.pl" basepath="qcPipeline"/>
         <tool name='combinedBamAnalysis' value='flags_isizes_PEaberrations.pl' basepath='qcPipeline'/>
-
-
 
         <tool name="annotateCnvVcf" value="annotate_vcf.pl" basepath="qcPipeline"/>
         <tool name="addMappability" value="addMappability.py" basepath="qcPipeline"/>

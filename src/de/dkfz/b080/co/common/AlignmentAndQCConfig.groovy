@@ -20,7 +20,6 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_TARGET_REGIONS_FILE = "TARGET_REGIONS_FILE"
     public static final String CVALUE_TARGETSIZE = "TARGETSIZE"
     public static final String CVALUE_TARGET_SIZE = "TARGET_SIZE"
-    public static final String CVALUE_RUN_COVERAGE_PLOTS_ONLY = "runCoveragePlotsOnly"
     public static final String CVALUE_OVERRIDE_BAM_FILES = "overrideBamFiles"
     public static final String CVALUE_OVERRIDE_SAMPLE_NAMES = "overrideSampleNames"
     public static final String CVALUE_MAPPABILITY_FILE = "MAPPABILITY_FILE_ALN"
@@ -37,21 +36,12 @@ class AlignmentAndQCConfig extends COConfig {
     /**
      * Tool entries
      */
-    public static final String TOOL_ALIGNMENT = "alignment"
-    public static final String TOOL_ACCELERATED_ALIGNMENT = "accelerated:alignment"
     public static final String TOOL_COLLECT_BAM_METRICS = "collectBamMetrics"
-    public static final String TOOL_SAMPESORT = "sampesort"
-    public static final String TOOL_ALIGNANDPAIR = "alignAndPair"
     public static final String TOOL_ALIGNANDPAIR_SLIM = "alignAndPairSlim"
-    public static final String TOOL_ACCELERATED_ALIGNANDPAIR = "accelerated:alignAndPair"
     public static final String TOOL_ACCELERATED_ALIGNANDPAIR_SLIM = "accelerated:alignAndPairSlim"
-    public static final String TOOL_SAMTOOLS_INDEX = "samtoolsIndex"
-    public static final String TOOL_SAMTOOLS_FLAGSTAT = "samtoolsFlagstat"
-    public static final String TOOL_PURITY_ESTIMATION = "purityEstimation"
     public static final String TARGET_EXTRACTION_AND_COVERAGE_SLIM = "targetExtractCoverageSlim"
 
     public static final String FLAG_USE_ACCELERATED_HARDWARE = "useAcceleratedHardware"
-    public static final String FLAG_USE_BIOBAMBAM_SORT = "useBioBamBamSort"
     public static final String FLAG_USE_BIOBAMBAM_MARK_DUPLICATES = "useBioBamBamMarkDuplicates"
     public static final String FLAG_USE_ONLY_EXISTING_PAIRED_BAMS = "useExistingPairedBams"
     public static final String FLAG_RUN_FASTQC = "runFastQC"
@@ -60,7 +50,6 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String FLAG_RUN_COVERAGE_PLOTS = "runCoveragePlots"
     public static final String FLAG_RUN_EXOME_ANALYSIS = "runExomeAnalysis"
     public static final String FLAG_RUN_COLLECT_BAMFILE_METRICS = "runCollectBamFileMetrics"
-    public static final String FLAG_USE_COMBINED_ALIGN_AND_SAMPE = "useCombinedAlignAndSampe"
     public static final String FLAG_USE_SINGLE_END_PROCESSING = "useSingleEndProcessing"
     public static final String FLAG_USE_ADAPTOR_TRIMMING = "useAdaptorTrimming"
     public static final String CVALUE_MARK_DUPLICATES_VARIANT = "markDuplicatesVariant"
@@ -115,10 +104,6 @@ class AlignmentAndQCConfig extends COConfig {
 
     String getWindowSize() {
         return configValues.getString(COConstants.CVALUE_WINDOW_SIZE, "1")
-    }
-
-    boolean getRunCoveragePlotsOnly() {
-        return configValues.getBoolean(CVALUE_RUN_COVERAGE_PLOTS_ONLY, false)
     }
 
     List<String> getOverrideMergedBamFiles() {
@@ -203,10 +188,6 @@ class AlignmentAndQCConfig extends COConfig {
 
     boolean getRunFastQC() {
         return configValues.getBoolean(FLAG_RUN_FASTQC, true)
-    }
-
-    boolean getUseCombinedAlignAndSampe() {
-        return configValues.getBoolean(FLAG_USE_COMBINED_ALIGN_AND_SAMPE, false)
     }
 
     String getDefaultLibraryName() {
