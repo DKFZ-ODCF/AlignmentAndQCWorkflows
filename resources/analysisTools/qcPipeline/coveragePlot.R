@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #
-# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 
 # example call:      R -f /home/hutter/workspace_ngs/Roddy/analysisTools/qcPipeline/coveragePlot.R --no-save --no-restore --args /icgc/dkfzlsdf/analysis/hipo/hipo_021/results_per_pid/P021-PTV8/coverage/buffy_coat_P021-PTV8_readCoverage_10kb_windows.txt /icgc/dkfzlsdf/analysis/hipo/hipo_021/results_per_pid/P021-PTV8/coverage/tumor_P021-PTV8_readCoverage_10kb_windows.txt read 10 /icgc/dkfzlsdf/analysis/hipo/hipo_021/results_per_pid/P021-PTV8/coverage/readDepth.png

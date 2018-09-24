@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 German Cancer Research Center (DKFZ).
  *
- * Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+ * Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
  */
 
 package de.dkfz.b080.co.qcworkflow
@@ -34,14 +34,14 @@ class QCPipeline extends Workflow {
         AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
         aqcfg.extractSamplesFromOutputFiles = false
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.runtimeService
 
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() == 0)
             return false
 
         BamFileGroup mergedBamFiles = new BamFileGroup()
-        Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>()
+        LinkedHashMap<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample : samples) {
             BamFileGroup sortedBamFiles = createLaneBams(aqcfg, runtimeService, sample)
@@ -55,7 +55,6 @@ class QCPipeline extends Workflow {
             if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics()
 
             if (aqcfg.runExomeAnalysis) {
-                mergedBam.rawBamCoverage()
                 mergedBam.extractTargetsCalculateCoverage()
             }
 
@@ -108,18 +107,9 @@ class QCPipeline extends Workflow {
                 if (aqcfg.runFastQCOnly)
                     continue
 
-                BamFile bamFile = null
+                BamFile bamFile = rawSequenceGroup.alignAndPairSlim()
 
-                if (aqcfg.useCombinedAlignAndSampe) { //I.e. bwa mem
-                    bamFile = rawSequenceGroup.alignAndPairSlim()
-                } else { //I.e. bwa align
-                    rawSequenceGroup.alignAll()
-                    bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim()
-                }
-
-                // @Michael: The comment suggests that this should only be called in the else branch above!?
-                // @Michael: Why should BAM files created with sai files be temporary? Because they are lane BAMs?
-                bamFile.setAsTemporaryFile()  // Bam files created with sai files are only temporary.
+                bamFile.setAsTemporaryFile()
                 sortedBamFiles.addFile(bamFile)
             }
 
@@ -346,23 +336,4 @@ class QCPipeline extends Workflow {
         return result
     }
 
-    boolean createTestdata(ExecutionContext context) {
-        boolean allOk = true
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
-
-        List<Sample> samples = runtimeService.getSamplesForContext(context)
-        for (Sample sample : samples) {
-            List<LaneFile> files = new LinkedList<LaneFile>()
-            LaneFileGroup allLaneFiles = new LaneFileGroup(context, "allLaneFiles", "noSpecificRun", sample, files)
-
-            List<LaneFileGroup> rawSequenceGroups = runtimeService.getLanesForSample(context, sample)
-            for (LaneFileGroup lfg : rawSequenceGroups) {
-                for (LaneFile lf : lfg.getFilesInGroup()) {
-                    allLaneFiles.addFile(lf)
-                }
-            }
-            allLaneFiles.createTestDataForLaneFiles()
-        }
-        return allOk
-    }
 }

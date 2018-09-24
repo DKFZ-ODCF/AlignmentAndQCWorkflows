@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #
-# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 # Read in a number of statistics files and compile some of the content into a JSON file.
 # The JSON file is required by OTP.
@@ -24,7 +24,7 @@ sub runTests () {
     require "Test/More.pm";
     Test::More->import('no_plan');
 
-    my @testDepthOfCoverage = (
+    my @testGenomeCoverage = (
 		"interval	coverage QC bases	#QC bases/#total bases	mapq=0 read1	mapq=0 read2	mapq>0,readlength<minlength read1	mapq>0,readlength<minlength read2	mapq>0,BaseQualityMedian<basequalCutoff read1	mapq>0,BaseQualityMedian<basequalCutoff read2	mapq>0,BaseQualityMedian>=basequalCutoff read1	mapq>0,BaseQualityMedian>=basequalCutoff read2	%incorrect PE orientation	#incorrect proper pair	#duplicates read1 (excluded from coverage analysis)	#duplicates read2 (excluded from coverage analysis)	genome_w/o_N coverage QC bases	#QC bases/#total not_N bases",
 		"1	0.01x	2885357/249250621	1373	1509	168	177	0	0	14400	14305	0.301	8	25	27	0.01x	2885357/225280621",
 		"Y	0.00x	114475/59373566	809	820	2	7	0	0	571	571	0.273	0	0	0	0.02x	114475/22984529",
@@ -33,10 +33,16 @@ sub runTests () {
 
 
     my @readLines = readFile($0);
-    is($readLines[0], "#!/usr/bin/perl", "readLines");
+    is($readLines[0], "#!/usr/bin/env perl", "readLines");
 
-    subtest 'parseDepthOfCoverage' => sub {
-		my $docRes = parseDepthOfCoverage(@testDepthOfCoverage);
+	eval {
+		readFile("nonEXISTINGfail");
+	}; if ($@) {
+		like($@, qr/Cannot\sopen\sfile\s'nonEXISTINGfail'/, "non-existing file");
+	}
+
+    subtest 'parseGenomeCoverage' => sub {
+		my $docRes = parseGenomeCoverage(@testGenomeCoverage);
 		is(ref($docRes), "HASH", "return hash");
 		ok(eq_set([keys %$docRes], [qw(1 all Y)]), "contigs");
 		ok(exists($docRes->{"all"}->{"genome_w/o_N coverage QC bases"}), "genome coverage w/o N");
@@ -211,22 +217,28 @@ sub runTests () {
     };
 
     subtest 'mapQcValues' => sub {
-	my $res1 = mapQcValues(-depthOfCoverage => parseDepthOfCoverage(@testDepthOfCoverage),
+	my $res1 = mapQcValues(-genomeCoverage => parseGenomeCoverage(@testGenomeCoverage),
 					       -insertSize => parseInsertSize(qw(399 23 93)),
 			       		   -flagstats => parseFlagstats(@testFlagstats_0_1_19),
 			       		   -diffChrom => parseDiffChrom(1.55));
 	my $exp1 = {
           '1' => {
                    'genomeWithoutNCoverageQcBases' => '0.01',
-                   'chromosome' => '1',
+			       'genomeWithoutNReferenceLength' => '225280621',
+   			       'genomeWithoutNQcBasesMapped' => '2885357',
+			       'chromosome' => '1',
                    'referenceLength' => '249250621',
-                   'qcBasesMapped' => '2885357'
+                   'qcBasesMapped' => '2885357',
+			       'coverageQcBases' => '0.01',
                  },
           'Y' => {
                    'chromosome' => 'Y',
                    'referenceLength' => '59373566',
                    'genomeWithoutNCoverageQcBases' => '0.02',
-                   'qcBasesMapped' => '114475'
+			       'genomeWithoutNReferenceLength' => '22984529',
+   			       'genomeWithoutNQcBasesMapped' => '114475',
+                   'qcBasesMapped' => '114475',
+			       'coverageQcBases' => '0.00'
                  },
           'all' => {
                      'withMateMappedToDifferentChr' => '33635',
@@ -247,6 +259,9 @@ sub runTests () {
                      'percentageMatesOnDifferentChr' => '1.55',
                      'referenceLength' => '3095677412',
                      'genomeWithoutNCoverageQcBases' => '46.03',
+			         'genomeWithoutNReferenceLength' => '2858658094',
+			  		 'genomeWithoutNQcBasesMapped' => '35857865',
+			  	     'coverageQcBases' => '0.01',
                      'withMateMappedToDifferentChrMaq' => '6161',
                      'pairedRead2' => '212163'
                    }
@@ -260,7 +275,7 @@ sub runTests () {
 
 sub readFile ($) {
     my ($infile) = @_;
-    my $ifh = new IO::File ("<" . $infile)
+    my $ifh = IO::File->new("<" . $infile)
 		|| confess("Cannot open file '$infile'");
     my @lines = <$ifh>;
     close($ifh);
@@ -269,10 +284,10 @@ sub readFile ($) {
 }
 
 
-sub parseDepthOfCoverage (@) {
+sub parseGenomeCoverage (@) {
     my @lines = @_;
     if (scalar(@lines) <= 1) {
-		croak "Empty depth of coverage file";
+		croak "Empty genome coverage file";
     }
     my $colIndex = 0;
     my %colNames = map { $_ => $colIndex++ } split(/\t/, shift(@lines));
@@ -291,8 +306,6 @@ sub parseDepthOfCoverage (@) {
     }
     return \%chrDat;
 }
-
-
 
 sub ensureDef (@) {
     my ($val) = @_;
@@ -334,7 +347,7 @@ sub zip ($$) {
 
 sub ensureInt ($) {
     my ($val) = @_;
-    if ($val !~ /^\d$/) {
+    if ($val !~ /^(?:\d|NaN|NA)$/) {
 		confess("Expected integer, got '$val'!");
     }
     return $val;
@@ -343,7 +356,7 @@ sub ensureInt ($) {
 
 sub ensureFloat ($) {
     my ($val) = @_;
-    if ($val !~ /^(?:-?\d+(?:\.\d+)?|\d(?:\.\d+)?(?:[eE]-?\d+)?)$/) {
+    if ($val !~ /^(?:-?\d+(?:\.\d+)?|\d(?:\.\d+)?(?:[eE]-?\d+)?|NaN|NA)$/) {
 		confess("Expected float, got '$val'!");
     }
     return $val;
@@ -422,6 +435,16 @@ sub parseDiffChrom (@) {
     };
 }
 
+sub mergeAllAndGroupedGenomeCoverages ($$) {
+	my ($all, $grouped) = @_;
+	map {
+		if (exists $all->{$_}) {
+			croak "Chromosome group '$_' exist in among the chromosomes";
+		}
+	} keys %$grouped;
+	return { %$all, %$grouped };
+}
+
 =head
 
     Here, the parsed data is mapped into a structure of hashes and arrays that is going to
@@ -432,17 +455,28 @@ sub mapQcValues (%) {
     my (%parseResults) = @_;
     my %results = (
 		map {
-		    my $chr = $parseResults{-depthOfCoverage}->{$_};
-	    	my $coverage = $chr->{"genome_w/o_N coverage QC bases"};
-	    	$coverage =~ s/x$//;
-	    	my ($qcBases, $referenceLength) = $chr->{"#QC bases/#total bases"} =~ /^(\d+)\/(\d+)/;
+		    my $chrData = $parseResults{-genomeCoverage}->{$_};
+
+			my ($qcBasesNotN, $referenceLengthNotN) = $chrData->{"#QC bases/#total not_N bases"} =~ /^(\d+)\/(\d+)/;
+			my $coverageNotN = $chrData->{"genome_w/o_N coverage QC bases"};
+			$coverageNotN =~ s/x$//;
+
+			my ($qcBases, $referenceLength) = $chrData->{"#QC bases/#total bases"} =~ /^(\d+)\/(\d+)/;
+			my $coverage = $chrData->{"coverage QC bases"};
+			$coverage =~ s/x$//;
+
 	    	$_ => {
-				"chromosome" => $chr->{"interval"},
-				"referenceLength" => ensureDef($referenceLength),
-				"genomeWithoutNCoverageQcBases" => ensureFloat($coverage),
-				"qcBasesMapped" => ensureDef($qcBases)
-		    }
-		} keys %{ $parseResults{-depthOfCoverage} }
+				"chromosome"                    => $chrData->{"interval"},
+
+				"qcBasesMapped"                 => ensureDef($qcBases),
+				"referenceLength"               => ensureDef($referenceLength),
+				"coverageQcBases"               => ensureDef($coverage),
+
+				"genomeWithoutNQcBasesMapped"   => ensureDef($qcBasesNotN),
+				"genomeWithoutNReferenceLength" => ensureDef($referenceLengthNotN),
+				"genomeWithoutNCoverageQcBases" => ensureFloat($coverageNotN),
+			}
+		} keys %{ $parseResults{-genomeCoverage} }
     );
 
     $results{"all"} = {
@@ -461,7 +495,7 @@ sub mapQcValues (%) {
 		"singletons" => $parseResults{-flagstats}->{-singletons},
 		"insertSizeMedian" => $parseResults{-insertSize}->{-median},
 		"insertSizeSD" => $parseResults{-insertSize}->{-stddev},
-		"insertSizeCV" => $parseResults{-insertSize}->{-varcoef},        ## New value. Coefficient of variation.
+		"insertSizeCV" => $parseResults{-insertSize}->{-varcoef},        ## New value. Kind of coefficient of variation but using median.
 		"percentageMatesOnDifferentChr" => $parseResults{-diffChrom}->{-percentage_mates_on_different_chr} ## New value.
     };
     return \%results;
@@ -537,26 +571,28 @@ sub toJSON ($) {
     return json($qcdata, 0) . "\n";
 }
 
-
 =head
 
     MAIN
 
 =cut
-my ($depthOfCoverageFile,
+my ($genomeCoverageFile,
+	$groupedGenomeCoverageFile,
     $insertSizeFile,
     $flagstatsFile,
     $diffChromFile) = @ARGV;
 
-if (defined $depthOfCoverageFile && $depthOfCoverageFile eq "test") {
+if (defined $genomeCoverageFile && $genomeCoverageFile eq "test") {
     runTests();
 } elsif (!defined $diffChromFile) {
     pod2usage(1);
 }
 
-
 my %parse_results = (
-	-depthOfCoverage => parseDepthOfCoverage(readFile($depthOfCoverageFile)),
+	-genomeCoverage => mergeAllAndGroupedGenomeCoverages(
+		parseGenomeCoverage(readFile($genomeCoverageFile)),
+		parseGenomeCoverage(readFile($groupedGenomeCoverageFile))
+	),
     -insertSize => parseInsertSize(readFile($insertSizeFile)),
     -flagstats => parseFlagstats(readFile($flagstatsFile)),
     -diffChrom => parseDiffChrom(readFile($diffChromFile))
@@ -575,7 +611,13 @@ qcJson.pl     Read in a number of QC and statistics files and compile (some of) 
 
 qcJson.pl test
 
-qcJson.pl depthOfCoverageFile insertSizeFile flagstatsFile diffChromFile > outFile
+qcJson.pl genomeCoverageFile groupedGenomeCoverage insertSizeFile flagstatsFile diffChromFile > outFile
+
+genomeCoverageFile          output of genomeCoverage.d
+groupedGenomeCoverage       derived from output of genomeCovarege.d, with coverage values for chromosomes matching and non-matching $prefix$chr$suffix
+                            aggregated
+flagstatsFile               samtools flagstat output
+diffChromFile               _DiffChroms.png_qcValues.txt file
 
 =head1 BACKGROUND
 

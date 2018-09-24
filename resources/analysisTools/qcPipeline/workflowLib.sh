@@ -1,10 +1,10 @@
 #
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #
-# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 ##############################################################################
-## Domain-specific code (maybe put this into a dedicated library file)
+## Domain-specific code
 ##############################################################################
 ##
 ## Include into your code with: source "$TOOL_WORKFLOW_LIB"
@@ -268,6 +268,71 @@ getMissingReadGroups() {
         throw 24 "something went wrong with the detection of merged files in ${EXISTING_BAM}, stopping here"
     fi
     echo "$readGroupsToMerge"
+}
+
+
+matchesShortChromosomeName() {
+    local val="${1:?No value to match short chromosome pattern against}"
+    if [[ $(matchesLongChromosomeName "$val") == "true" ]]; then
+        echo "false"
+    else
+        echo "true"
+    fi
+}
+
+matchesLongChromosomeName() {
+    local val="${1:?No value to match long chromosome pattern against}"
+    if [[ "${CHR_PREFIX:-}" != "" || "${CHR_SUFFIX:-}" != "" ]]; then
+        if [[ "${val##${CHR_PREFIX:-}*${CHR_SUFFIX:-}}" == "" ]]; then
+            echo "true"
+        else
+            echo "false"
+        fi
+    else
+        echo "false"
+    fi
+}
+
+chromosomeIndices() {
+    if [[ ! -v ___chromosomeIndices ]]; then
+        declare -g -a ___chromosomeIndices=( $(cut -f 1 "$CHROM_SIZES_FILE") )
+    fi
+    echo "${___chromosomeIndices[@]}"
+}
+
+shortChromosomeGroupSpec() {
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
+    echo -n "${CHR_GROUP_NOT_MATCHING:-nonmatching}="
+    declare -a shorts=()
+    for chr in "${chromosomeIndices[@]}"; do
+        if [[ $(matchesShortChromosomeName "$chr") == "true" ]]; then
+            set +u
+            shorts=("${shorts[@]}" "$chr")
+        fi
+    done
+    echo $(set +u; stringJoin "," "${shorts[@]}")
+}
+
+longChromosomeGroupSpec() {
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
+    echo -n "${CHR_GROUP_MATCHING:-matching}="
+    declare -a longs=()
+    for chr in "${chromosomeIndices[@]}"; do
+        if [[ $(matchesLongChromosomeName "$chr") == "true" ]]; then
+            set +u
+            longs=("${longs[@]}" "$chr")
+        fi
+    done
+    echo $(set +u; stringJoin "," "${longs[@]}")
+}
+
+groupLongAndShortChromosomeNames() {
+    local genomeCoverageFile="${1:-/dev/stdin}"
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
+    $PERL_BINARY $TOOL_GROUPED_GENOME_COVERAGES \
+        "$genomeCoverageFile" \
+        $(shortChromosomeGroupSpec) \
+        $(longChromosomeGroupSpec)
 }
 
 

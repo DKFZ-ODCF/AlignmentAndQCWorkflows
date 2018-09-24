@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #
-# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 
 source ${TOOL_WORKFLOW_LIB:?No TOOL_WORKFLOW_LIB}
@@ -107,6 +107,75 @@ testSampleType() {
     assertEquals control $(bash -c 'sampleType c')
     assertEquals tumor $(bash -c 'sampleType t')
     assertEquals tumor $(bash -c 'sampleType tA')
+}
+
+chromosomeSizesFile() {
+    echo "$(dirname ${BASH_SOURCE[0]})/chrom-sizes-file.tsv"
+}
+
+testChromosomeIndices() {
+    local CHROM_SIZES_FILE=$(chromosomeSizesFile)
+    assertEquals "1 2 3 chrMmu1 chrMmuX" "$(chromosomeIndices)"
+}
+
+testMatchesShortChromosomeName() {
+    assertEquals "true" $(matchesShortChromosomeName 1)
+    assertEquals "true" $(matchesShortChromosomeName chr1)
+
+    local CHR_PREFIX=chrMmu
+    assertEquals "true"  $(matchesShortChromosomeName 1)
+    assertEquals "true"  $(matchesShortChromosomeName 1xxx)
+    assertEquals "false" $(matchesShortChromosomeName chrMmu1)
+    assertEquals "false" $(matchesShortChromosomeName chrMmu1xxx)
+
+    local CHR_SUFFIX=bla
+    assertEquals "true"  $(matchesShortChromosomeName 1)
+    assertEquals "true"  $(matchesShortChromosomeName 1xxx)
+    assertEquals "true"  $(matchesShortChromosomeName 1bla)
+    assertEquals "true"  $(matchesShortChromosomeName chrMmu1)
+    assertEquals "true"  $(matchesShortChromosomeName chrMmu1xxx)
+    assertEquals "false" $(matchesShortChromosomeName chrMmu1bla)
+}
+
+
+testMatchesLongChromosomeName() {
+    assertEquals "false" $(matchesLongChromosomeName 1)
+    assertEquals "false" $(matchesLongChromosomeName chr1)
+
+    local CHR_PREFIX=chrMmu
+    assertEquals "false" $(matchesLongChromosomeName 1)
+    assertEquals "false" $(matchesLongChromosomeName 1xxx)
+    assertEquals "true"  $(matchesLongChromosomeName chrMmu1)
+    assertEquals "true"  $(matchesLongChromosomeName chrMmu1xxx)
+
+    local CHR_SUFFIX=bla
+    assertEquals "false" $(matchesLongChromosomeName 1)
+    assertEquals "false" $(matchesLongChromosomeName 1xxx)
+    assertEquals "false" $(matchesLongChromosomeName 1bla)
+    assertEquals "false" $(matchesLongChromosomeName chrMmu1)
+    assertEquals "false" $(matchesLongChromosomeName chrMmu1xxx)
+    assertEquals "true"  $(matchesLongChromosomeName chrMmu1bla)
+}
+
+testShortChromosomeGroupSpec() {
+    local CHROM_SIZES_FILE=$(chromosomeSizesFile)
+    local CHR_PREFIX=chrMmu
+
+    assertEquals "nonmatching=1,2,3" $(shortChromosomeGroupSpec)
+
+    CHR_GROUP_NOT_MATCHING=human
+    assertEquals "human=1,2,3" $(shortChromosomeGroupSpec)
+
+}
+
+testLongChromosomeGroupSpec() {
+    local CHROM_SIZES_FILE=$(chromosomeSizesFile)
+    local CHR_PREFIX=chrMmu
+
+    assertEquals "matching=chrMmu1,chrMmuX" $(longChromosomeGroupSpec)
+
+    CHR_GROUP_MATCHING=mouse
+    assertEquals "mouse=chrMmu1,chrMmuX" $(longChromosomeGroupSpec)
 }
 
 source ${SHUNIT2:?Oops}

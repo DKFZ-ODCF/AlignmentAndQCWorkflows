@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 German Cancer Research Center (DKFZ).
  *
- * Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+ * Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
  */
 
 package de.dkfz.b080.co.files;
@@ -14,19 +14,20 @@ import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider;
-import de.dkfz.roddy.execution.jobs.BEJobResult;
-import de.dkfz.roddy.execution.jobs.Job;
-import de.dkfz.roddy.knowledge.files.*;
+import de.dkfz.roddy.knowledge.files.ITestdataSource;
+import de.dkfz.roddy.knowledge.files.Tuple2;
 import de.dkfz.roddy.knowledge.methods.GenericMethod;
 import de.dkfz.roddy.tools.LoggerWrapper;
+import groovy.transform.CompileStatic;
 
 import java.io.File;
-import java.util.*;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
  * @author michael
  */
+@CompileStatic
 public class LaneFile extends COBaseFile implements ITestdataSource {
     private static final LoggerWrapper logger = LoggerWrapper.getLogger(LaneFile.class.getName());
 
@@ -60,16 +61,6 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
         return lf;
     }
 
-    @Override
-    public void runDefaultOperations() {
-        calcFastqc();
-        align();
-    }
-
-    public Tuple2<FastqcFile,TextFile> calcFastqc() {
-        return GenericMethod.callGenericTool("fastqc", this, new LinkedHashMap<String, String>());
-    }
-
     public Tuple2<FastqcFile,TextFile> calcFastqc(Map<String, String> parameters) {
         return GenericMethod.callGenericTool("fastqc", this, parameters);
     }
@@ -77,70 +68,6 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
     @Override
     public boolean checkFileValidity() {
         return super.checkFileValidity();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    public AlignedSequenceFile align() {
-        ExecutionContext context = getExecutionContext();
-        AlignedSequenceFile alignedSequenceFile = new AlignedSequenceFile(this);
-        Configuration configuration = context.getConfiguration();
-        boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ACCELERATED_HARDWARE);
-        boolean useAdaptorTrimming = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ADAPTOR_TRIMMING, false);
-
-        List<BaseFile> pFiles = new LinkedList<>();
-
-        final String TOOL = useAcceleratedHardware ? COConstants.TOOL_ACCELERATED_ALIGNMENT : COConstants.TOOL_ALIGNMENT;
-
-        Map<String, Object> parameters = context.getDefaultJobParameters(TOOL);
-        parameters.put(COConstants.PRM_RAW_SEQ, getPath().getAbsolutePath());
-        parameters.put(COConstants.PRM_RAW_SEQ_JOBJ, this);
-        parameters.put(COConstants.PRM_FILENAME_ALIGNMENT, alignedSequenceFile.getAbsolutePath());
-
-        if (useAdaptorTrimming) {
-
-            LaneFile sisterFile = null;
-            for (FileGroup fg : (List<FileGroup>) getFileGroups()) {
-                if (fg instanceof LaneFileGroup) {
-                    for (LaneFile laneFile : ((LaneFileGroup) fg).getFilesInGroup()) {
-                        if (laneFile == this)
-                            continue;
-                        sisterFile = laneFile;
-                        break;
-                    }
-                    break;
-                }
-            }
-
-            COFileStageSettings fs = (COFileStageSettings) this.getFileStage();
-            COFileStageSettings fss = (COFileStageSettings) sisterFile.getFileStage();
-
-            parameters.put(COConstants.PRM_RAW_SEQ_FILE_1_INDEX, "" + fs.getNumericIndex());
-            parameters.put(COConstants.PRM_RAW_SEQ_2, sisterFile.getPath().getAbsolutePath());
-            parameters.put(COConstants.PRM_RAW_SEQ_FILE_2_INDEX, "" + fss.getNumericIndex());
-        }
-
-        Job job = new Job(context, context.createJobName(this, TOOL), TOOL, parameters, pFiles, Arrays.asList((BaseFile) alignedSequenceFile));
-
-        BEJobResult jobResult = job.run();
-        alignedSequenceFile.setCreatingJobsResult(jobResult);
-
-        this.alignedSequenceFile = alignedSequenceFile;
-        return alignedSequenceFile;
-    }
-
-    public boolean isAligned() {
-        return alignedSequenceFile != null;
-    }
-
-    public boolean hasQualityControlFile() {
-        return fastqcFile != null;
-    }
-
-    public FastqcFile getFastqcFile() {
-        return fastqcFile;
-    }
-
-    public AlignedSequenceFile getAlignedSequenceFile() {
-        return alignedSequenceFile;
     }
 
     public LaneID getLaneId() {
@@ -158,27 +85,8 @@ public class LaneFile extends COBaseFile implements ITestdataSource {
     public Sample getSample() {
         return ((COFileStageSettings) fileStageSettings).getSample();
     }
-//
-//    public String getSequencerID() {
-//        //TODO Read out sequencer ID on demand? or instantly?
-//        if (sequencerID == null) {
-//            //Read it out and store it.
-//            File tool = getRunningProcess().getConfiguration().getProcessingToolPath(getRunningProcess(), "sequencerDetection");
-//            ExecutionResult er = getRunningProcess().getExecutionService().execute(this.decompressionString + "  " + this.path.getAbsolutePath() + " | " + tool.getAbsolutePath() + "");
-//            if (er.successful)
-//                sequencerID = er.firstLine;
-//        }
-//        return sequencerID;
-//    }
-
-    public void setSequencerID(String id) {
-        sequencerID = id;
-    }
 
     public String getDecompressionString() {
-//        if(decompressionString == null) {
-//            decompressionString = executionContext.getRuntimeService().getCompressorForLaneFile(executionContext, this);
-//        }
         return decompressionString;
     }
 

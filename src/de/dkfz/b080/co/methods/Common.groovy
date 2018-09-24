@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 German Cancer Research Center (DKFZ).
  *
- * Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+ * Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
  */
 
 package de.dkfz.b080.co.methods
@@ -22,38 +22,9 @@ import de.dkfz.roddy.knowledge.files.FileObject
 @StaticScriptProviderClass
 class Common {
 
-    public static final String CHROMOSOMEDIFF = "chromosomeDiff";
-    public static final String GENOMECOVERAGE = "genomeCoverage";
     public static final String QCSUMMARY = "qcSummary";
 
     public static final String PID = "DataSet";
-
-    @ScriptCallingMethod
-    public static ChromosomeDiffFileGroup differentiateChromosomesForBamFile(ExecutionContext run, BamFile bamFile) {
-        if (!bamFile.hasIndex()) bamFile.index();
-
-        ChromosomeDiffTextFile tFile = BaseFile.constructManual(ChromosomeDiffTextFile, bamFile) as ChromosomeDiffTextFile;
-        ChromosomeDiffPlotFile pFile = BaseFile.constructManual(ChromosomeDiffPlotFile, bamFile) as ChromosomeDiffPlotFile;
-
-        File filePathD = tFile.path;
-        File filePathP = pFile.path;
-
-        String bamFilename = bamFile.path.absolutePath;
-
-        Map<String, Object> parameters = new HashMap<String, Object>();
-        parameters.putAll([
-                "FILENAME": bamFilename,
-                "FILENAMED": filePathD.absolutePath,
-                "FILENAMEP": filePathP.absolutePath
-        ]);
-        List<BaseFile> pFiles = [(BaseFile) bamFile.getIndexFile()];
-
-        BEJobResult jobResult = new Job(run, run.createJobName(pFiles[0], CHROMOSOMEDIFF), CHROMOSOMEDIFF, parameters, pFiles).run();
-        tFile.setCreatingJobsResult(jobResult);
-        pFile.setCreatingJobsResult(jobResult);
-        ChromosomeDiffFileGroup fGroup = new ChromosomeDiffFileGroup([tFile, pFile] as List<BaseFile>);
-        return fGroup;
-    }
 
     private static LaneFile recursivelySearchLaneFile(List<BaseFile> files) {
         LaneFile lf = null;

@@ -2,17 +2,17 @@
 #
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #
-# Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 
 
-#convert simple tab seperated file wit header 
+# Convert simple tab separated file with header to JSON.
 import argparse
 import sys
 import json
 from gccorrection_python_modules import Tabfile
 
-parser=argparse.ArgumentParser(description='Convert tab seperated CNV calls to vcf file' )
+parser=argparse.ArgumentParser(description='Convert tab separated CNV calls to vcf file' )
 parser.add_argument('--file',	  	'-f', type=file, help='Tabfile with headerline')
 parser.add_argument('--id', 	  	'-i', type=str, help='Patient identifier printed in json')
 parser.add_argument('--out', 	  	'-o', type=str, help='Output file')

@@ -1,20 +1,16 @@
 /*
  * Copyright (c) 2018 German Cancer Research Center (DKFZ).
  *
- * Distributed under the MIT License (license terms are at https://github.com/TheRoddyWMS/AlignmentAndQCWorkflows).
+ * Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
  */
 
 package de.dkfz.b080.co.common
 
-import de.dkfz.b080.co.files.COConstants
 import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.execution.io.ExecutionService
 import groovy.transform.CompileStatic
 
-/**
- * Created by kensche on 17.05.16.
- */
 @CompileStatic
 class AlignmentAndQCConfig extends COConfig {
 
@@ -24,7 +20,6 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_TARGET_REGIONS_FILE = "TARGET_REGIONS_FILE"
     public static final String CVALUE_TARGETSIZE = "TARGETSIZE"
     public static final String CVALUE_TARGET_SIZE = "TARGET_SIZE"
-    public static final String CVALUE_RUN_COVERAGE_PLOTS_ONLY = "runCoveragePlotsOnly"
     public static final String CVALUE_OVERRIDE_BAM_FILES = "overrideBamFiles"
     public static final String CVALUE_OVERRIDE_SAMPLE_NAMES = "overrideSampleNames"
     public static final String CVALUE_MAPPABILITY_FILE = "MAPPABILITY_FILE_ALN"
@@ -37,6 +32,27 @@ class AlignmentAndQCConfig extends COConfig {
     public static final String CVALUE_RUN_FINGERPRINTING = "runFingerprinting"
     public static final String CVALUE_FINGERPRINTING_SITES_FILE="fingerprintingSitesFile"
     public static final String CVALUE_DEFAULT_LIBRARY_NAME = "defaultLibraryName"
+
+    /**
+     * Tool entries
+     */
+    public static final String TOOL_COLLECT_BAM_METRICS = "collectBamMetrics"
+    public static final String TOOL_ALIGNANDPAIR_SLIM = "alignAndPairSlim"
+    public static final String TOOL_ACCELERATED_ALIGNANDPAIR_SLIM = "accelerated:alignAndPairSlim"
+    public static final String TARGET_EXTRACTION_AND_COVERAGE_SLIM = "targetExtractCoverageSlim"
+
+    public static final String FLAG_USE_ACCELERATED_HARDWARE = "useAcceleratedHardware"
+    public static final String FLAG_USE_BIOBAMBAM_MARK_DUPLICATES = "useBioBamBamMarkDuplicates"
+    public static final String FLAG_USE_ONLY_EXISTING_PAIRED_BAMS = "useExistingPairedBams"
+    public static final String FLAG_RUN_FASTQC = "runFastQC"
+    public static final String FLAG_RUN_FASTQC_ONLY = "runFastQCOnly"
+    public static final String FLAG_RUN_ALIGNMENT_ONLY = "runAlignmentOnly"
+    public static final String FLAG_RUN_COVERAGE_PLOTS = "runCoveragePlots"
+    public static final String FLAG_RUN_EXOME_ANALYSIS = "runExomeAnalysis"
+    public static final String FLAG_RUN_COLLECT_BAMFILE_METRICS = "runCollectBamFileMetrics"
+    public static final String FLAG_USE_SINGLE_END_PROCESSING = "useSingleEndProcessing"
+    public static final String FLAG_USE_ADAPTOR_TRIMMING = "useAdaptorTrimming"
+    public static final String CVALUE_MARK_DUPLICATES_VARIANT = "markDuplicatesVariant"
 
     AlignmentAndQCConfig(ExecutionContext context) {
         super(context)
@@ -55,26 +71,26 @@ class AlignmentAndQCConfig extends COConfig {
     }
 
     boolean getUseOnlyExistingLaneBams() {
-        return configValues.getBoolean(COConstants.FLAG_USE_ONLY_EXISTING_PAIRED_BAMS, false)
+        return configValues.getBoolean(FLAG_USE_ONLY_EXISTING_PAIRED_BAMS, false)
     }
 
-    public String getIndexPrefix() {
+    String getIndexPrefix() {
         return configValues.getString(CVALUE_INDEX_PREFIX, "")
     }
 
-    public File getChromosomeSizesFile() {
+    File getChromosomeSizesFile() {
         return new File (configValues.getString(CVALUE_CHROMOSOME_SIZES_FILE, ""))
     }
 
-    public File getChromosomeLengthFile () {
+    File getChromosomeLengthFile () {
         return new File (configValues.getString(CVALUE_CHROMOSOME_LENGTH_FILE, ""))
     }
 
-    public File getTargetRegionsFile() {
+    File getTargetRegionsFile() {
         return new File (configValues.getString(CVALUE_TARGET_REGIONS_FILE, ""))
     }
 
-    public Integer getTargetSize() {
+    Integer getTargetSize() {
         Integer returnValue = configValues.getString(CVALUE_TARGET_SIZE, null) as Integer
         if (null == returnValue) {
             returnValue = configValues.getString(CVALUE_TARGETSIZE, null) as Integer
@@ -82,112 +98,104 @@ class AlignmentAndQCConfig extends COConfig {
         return returnValue
     }
 
-    public boolean getRunExomeAnalysis() {
-        return configValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS)
+    boolean getRunExomeAnalysis() {
+        return configValues.getBoolean(FLAG_RUN_EXOME_ANALYSIS)
     }
 
-    public String getWindowSize() {
+    String getWindowSize() {
         return configValues.getString(COConstants.CVALUE_WINDOW_SIZE, "1")
     }
 
-    public boolean getRunCoveragePlotsOnly() {
-        return configValues.getBoolean(CVALUE_RUN_COVERAGE_PLOTS_ONLY, false)
-    }
-
-    public List<String> getOverrideMergedBamFiles() {
+    List<String> getOverrideMergedBamFiles() {
         return configValues.getString(CVALUE_OVERRIDE_BAM_FILES, "").split(StringConstants.SPLIT_SEMICOLON) as List<String>
     }
 
-    public List<String> getOverrideSampleNames() {
+    List<String> getOverrideSampleNames() {
         return configValues.getString(CVALUE_OVERRIDE_SAMPLE_NAMES, "").split(StringConstants.SPLIT_SEMICOLON) as List<String>
     }
 
-    public File getMappabilityFile () {
+    File getMappabilityFile () {
         return new File(configValues.getString(CVALUE_MAPPABILITY_FILE))
     }
 
-    public File getReplicationTimeFile () {
+    File getReplicationTimeFile () {
         return new File(configValues.getString(CVALUE_REPLICATION_TIME_FILE))
     }
 
-    public File getGcContentFile () {
+    File getGcContentFile () {
         return new File(configValues.getString(CVALUE_GC_CONTENT_FILE))
     }
 
-    public boolean getRunACEseqQC () {
+    boolean getRunACEseqQC () {
         return configValues.getBoolean(CVALUE_RUN_ACESEQ_QC, false)
     }
 
-    public String getControlBamName() {
+    String getControlBamName() {
         return overrideMergedBamFiles[0]
     }
 
-    public List<String> getTumorBamNames() {
+    List<String> getTumorBamNames() {
         return overrideMergedBamFiles[1..-1]
     }
 
-    public void setSampleExtractionFromOutputFiles(boolean value) {
+    void setSampleExtractionFromOutputFiles(boolean value) {
         setConfig(COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, value.toString(), "boolean")
     }
 
-    public File getCytosinePositionIndex() {
+    File getCytosinePositionIndex() {
         return new File(configValues.getString(CVALUE_CYTOSINE_POSITIONS_INDEX))
     }
 
-    public boolean getUseAdapterTrimming() {
-        return configValues.getBoolean(COConstants.FLAG_USE_ADAPTOR_TRIMMING, false)
+    boolean getUseAdapterTrimming() {
+        return configValues.getBoolean(FLAG_USE_ADAPTOR_TRIMMING, false)
     }
 
-    public File getClipIndex() {
+    File getClipIndex() {
         return new File(configValues.getString(CVALUE_CLIP_INDEX))
     }
 
-    public boolean getRunFingerprinting() {
+    boolean getRunFingerprinting() {
         return configValues.getBoolean(CVALUE_RUN_FINGERPRINTING, true)
     }
 
-    public File getFingerprintingSitesFile() {
+    File getFingerprintingSitesFile() {
         return new File(configValues.getString(CVALUE_FINGERPRINTING_SITES_FILE))
     }
 
-    public String getDirExecution() {
+    String getDirExecution() {
         return context.executionDirectory.absolutePath
     }
 
-    public boolean getRunFastQCOnly() {
-        return configValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false)
+    boolean getRunFastQCOnly() {
+        return configValues.getBoolean(FLAG_RUN_FASTQC_ONLY, false)
     }
 
-    public boolean getRunAlignmentOnly() {
-        return configValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false)
+    boolean getRunAlignmentOnly() {
+        return configValues.getBoolean(FLAG_RUN_ALIGNMENT_ONLY, false)
     }
 
-    public boolean getRunCoveragePlots() {
-        return configValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true)
+    boolean getRunCoveragePlots() {
+        return configValues.getBoolean(FLAG_RUN_COVERAGE_PLOTS, true)
     }
 
-    public boolean getRunCollectBamFileMetrics() {
-        return configValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false)
+    boolean getRunCollectBamFileMetrics() {
+        return configValues.getBoolean(FLAG_RUN_COLLECT_BAMFILE_METRICS, false)
     }
 
-    public boolean setExtractSamplesFromOutputFiles(boolean value) {
+    boolean setExtractSamplesFromOutputFiles(boolean value) {
         return configValues.put(COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, value.toString(), "boolean")
     }
 
-    public boolean getRunFastQC() {
-        return configValues.getBoolean(COConstants.FLAG_RUN_FASTQC, true)
+    boolean getRunFastQC() {
+        return configValues.getBoolean(FLAG_RUN_FASTQC, true)
     }
 
-    public boolean getUseCombinedAlignAndSampe() {
-        return configValues.getBoolean(COConstants.FLAG_USE_COMBINED_ALIGN_AND_SAMPE, false)
-    }
-
-    public String getDefaultLibraryName() {
+    String getDefaultLibraryName() {
         return configValues.getString(CVALUE_DEFAULT_LIBRARY_NAME, "null")
     }
 
     String getUseSingleEndProcessing() {
-        return configValues.getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING , false)
+        return configValues.getBoolean(FLAG_USE_SINGLE_END_PROCESSING , false)
     }
 
 }
