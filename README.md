@@ -101,26 +101,26 @@ The most important parameters are:
 | Parameter  | Example      | Description                            |
 |------------|--------------|----------------------------------------|
 | INDEX_PREFIX | /path/to/assembly/assembly.fa | The path to the fasta file with the assembled genome(s). Note that the BWA index needs to be this directly and use the string 'assembly.fa' as prefix |
-| CHROM_SIZES_FILE | /path/to/assembly/sizes.tsv | A two-column TSV file with chromosome identifiers (1) and number of bases (2). Usually you want the number of bases just be from the set {A, T, C, G}, to ignore in the statictics all lower-quality bases in the genome. | 
+| CHROM_SIZES_FILE | /path/to/assembly/sizes.tsv | A two-column TSV file with chromosome identifiers (1) and number of bases (2). Usually you want the number of bases just be from the set {A, T, C, G}, to ignore all lower-quality bases in the genome in the statistics. | 
 | CHR_PREFIX | chrMmu       | With xenograft data used to discern 'matching' and 'nonmatching' identifiers which match the /$CHR_PREFIX$chr$CHR_SUFFIX/ pattern or not, respectively. Also used for WGBS. |
 | CHR_SUFFIX | _hsa      | See CHR_PREFIX. |
-| CHR_GROUP_NOT_MATCHING | nonmatching | See CHR_PREFIX. |
-| CHR_GROUP_MATCHING | matching | See CHR_PREFIX. |
-| CHROMOSOME_INDICES | "( 1 2 3 )" | Needed for the WGBS workflow to select chromosomes to be processed. The should be a quoted bash array, i.e. with spaces as element separators and including the parentheses. |
+| CHR_GROUP_NOT_MATCHING | human | See CHR_PREFIX. Default: "nonmatching" |
+| CHR_GROUP_MATCHING | mouse | See CHR_PREFIX. Default" "matching" |
+| CHROMOSOME_INDICES | "( 1 2 3 )" | Needed for the WGBS workflow to select chromosomes to be processed. This should be a quoted bash array, i.e. with spaces as element separators and including the parentheses. |
 
 A full description of all options in the different workflows can be found in the XML files in `resources/configurationFiles`. Note that workflow configurations inherit from each other in the order "WGS" <- "WES" <- "WGBS". Thus the WGS configuration (analysisQc.xml) contains variables that are overridden by values in the WES configuration (analysisExome.xml), and so forth.
 
 ## Xenograft
 
-The WGS and WES workflows can deal with xenograft data. To process xenograft data you need a combined FASTA file and genome index plus a matching "chromosome sizes file". Thus, `INDEX_PREFIX` and `CHROM_SIZES_FILE` need to be set to the paths of the FASTA file (and BWA index) and the "stats" containing the chromosome sizes. Note that for xenograft the `CHROM_SIZES_FILE` should include also the chromosomes of the host (mouse).
+The WGS and WES workflows can deal with xenograft data simply by aligning against the combined genome. Thus to process xenograft data you need a FASTA file, a genome index, and a matching "chromosome sizes file" -- all with both the host's and xenografted species's genomes. Make sure that the chromosomes from both species have different identifiers, e.g. by pre- or suffixing one of sets of the chromosome names, e.g. with chrMmu or whatever is appropriate.
 
-If you want to have species-specific coverage you additionally need to set some variables. The chromosomes of one of the two species needs to be prefixed (`CHR_PREFIX`) and/or suffixed (`CHR_SUFFIX`). For instance you may use a FASTA file with the human chromosomes without (explicitly configured) prefixes, e.g. with chromosomes 1, 2, ..., X, Y, MT and mouse chromosomes prefixed by 'chrMmu'. In this situation use the following configuration values:
+If you want to have species-specific coverage you additionally need to set some variables. The chromosomes of one of the two species need to be prefixed (`CHR_PREFIX`) and/or suffixed (`CHR_SUFFIX`). For instance you may use a FASTA file with the human chromosomes without (explicitly configured) prefixes, e.g. with chromosomes 1, 2, ..., X, Y, MT and mouse chromosomes prefixed by 'chrMmu'. In this situation use the following configuration values:
 
 * `CHR_PREFIX`=chrMmu
 * `CHR_GROUP_MATCHING`=mouse
 * `CHR_GROUP_NOT_MATCHING`=human
 
-This will do an alignment of all reads against the combined genomes and additionally collect statistics in the quality-control JSON for the chromosomes in human (without the prefix and suffix) and mouse (matching the "chrMmu" prefix) groups.
+The result will be that in the files `$sample_$pid(_targetExtract)?.rmdup.bam.DepthOfCoverage(_Target)?_Grouped.txt` two lines are created called "matching" (or "mouse" in the example) and "nonmatching" (or "human in the example). Additionally, these values are collected into the `_qualitycontrol.json` files.
 
 *NOTE:* Currently, the WGBS workflow variant uses the `CHR_PREFIX`-variable for another purpose and, therefore, can not collect dedicated statistics for xenograft data.   
 
