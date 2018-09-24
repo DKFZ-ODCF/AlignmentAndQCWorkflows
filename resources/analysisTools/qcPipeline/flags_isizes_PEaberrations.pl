@@ -303,16 +303,11 @@ else
 		$devsqsum += $howmany * (($i - $average)**2);
 	}
 
-	my $stddev;
-	my $sdrd;
-	my $sdperc;
-	my $rounded;
-	if ($ctr - 1 == 0) { # Cannot calculate SD and derived values due to lack of data.
-		$stddev = "NA";
-		$sdrd = "NA";
-		$sdperc = "NA";
-		$rounded = "NA";
-	} else {
+	my $stddev = "NA";
+	my $sdrd = "NA";
+	my $sdperc = "NA";
+	my $rounded = "NA";
+	if ($ctr - 1 != 0) { # Can only calculate SD and derived values if there is data.
 		$stddev = sqrt($devsqsum/($ctr-1));
 		$sdrd = int($stddev+0.5);
 		$sdperc = $stddev/$median*100;
