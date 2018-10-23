@@ -40,24 +40,20 @@ tempFileForSort=${RODDY_BIG_SCRATCH}/${bamname}_forsorting
 tempBamIndexFile=${FILENAME_SORTED_BAM}.tmp.bai
 tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 
-# samtools sort may complain about truncated temp files and for each line outputs
-# the error message. This happens when the same files are written at the same time,
-# see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
-NP_SORT_ERRLOG=$RODDY_SCRATCH/NP_SORT_ERRLOG
-
 RAW_SEQ=${RAW_SEQ_1}
 source ${TOOL_COMMON_ALIGNMENT_SETTINGS_SCRIPT}
 
 NP_BAMSORT=${RODDY_SCRATCH}/NAMED_PIPE_BAMSORT
 mkfifo ${NP_BAMSORT}
 
-# Create the following variable for error checking issues
-TMP_FILE=${tempSortedBamFile}
-# error tracking
-FILENAME_SORT_LOG=${DIR_TEMP}/${bamname}_errlog_sort
-
+# Error tracking
 FILENAME_BWA_ERRORCODE=${DIR_TEMP}/${bamname}_ec_bbam
 FILENAME_BWA_LOG=${DIR_TEMP}/${bamname}_errlog_bwamem
+# samtools sort may complain about truncated temp files and for each line outputs
+# the error message. This happens when the same files are written at the same time by independent processes,
+# see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
+FILENAME_SORT_LOG=${DIR_TEMP}/${bamname}_errlog_sort
+
 
 bamFileExists=false
 # in case the BAM already exists, but QC files are missing, create these only
@@ -165,7 +161,7 @@ else
 		    | $MBUF_LARGE \
 		    | tee ${NP_FLAGSTATS} \
 		    | ${SAMBAMBA_BINARY} sort --tmpdir=${RODDY_SCRATCH} -l 9 -t ${CONVEY_SAMBAMBA_SAMSORT_THREADS} \
-		      -m ${CONVEY_SAMBAMBA_SAMSORT_MEMSIZE} /dev/stdin -o /dev/stdout 2> $NP_SORT_ERRLOG \
+		      -m ${CONVEY_SAMBAMBA_SAMSORT_MEMSIZE} /dev/stdin -o /dev/stdout 2> $FILENAME_SORT_LOG \
 		    | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} > $tempSortedBamFile; \
 		  echo $? > "$FILENAME_BWA_ERRORCODE") & procID_MEMSORT=$!
 
@@ -173,6 +169,7 @@ else
 
 	elif [[ ${useBioBamBamSort} == false ]]
 	then	# we use samtools for making the index
+	    NP_SORT_ERRLOG="$RODDY_SCRATCH/NP_SORT_ERRLOG"
 		mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
 		${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
 		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} \
@@ -206,7 +203,7 @@ else
 		    | $MBUF_LARGE \
 		    | ${BAMSORT_BINARY} O=${NP_BAMSORT} level=1 inputthreads=2 outputthreads=2 \
 		        index=1 indexfilename=${tempBamIndexFile} calmdnm=1 calmdnmrecompindetonly=1 calmdnmreference=${INDEX_PREFIX} \
-		        tmpfile=${tempFileForSort} 2>$NP_SORT_ERRLOG; \
+		        tmpfile=${tempFileForSort} 2> $FILENAME_SORT_LOG; \
 		  echo $? > "$FILENAME_BWA_ERRORCODE") & procIDBamsort=$!
 		wait $procIDBamsort || throw 11 "Error from bamsort binary"
 		wait $procIDview || throw 12 "Error from cat from bamsort output for pipes"
@@ -216,17 +213,17 @@ fi
 if [[ ${bamFileExists} == true ]]
 then
 	wait $procIDOutPipe; [[ $? -gt 0 ]] && echo "Error from sambamba view pipe" && exit 13
-else	# make sure to rename BAM file when it has been produced correctly
+else	# Rename BAM file when it has been produced correctly.
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	rm $FNPIPE1
 	rm $FNPIPE2
-	checkBwaOutput "$TMP_FILE" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG" "$FILENAME_BWA_ERRORCODE"
+	checkBwaOutput "$tempSortedBamFile" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG" "$FILENAME_BWA_ERRORCODE"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
-	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
+	# The index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp.
 	if [[ -f ${tempBamIndexFile} ]]; then
         mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
 	fi
-	# clean up adapter trimming pipes if they exist
+	# Clean up adapter trimming pipes if they exist.
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	
 fi
