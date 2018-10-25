@@ -1,16 +1,16 @@
 @startuml
 
 [fastqc]
-note left of [fastqc]
+note right of [fastqc]
   - if (runFastqc=true)
   - once for each input FASTQ
 endnote
 
 component alignAndPairSlim as align
-note top of [align] : sorted lane-BAMs
+note right of [align] : sorted lane-BAMs
 
 component mergeAndMarkDuplicatesSlim as merge
-note top of [merge]
+note right of [merge]
   - merge lane BAMs into merged BAM
   - variants for Picard, Biobambam and
     Sambamba
@@ -29,13 +29,13 @@ note bottom of [extract]
   calculate QC values only for target regions
 endnote
 
-[fastqc] "2" *-right-> [align]
+[fastqc] "2" *-down-> [align]
 
-[align] "n" *-right-> [merge]
+[align] "n" *-down-> [merge]
 
-[merge] "1-2" *-right-> [plot]
+[merge] "1-2" *-down-> [plot]
 
-[merge] --> [extract]
+[merge] -down-> [extract]
 
 legend top
   Workflow structure for WES data
