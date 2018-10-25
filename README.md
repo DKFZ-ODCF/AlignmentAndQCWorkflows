@@ -9,7 +9,8 @@ These are basically BWA alignment (bwa mem) workflows with plenty of additional 
 
 > **Your opinion matters!** The development of this workflow is supported by the [German Network for Bioinformatic Infrastructure (de.NBI)](https://www.denbi.de/). By completing [this very short survey](link) you support our efforts to improve this tool.
 >  
->  ![de.NBI](docs/images/denbi.png)
+> <a href="docs/images/denbi.png" alt="de.NBI logo" width="75"/></a>
+
  
 # Configuration
 
