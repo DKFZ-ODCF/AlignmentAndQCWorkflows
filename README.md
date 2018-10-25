@@ -7,6 +7,10 @@ This plugins contains alignment and quality control related [Roddy](https://gith
 
 These are basically BWA alignment (bwa mem) workflows with plenty of additional quality control steps. QC-steps acting on the BAM files are mostly done through piping the input data into multiple QC tools simultaneously to achieve a high performance. All workflows can be run for each sample or with combinations of tumor- and control-samples.
 
+> **Your opinion matters!** The development of this workflow is supported by the [German Network for Bioinformatic Infrastructure (de.NBI)](https://www.denbi.de/). By completing [this very short survey](link) you support our efforts to improve this tool.
+>  
+>  ![de.NBI](docs/denbi.png)
+ 
 # Configuration
 
 All configuration variables are documented in the XML files in the `resources/configurationFiles/` directory. There is one XML for each workflow. Note that the workflows depend on each other, i.e. the WES and WGBS workflows are extension of the WGS workflow -- this can be recognized from the `imports` attribute of the top-level configuration tag in the XMLs. This means that most options of the WGS workflow also affect the other two workflows. Conversely, settings in the WGBS and WES workflow may override those in the WGS workflow. Some processing steps, notably those of the ACEseq quality control (QC) are not valid for the WES workflow. Note that the plugin depends on the [COWorkflowBasePlugin](https://github.com/TheRoddyWMS/COWorkflowsBasePlugin), which has its own configurations affecting this alignment plugin.
