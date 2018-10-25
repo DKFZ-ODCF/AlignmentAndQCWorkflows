@@ -7,9 +7,7 @@ This plugins contains alignment and quality control related [Roddy](https://gith
 
 These are basically BWA alignment (bwa mem) workflows with plenty of additional quality control steps. QC-steps acting on the BAM files are mostly done through piping the input data into multiple QC tools simultaneously to achieve a high performance. All workflows can be run for each sample or with combinations of tumor- and control-samples.
 
-> **Your opinion matters!** The development of this workflow is supported by the [German Network for Bioinformatic Infrastructure (de.NBI)](https://www.denbi.de/). By completing [this very short survey](link) you support our efforts to improve this tool.
->  
-> <a href="docs/images/denbi.png" alt="de.NBI logo" width="75"/></a>
+> <table><tr><td><a href="https://www.denbi.de/"><img src="docs/images/denbi.png" alt="de.NBI logo" width="300" align="left"></a></td><td><strong>Your opinion matters!</strong> The development of this workflow is supported by the <a href="https://www.denbi.de/">German Network for Bioinformatic Infrastructure (de.NBI)</a>. By completing <a href="yet unknown">this very short survey</a> you support our efforts to improve this tool.</td></tr></table>
 
  
 # Configuration
