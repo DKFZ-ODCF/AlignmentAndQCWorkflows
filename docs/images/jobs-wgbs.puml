@@ -1,39 +1,39 @@
 @startuml
 
 [fastqc]
-note left of [fastqc]
+note right of [fastqc]
   - if (runFastqc=true)
   - once for each input FASTQ
 endnote
 
 component alignAndPairSlim as align
-note top of [align] : sorted lane-BAMs
+note right of [align] : sorted lane-BAMs
 
 component mergeAndMarkDuplicatesSlim as mergeLibrary
-note top of [mergeLibrary]
+note right of [mergeLibrary]
   merge lane BAMs into library BAM
 endnote
 
 component mergeAndMarkDuplicatesSlim as mergeSample
-note top of [mergeSample]
+note right of [mergeSample]
   merge library BAMs into sample BAM
 endnote
 
 component "coveragePlot[Single]" as plot
-note bottom of [plot]
+note right of [plot]
   - generate a coverage plot
   - single variant called if
     only one of control & tumor
     available
 endnote
 
-[fastqc] "2" *-right-> [align]
+[fastqc] "2" *-down-> [align]
 
-[align] "n" *-right-> [mergeLibrary]
+[align] "n" *-down-> [mergeLibrary]
 
-[mergeLibrary] "n" *-right-> [mergeSample]
+[mergeLibrary] "n" *-down-> [mergeSample]
 
-[mergeSample] "1-2" *-right-> [plot]
+[mergeSample] "1-2" *-down-> [plot]
 
 legend top
   Workflow structure for [tagmentation] WGBS

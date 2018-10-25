@@ -1,16 +1,16 @@
 @startuml
 
 [fastqc]
-note left of [fastqc]
+note right of [fastqc]
   - if (runFastqc=true)
   - once for each input FASTQ
 endnote
 
 component alignAndPairSlim as align
-note top of [align] : sorted lane-BAMs
+note right of [align] : sorted lane-BAMs
 
 component mergeAndMarkDuplicatesSlim as merge
-note top of [merge]
+note right of [merge]
   - merge lane BAMs into merged BAM
   - variants for Picard, Biobambam and
     Sambamba
@@ -26,25 +26,24 @@ endnote
 
 component "annotateCoverageWindows" as annotate
 note top of [annotate]
-  - estimate sample gender
-  -
+  estimate sample gender
 endnote
 
 component "mergeAndFilterCovWindows" as filter
 
 component "correctGc" as correct
-note bottom of [correct]
+note right of [correct]
   GC-corrected coverage
 endnote
 
 
-[fastqc] "2" *-right-> [align]
+[fastqc] "2" *-down-> [align]
 
-[align] "n" *-right-> [merge]
+[align] "n" *-down-> [merge]
 
-[merge] "1-2" *-right-> [plot]
+[merge] "1-2" *-down-> [plot]
 
-[merge] -left-> [annotate]
+[merge] -down-> [annotate]
 
 [annotate] -down-> [filter]
 
