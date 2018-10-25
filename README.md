@@ -60,6 +60,16 @@ Two programs in this repository -- `genomeCoverage.d` and `coverageQc.d` -- were
   * the D-compiler [LDC 0.12.1](https://github.com/ldc-developers/ldc/releases/tag/v0.12.1) compiler
   * and [BioD](https://github.com/lomereiter/BioD) master branch (commit 8b633de) 
 
+# Workflow Job Structure
+
+The workflow submits various jobs. The exact job-types depend on whether you analyse WGS, WES or WGBS data.
+
+![WGS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgs.puml)
+
+![WES job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wes.puml)
+
+![WGBS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgbs.puml)
+
 # Resource Requirements
 
 The workflow is rather tuned to minimize IO. For instance, the tools are glued together using pipes. However, the duplication marking and the BAM sorting steps produce temporary files. These two and the BWA step are also the memory-hungry steps, while BWA is the step that requires most CPU time. 

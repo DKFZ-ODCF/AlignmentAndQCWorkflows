@@ -1,0 +1,57 @@
+@startuml
+
+[fastqc]
+note left of [fastqc]
+  - if (runFastqc=true)
+  - once for each input FASTQ
+endnote
+
+component alignAndPairSlim as align
+note top of [align] : sorted lane-BAMs
+
+component mergeAndMarkDuplicatesSlim as merge
+note top of [merge]
+  - merge lane BAMs into merged BAM
+  - variants for Picard, Biobambam and
+    Sambamba
+endnote
+
+component "coveragePlot[Single]" as plot
+note bottom of [plot]
+  - generate a coverage plot
+  - single variant called if
+    only one of control & tumor
+    available
+endnote
+
+component "annotateCoverageWindows" as annotate
+note top of [annotate]
+  - estimate sample gender
+  -
+endnote
+
+component "mergeAndFilterCovWindows" as filter
+
+component "correctGc" as correct
+note bottom of [correct]
+  GC-corrected coverage
+endnote
+
+
+[fastqc] "2" *-right-> [align]
+
+[align] "n" *-right-> [merge]
+
+[merge] "1-2" *-right-> [plot]
+
+[merge] -left-> [annotate]
+
+[annotate] -down-> [filter]
+
+[filter] -down-> [correct]
+
+legend top
+  Workflow structure for WGS data
+endlegend
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+
+[fastqc]
+note left of [fastqc]
+  - if (runFastqc=true)
+  - once for each input FASTQ
+endnote
+
+component alignAndPairSlim as align
+note top of [align] : sorted lane-BAMs
+
+component mergeAndMarkDuplicatesSlim as merge
+note top of [merge]
+  - merge lane BAMs into merged BAM
+  - variants for Picard, Biobambam and
+    Sambamba
+endnote
+
+component "coveragePlot[Single]" as plot
+note bottom of [plot]
+  - generate a coverage plot
+  - single variant called if
+    only one of control & tumor
+    available
+endnote
+
+component targetExtractCoverageSlim as extract
+note bottom of [extract]
+  calculate QC values only for target regions
+endnote
+
+[fastqc] "2" *-right-> [align]
+
+[align] "n" *-right-> [merge]
+
+[merge] "1-2" *-right-> [plot]
+
+[merge] --> [extract]
+
+legend top
+  Workflow structure for WES data
+endlegend
+
+@enduml
