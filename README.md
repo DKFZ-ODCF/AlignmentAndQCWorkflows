@@ -54,7 +54,7 @@ We successfully tested the Conda environment imported as described above and usi
 
 ## WGBS Data Processing and methylCtools
 
-The current implementation of the WGBS workflow uses [methylCtools](https://github.com/hovestadt/methylCtools) requires a patched BWA version. Note that the methylCtools version in this repository is not as new as the one in the official Github repository. Furthermore, 
+The current implementation of the WGBS workflow uses [methylCtools](https://github.com/hovestadt/methylCtools) requires a patched BWA version. Note that the methylCtools version in this repository differs from the one in the official Github repository.
 
 ## Recompiling the D-based Components
 
@@ -67,11 +67,21 @@ Two programs in this repository -- `genomeCoverage.d` and `coverageQc.d` -- were
 
 The workflow submits various jobs. The exact job-types depend on whether you analyse WGS, WES or WGBS data.
 
+## Whole Genome Sequencing (WGS) 
+
+The WGS variant does some GC- and replication-timing bias corrections for the coverage estimates, as are described is the documentation of the [ACEseq workflow](https://aceseq.readthedocs.io/en/latest/methods.html#gc-replication-timing-bias-correction).
+
 ![WGS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgs.puml)
 
-The GC- and replication-timing bias corrections are described is the documentation of the [ACEseq workflow](https://aceseq.readthedocs.io/en/latest/methods.html#gc-replication-timing-bias-correction).
+## Whole Exome Sequencing (WES)
+
+For exome sequencing the QC statistics need to account for the target regions only, otherwise the estimates would be widely off any relevant value.
 
 ![WES job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wes.puml)
+
+## Whole Genome Bisulfite Sequencing (WGBS)
+
+The WGBS variant does bisulfite calling on the fly with a patched version of [methylCtools](https://github.com/hovestadt/methylCtools) that is included in this repository. The workflow can handle not only WGBS but also tagmentation-WGBS data as described by [Wang _et al._, 2013](https://doi.org/10.1038/nprot.2013.118). Tagmentation data is based on independently amplified libraries, which makes it necessary to do independent duplication marking for each individual library before merging everything into a final merged-BAM.
 
 ![WGBS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgbs.puml)
 
@@ -147,4 +157,4 @@ Various versions are or have been in production mode at the DKFZ/ODCF. These oft
   * New important features are sometimes backported -- as long as they do not change the previous results.
   * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
   
-> Note that [ReleaseBranch_1.2.182](../tree/ReleaseBranch_1.0.182) is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
+> Note that ReleaseBranch_1.2.182](../tree/ReleaseBranch_1.0.182) is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
