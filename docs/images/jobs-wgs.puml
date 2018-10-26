@@ -33,7 +33,8 @@ component "mergeAndFilterCovWindows" as filter
 
 component "correctGc" as correct
 note right of [correct]
-  GC-corrected coverage
+  GC-bias and replication-timing
+  corrected coverage
 endnote
 
 

@@ -69,6 +69,8 @@ The workflow submits various jobs. The exact job-types depend on whether you ana
 
 ![WGS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgs.puml)
 
+The GC- and replication-timing bias corrections are described is the documentation of the [ACEseq workflow](https://aceseq.readthedocs.io/en/latest/methods.html#gc-replication-timing-bias-correction).
+
 ![WES job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wes.puml)
 
 ![WGBS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgbs.puml)
@@ -99,7 +101,7 @@ It depends on the set of parameters, which BAM file is used as input, e.g. when 
 
 * If the `bam` parameter is set to some file, an existing target BAM file (derived from the filename pattern in the XML) will be rescued by renaming with a date suffix.
 * If `fastq_list` is set (to a semicolon-separated list of files) FASTQ files matching filename patterns are ignored. However, read groups already in the BAM file (no matter whether provided via `bam` or via filename pattern matching) are ignored.
-* `bam` and `fastq_list` can be set together. Then all BAM and FASTQ files matching filename patterns are ignored.
+* `bam` and `fastq_list` can be set together. Then all only the explicitly set files are used but other BAM and FASTQ files matching filename patterns are ignored.
 * If `useOnlyExistingTargetBam` is set to true, then all existing FASTQ files matching filename patterns are ignored.
 * Using `useOnlyExistingTargetBam=true` with 'bam' or 'fastq_list' set is considered a configuration error. The workflow will check this and stop before the job submission.
 
@@ -145,4 +147,4 @@ Various versions are or have been in production mode at the DKFZ/ODCF. These oft
   * New important features are sometimes backported -- as long as they do not change the previous results.
   * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
   
-Note that ReleaseBranch_1.2.182 is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow (QualityControlWorkflows_1.0.182) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
+> Note that [ReleaseBranch_1.2.182](tree/ReleaseBranch_1.2.182) is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
