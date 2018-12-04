@@ -1,49 +1,51 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+#
 
 # The sambamba version used for sorting, viewing. Note that v0.5.9 is segfaulting on convey during view or sort.
-export SAMBAMBA_BINARY=sambamba_v0.4.6
+export SAMBAMBA_BINARY="sambamba_v${SAMBAMBA_VERSION:?SAMBAMBA_VERSION is not set}"
 
 # The sambamba version used only for making flagstats.
-export SAMBAMBA_FLAGSTATS_BINARY=sambamba_v0.4.6
+export SAMBAMBA_FLAGSTATS_BINARY="sambamba_v${SAMBAMBA_VERSION:?SAMBAMBA_VERSION is not set}"
 # Warning: Currently bwaMemSortSlim uses sambamba flagstats, while mergeAndMarkOrRemoveSlim uses samtools flagstats.
 
 # The sambamba version used only for duplication marking and merging.
-export SAMBAMBA_MARKDUP_BINARY=sambamba_v0.5.9
+export SAMBAMBA_MARKDUP_BINARY="sambamba_v${SAMBAMBA_MARKDUP_VERSION:?SAMBAMBA_MARKDUP_VERSION is not set}"
 
-export PICARD_BINARY=picard-1.125.sh
-export FASTQC_BINARY=fastqc-0.10.1
-export SAMTOOLS_BINARY=samtools-0.1.19
+export PICARD_BINARY="picard-${PICARD_VERSION:?PICARD_VERSION is not set}.sh"
+export FASTQC_BINARY="fastqc-${FASTQC_VERSION:?FASTQC_VERSION is not set}"
+export SAMTOOLS_BINARY="samtools-${SAMTOOLS_VERSION:?SAMTOOLS_VERSION is not set}"
 
 # biobambam
-export BAMSORT_BINARY=bamsort-0.0.148
-export MARKDUPLICATES_BINARY=bammarkduplicates-0.0.148
-
-export JAVA_BINARY=java8
+export BAMSORT_BINARY="bamsort-${BIOBAMBAM_VERSION:?BIOBAMBAM_VERSION is not set}"
+export BAMMARKDUPLICATES_BINARY="bammarkduplicates-${BIOBAMBAM_VERSION:?BIOBAMBAM_VERSION is not set}"
 
 # htslib/0.2.5
-export BGZIP_BINARY=bgzip-tabix-0.2.5
-export TABIX_BINARY=tabix-0.2.5
-
-export PERL_BINARY=perl-5.20.2
-export PYTHON_BINARY=python-2.7.9
-export PYPY_BINARY=pypy-c
-export RSCRIPT_BINARY=Rscript-3.0.0
-export MBUFFER_BINARY=mbuffer
-
-#export FASTAFROMBED_BINARY=fastaFromBed-2.16.2
-#export BCFTOOLS_BINARY=bcftools-0.1.19
-#export VCFTOOLS_SORT_BINARY=vcf-sort-0.1.10
+export BGZIP_BINARY="bgzip-tabix-${HTSLIB_VERSION:?HTSLIB_VERSION is not set}"
+export TABIX_BINARY="tabix-${HTSLIB_VERSION}:?HTSLIB_VERSION is not set}"
 
 # WES only
-export INTERSECTBED_BINARY=intersectBed-2.16.2
-export COVERAGEBED_BINARY=coverageBed-2.16.2
+export INTERSECTBED_BINARY="intersectBed-${BEDTOOLS_VERSION:?BEDTOOLS_VERSION is not set}"
+export COVERAGEBED_BINARY="coverageBed-${BEDTOOLS_VERSION:?BEDTOOLS_VERSION is not set}"
 
-if [[ WGBS ]]; then
-    export BWA_BINARY=bwa-0.7.8-bisulfite
+export PERL_BINARY="perl-${PERL_VERSION:?PERL_VERSION is not set}"
+export PYTHON_BINARY="python-${PYTHON_VERSION:?PYTHON_VERSION is not set}"
+export RSCRIPT_BINARY="Rscript-${R_VERSION:?R_VERSION is not set}"
+
+export JAVA_BINARY="java8"
+
+if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
+    export BWA_BINARY="bwa-${BWA_VERSION:?BWA_VERSION is not set}-bisulfite"
 else
-    export BWA_BINARY=bwa-0.7.8
-    export BWA_ACCELERATED_BINARY=/opt/bb/bwa-0.7.8-r2.05/bin/bwa-bb
+    export BWA_BINARY="bwa-${BWA_VERSION:?BWA_VERSION is not set}"
+    export BWA_ACCELERATED_BINARY="/opt/bb/bwa-${BWA_VERSION:?BWA_VERSION is not set}/bin/bwa-bb"
 fi
 
+moduleLoad trimmomatic
+export TRIMMOMATIC_BINARY=trimmomatic.sh
 
+export MBUFFER_BINARY=mbuffer
 

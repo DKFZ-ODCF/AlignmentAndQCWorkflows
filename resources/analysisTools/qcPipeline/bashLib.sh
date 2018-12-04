@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+#
 # Library of BASH function. Please import using
 #
 #        source "$TOOL_BASH_LIB"
@@ -81,11 +86,13 @@ throw () {
 
 printInfo () {
     ## Get information about the node.
-    hostname -f
-    ulimit -a
-    echo "user="$(whoami)
-    echo "umask="$(umask)
-    echo "groups="$(groups)
+    {
+        hostname -f
+        ulimit -a
+        echo "user="$(whoami)
+        echo "umask="$(umask)
+        echo "groups="$(groups)
+    } >> /dev/stderr
 }
 
 
@@ -113,7 +120,7 @@ stringJoin () {
     local separator="$1"
     shift
     assertNonEmpty "$separator" "Undefined separator" || return $?
-    declare -la values=($@)
+    declare -a values=($@)
     local result=""
     local first=true
     for value in ${values[@]}; do

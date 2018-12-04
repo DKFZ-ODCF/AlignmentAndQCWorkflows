@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2018 German Cancer Research Center (DKFZ).
+ *
+ * Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+ */
+
 package de.dkfz.b080.co.qcworkflow
 
 import de.dkfz.b080.co.common.AlignmentAndQCConfig
@@ -15,23 +21,23 @@ import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
  * @author michael
  */
 @groovy.transform.CompileStatic
-public class BisulfiteCoreWorkflow extends QCPipeline {
+class BisulfiteCoreWorkflow extends QCPipeline {
 
     @Override
-    public boolean execute(ExecutionContext context) {
+    boolean execute(ExecutionContext context) {
         AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
         aqcfg.extractSamplesFromOutputFiles = false
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
 
-        BamFileGroup mergedBamFiles = new BamFileGroup();
+        BamFileGroup mergedBamFiles = new BamFileGroup()
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample in samples) {
 
-            List<String> availableLibrariesForSample = sample.getLibraries();
-            BamFileGroup mergedBamsPerLibrary = new BamFileGroup();
+            List<String> availableLibrariesForSample = sample.getLibraries()
+            BamFileGroup mergedBamsPerLibrary = new BamFileGroup()
 
             // Create per library merged bams
             for (String library in availableLibrariesForSample) {
@@ -39,38 +45,36 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
                 List<LaneFileGroup> rawSequenceGroups = runtimeService.loadLaneFilesForSampleAndLibrary(context, sample, library)
                 if (rawSequenceGroups == null || rawSequenceGroups.size() > 0) {
                     for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
+                        LinkedHashMap<String, String> libraryParameters = ["library": library, "LIBRARY": library]
 
                         if (aqcfg.runFastQC && !aqcfg.runAlignmentOnly)
-                            rawSequenceGroup.calcFastqcForAll();
+                            rawSequenceGroup.calcFastqcForAll(libraryParameters)
                         if (aqcfg.runFastQCOnly)
-                            continue;
+                            continue
 
+                        BamFile bamFile = rawSequenceGroup.alignAndPairSlim(libraryParameters)
 
-                        BamFile bamFile = rawSequenceGroup.alignAndPairSlim();
-                        //rawSequenceGroup.alignAndPairSlim()
-
-
-                        bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
-                        sortedBamFiles.addFile(bamFile);
+                        bamFile.setAsTemporaryFile()  // Bam files created with sai files are only temporary.
+                        sortedBamFiles.addFile(bamFile)
 
                     }
                 }
 
-                if (!sortedBamFiles.getFilesInGroup()) continue;
+                if (!sortedBamFiles.getFilesInGroup()) continue
 
-                if (aqcfg.runAlignmentOnly) continue;
+                if (aqcfg.runAlignmentOnly) continue
 
-                BamFile mergedLibraryBam;
+                BamFile mergedLibraryBam
                 if (availableLibrariesForSample.size() == 1) {
-                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
-                    if (aqcfg.runCollectBamFileMetrics) mergedLibraryBam.collectMetrics();
+                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample)
+                    if (aqcfg.runCollectBamFileMetrics) mergedLibraryBam.collectMetrics()
 
-                    Sample.SampleType sampleType = sample.getType();
+                    Sample.SampleType sampleType = sample.getType()
                     if (!coverageTextFilesBySample.containsKey(sampleType))
-                        coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
-                    coverageTextFilesBySample.get(sampleType).addFile(mergedLibraryBam.calcReadBinsCoverage());
+                        coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup())
+                    coverageTextFilesBySample.get(sampleType).addFile(mergedLibraryBam.calcReadBinsCoverage())
 
-                    mergedBamFiles.addFile(mergedLibraryBam);
+                    mergedBamFiles.addFile(mergedLibraryBam)
                     // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
                     // a method, in order to put library and merged methylation results into different directories.
                     // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
@@ -84,49 +88,48 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
                     mergedLibraryBam.libraryMethylationCallingMeta()
                 }
 
-                mergedBamsPerLibrary.addFile(mergedLibraryBam);
+                mergedBamsPerLibrary.addFile(mergedLibraryBam)
             }
 
             // Merge library bams into per sample bams
             if(availableLibrariesForSample.size() > 1) {
-                BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample);
+                BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample)
                 // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
                 // a method, in order to put library and merged methylation results into different directories.
                 // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
                 mergedBam.mergedMethylationCallingMeta()
 
-                if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics();
+                if (aqcfg.runCollectBamFileMetrics) mergedBam.collectMetrics()
 
-                Sample.SampleType sampleType = sample.getType();
+                Sample.SampleType sampleType = sample.getType()
                 if (!coverageTextFilesBySample.containsKey(sampleType))
-                    coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
-                coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage());
+                    coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup())
+                coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage())
 
-                mergedBamFiles.addFile(mergedBam);
+                mergedBamFiles.addFile(mergedBam)
             }
 
         }
 
         if (!mergedBamFiles.getFilesInGroup()) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."));
-            return false;
+            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."))
+            return false
         }
 
         if (aqcfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
-            coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
+            coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR))
         } else if (aqcfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
-            ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot();
+            ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot()
         }
 
-        return true;
+        return true
     }
 
-
     @Override
-    protected boolean checkLaneFiles(ExecutionContext context) {
+    protected boolean checkLaneFileCounts(ExecutionContext context) {
         boolean returnValue = true
-        int cnt = 0;
+        int cnt = 0
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService()
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         for (Sample sample : samples) {
@@ -172,7 +175,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
     }
 
     @Override
-    public boolean checkExecutability(ExecutionContext context) {
+    boolean checkExecutability(ExecutionContext context) {
         boolean result = super.checkExecutability(context)
         result &= checkCytosinePositionIndex(context)
         return result

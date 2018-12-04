@@ -1,4 +1,9 @@
-#!/usr/env perl
+#!/usr/bin/env perl
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+#
 
 use strict;
 use warnings;
@@ -9,7 +14,7 @@ if (@ARGV < 4)
 }
 
 my $bampaths = shift;
-my $rgs = shift;
+my $readGroups = shift;
 my $pairedBamSuffix = shift;
 my $sampletype = shift;
 
@@ -24,7 +29,7 @@ my $sampletype = shift;
 # already present lanes from RG:
 my %present = ();
 my $lanes = 0;
-while ($rgs =~ /ID:([\w+-]+)\t/g)
+while ($readGroups =~ /ID:([\w+-]+)\t/g)
 {
         #print STDERR "$1\n";
         $present{$1} = 1;

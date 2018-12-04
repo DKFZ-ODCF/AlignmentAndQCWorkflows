@@ -1,4 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+#
 
 # This script replaces all.cnv.pl.
 #

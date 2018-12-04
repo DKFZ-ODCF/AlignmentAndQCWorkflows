@@ -1,4 +1,9 @@
 #!/usr/bin/perl
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+#
 
 # extended flagstats with number of secondary and supplementary alignments,
 # paired end reads mapping to different chromosomes,
@@ -298,11 +303,17 @@ else
 		$devsqsum += $howmany * (($i - $average)**2);
 	}
 
-	my $stddev = sqrt($devsqsum/($ctr-1));
-	my $sdrd=int($stddev+0.5);
+	my $stddev = "NA";
+	my $sdrd = "NA";
+	my $sdperc = "NA";
+	my $rounded = "NA";
+	if ($ctr - 1 != 0) { # Can only calculate SD and derived values if there is data.
+		$stddev = sqrt($devsqsum/($ctr-1));
+		$sdrd = int($stddev+0.5);
+		$sdperc = $stddev/$median*100;
+		$rounded = int($sdperc+0.5);
+	}
 	print STDERR "stddev: $stddev; rounded: $sdrd\n";
-	my $sdperc = $stddev/$median*100;
-	my $rounded = int($sdperc+0.5);
 	print STDERR "median: $median; SDpercent: $sdperc; rounded: $rounded\n";
 	print IS "$median\n$rounded\n$sdrd\n";
 

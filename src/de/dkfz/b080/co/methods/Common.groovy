@@ -1,8 +1,14 @@
+/*
+ * Copyright (c) 2018 German Cancer Research Center (DKFZ).
+ *
+ * Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+ */
+
 package de.dkfz.b080.co.methods
 import de.dkfz.b080.co.files.*
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.execution.jobs.Job
-import de.dkfz.roddy.execution.jobs.JobResult
+import de.dkfz.roddy.execution.jobs.BEJobResult
 import de.dkfz.roddy.execution.jobs.ScriptCallingMethod
 import de.dkfz.roddy.execution.jobs.StaticScriptProviderClass
 import de.dkfz.roddy.knowledge.files.BaseFile
@@ -16,39 +22,9 @@ import de.dkfz.roddy.knowledge.files.FileObject
 @StaticScriptProviderClass
 class Common {
 
-    public static final String CHROMOSOMEDIFF = "chromosomeDiff";
-    public static final String GENOMECOVERAGE = "genomeCoverage";
     public static final String QCSUMMARY = "qcSummary";
 
-    public static final String CONFIG_FILE = "CONFIG_FILE";
     public static final String PID = "DataSet";
-
-    @ScriptCallingMethod
-    public static ChromosomeDiffFileGroup differentiateChromosomesForBamFile(ExecutionContext run, BamFile bamFile) {
-        if (!bamFile.hasIndex()) bamFile.index();
-
-        ChromosomeDiffTextFile tFile = BaseFile.constructManual(ChromosomeDiffTextFile, bamFile) as ChromosomeDiffTextFile;
-        ChromosomeDiffPlotFile pFile = BaseFile.constructManual(ChromosomeDiffPlotFile, bamFile) as ChromosomeDiffPlotFile;
-
-        File filePathD = tFile.path;
-        File filePathP = pFile.path;
-
-        String bamFilename = bamFile.path.absolutePath;
-
-        Map<String, Object> parameters = new HashMap<String, Object>();
-        parameters.putAll([
-                "FILENAME": bamFilename,
-                "FILENAMED": filePathD.absolutePath,
-                "FILENAMEP": filePathP.absolutePath
-        ]);
-        List<BaseFile> pFiles = [(BaseFile) bamFile.getIndexFile()];
-
-        JobResult jobResult = new Job(run, run.createJobName(pFiles[0], CHROMOSOMEDIFF), CHROMOSOMEDIFF, parameters, pFiles).run();
-        tFile.setCreatingJobsResult(jobResult);
-        pFile.setCreatingJobsResult(jobResult);
-        ChromosomeDiffFileGroup fGroup = new ChromosomeDiffFileGroup([tFile, pFile] as List<BaseFile>);
-        return fGroup;
-    }
 
     private static LaneFile recursivelySearchLaneFile(List<BaseFile> files) {
         LaneFile lf = null;
@@ -114,7 +90,7 @@ class Common {
                 }
         }
 
-        JobResult jobResult = new Job(run, run.createJobName(files[0], QCSUMMARY), QCSUMMARY, parameters, new LinkedList<BaseFile>(files), [(COBaseFile) qcSummaryFile] as List<BaseFile>).run();
+        BEJobResult jobResult = new Job(run, run.createJobName(files[0], QCSUMMARY), QCSUMMARY, parameters, new LinkedList<BaseFile>(files), [(COBaseFile) qcSummaryFile] as List<BaseFile>).run();
         qcSummaryFile.setCreatingJobsResult(jobResult);
         return qcSummaryFile;
     }

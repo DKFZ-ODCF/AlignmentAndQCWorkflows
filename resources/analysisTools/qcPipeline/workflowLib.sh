@@ -1,5 +1,10 @@
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+#
 ##############################################################################
-## Domain-specific code (maybe put this into a dedicated library file)
+## Domain-specific code
 ##############################################################################
 ##
 ## Include into your code with: source "$TOOL_WORKFLOW_LIB"
@@ -36,14 +41,6 @@ mbuf () {
     "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null ${@}
 }
 
-
-runningOnConvey () {
-    if [[ "${PBS_QUEUE:-none}" == convey* ]]; then
-    	echo "true"
-    else
-    	echo "false"
-    fi
-}
 
 ## The return the directory, to which big temporary files should be written, e.g. for sorting.
 getBigScratchDirectory () {
@@ -103,7 +100,7 @@ fakeDupMarkMetrics () {
 
 
 toIEqualsList () {
-    declare -la inputFiles=($@)
+    declare -a inputFiles=($@)
     for inFile in ${inputFiles[@]}; do
 	    echo -n "I=$inFile "
     done
@@ -128,13 +125,13 @@ matchPrefixInArray () {
 
 isControlSample () {
     assertNonEmpty "$1" "isControlSample expects sample type name as single parameter" || return $?
-    declare -la prefixes="${possibleControlSampleNamePrefixes[@]}"
+    declare -a prefixes="${possibleControlSampleNamePrefixes[@]}"
     matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
 isTumorSample () {
     assertNonEmpty "$1" "isTumorSample expects sample type name as single parameter" || return $?
-    declare -la prefixes="${possibleTumorSampleNamePrefixes[@]}"
+    declare -a prefixes="${possibleTumorSampleNamePrefixes[@]}"
     matchPrefixInArray "$1" "${prefixes[@]}"
 }
 
@@ -154,7 +151,7 @@ sampleType () {
 runFingerprinting () {
     local bamFile="${1:?No input BAM file given}"
     local fingerPrintsFile="${2:?No output fingerprints file given}"
-    if [[ "${runFingerprinting:-false}" == true && $(runningOnConvey) != true ]]; then
+    if [[ "${runFingerprinting:-false}" == true && ${useAcceleratedHardware:-false} != true ]]; then
         "${PYTHON_BINARY}" "${TOOL_FINGERPRINT}" "${fingerprintingSitesFile}" "${bamFile}" > "${fingerPrintsFile}.tmp" || throw 43 "Fingerprinting failed"
         mv "${fingerPrintsFile}.tmp" "${fingerPrintsFile}" || throw 39 "Could not move file"
     fi
@@ -182,6 +179,160 @@ removeRoddyBigScratch () {
     if [[ "${RODDY_BIG_SCRATCH}" && "${RODDY_BIG_SCRATCH}" != "${RODDY_SCRATCH}" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
         saferRemoveSingleDirRecursively "${RODDY_BIG_SCRATCH}" # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
     fi
+}
+
+checkBamIsComplete () {
+    local bamFile="${1:?No BAM file given}"
+    local result
+    result=$("$TOOL_BAM_IS_COMPLETE" "$bamFile")
+    if [[ $? ]]; then
+        echo "BAM is terminated! $bamFile" >> /dev/stderr
+    else
+        throw 40 "BAM is not terminated! $bamFile"
+    fi
+}
+
+checkBwaOutput() {
+    local bamFile="${1:?No BAM file given}"
+    local bwaOutput="${2:?No BWA STDERR output file given}"
+    local sortLog="${3:?No sort log given}"
+    local errorCodeFile="${4:?No error code file given}"
+
+    if [[ $(cat "$errorCodeFile") != "0" ]]; then
+        throw 32 "There was a non-zero exit code in bwa pipe (w/ pipefail); exiting..."
+    fi
+
+    if [[ "2048" -gt `stat -c %s $bamFile` ]]; then
+        throw 33 "Output file is too small!"
+    fi
+
+    # Check for segfault messages
+    success=`grep " fault" ${bwaOutput}`
+    if [[ ! -z "$success" ]]; then
+        throw 31 "found segfault $success in bwa logfile!"
+    fi
+
+    # Barbara Aug 10 2015: I can't remember what bwa aln and sampe reported as "error".
+    # bluebee bwa has "error_count" in bwa-0.7.8-r2.05; and new in bwa-0.7.8-r2.06: "WARNING:top_bs_ke_be_hw: dummy be execution, only setting error."
+    # these are not errors that would lead to fail, in contrast to "ERROR: Bus error"
+    success=`grep -i "error" ${bwaOutput} | grep -v "error_count" | grep -v "dummy be execution"`
+    if [[ ! -z "$success" ]]; then
+        throw 36 "found error $success in bwa logfile!"
+    fi
+
+    # Check for BWA abortion.
+    success=`grep "Abort. Sorry." ${bwaOutput}`
+    if [[ ! -z "$success" ]]; then
+        throw 37 "found error $success in bwa logfile!"
+    fi
+
+    # samtools sort may complain about truncated temp files and for each line outputs
+    # the error message. This happens when the same files are written at the same time,
+    # see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
+    # This happens when the scheduler puts the same job on 2 nodes bc. the prefix for samtools-0.1.19 -o $prefix is constructed using the job ID
+    if [ ! -z $sortLog ] && [ -f $sortLog ]; then
+        success=`grep "is truncated. Continue anyway." $sortLog`
+        if [[ ! -z "$success" ]]; then
+            throw 38 "echo found error $success in samtools sorting logfile!"
+        fi
+    else
+        echo "there is no samtools sort log file" >> /dev/stderr
+    fi
+
+    checkBamIsComplete "$tempSortedBamFile"
+
+    echo all OK
+}
+
+readGroupsInBam() {
+    local bamFile="${1:?No bam file given}"
+    local readGroups=`${SAMTOOLS_BINARY} view -H ${bamFile} | grep "^@RG"`
+    if [[ -z "$readGroups" ]]; then
+        throw 23 "could not detect single lane BAM files in $bamFile, stopping here"
+    fi
+    echo "$readGroups"
+}
+
+getMissingReadGroups() {
+    local pairedBamSuffix="${1:?No paired-bam suffix given}"
+    local sample="${2:?No sample name given}"
+    local bamFile="${3:?No existing bam file given}"
+    shift 3
+    declare -a inputFiles=($@)
+
+    local existingBamReadGroups=`readGroupsInBam "$bamFile"`
+    ## Note: This does not test or even complain, if the BAM (e.g. due to manual manipulation) contains lanes that are
+    ##       NOT among the INPUT_FILES. TODO Add at least a warning upon unknown lanes in BAM.
+    readGroupsToMerge=`perl ${TOOL_PRINT_MISSING_READ_GROUPS} $(stringJoin ":" ${inputFiles[@]}) "$existingBamReadGroups" "$pairedBamSuffix" "$sample"`
+    if [[ "$?" != 0 ]]; then
+        throw 24 "something went wrong with the detection of merged files in ${EXISTING_BAM}, stopping here"
+    fi
+    echo "$readGroupsToMerge"
+}
+
+
+matchesShortChromosomeName() {
+    local val="${1:?No value to match short chromosome pattern against}"
+    if [[ $(matchesLongChromosomeName "$val") == "true" ]]; then
+        echo "false"
+    else
+        echo "true"
+    fi
+}
+
+matchesLongChromosomeName() {
+    local val="${1:?No value to match long chromosome pattern against}"
+    if [[ "${CHR_PREFIX:-}" != "" || "${CHR_SUFFIX:-}" != "" ]]; then
+        if [[ "${val##${CHR_PREFIX:-}*${CHR_SUFFIX:-}}" == "" ]]; then
+            echo "true"
+        else
+            echo "false"
+        fi
+    else
+        echo "false"
+    fi
+}
+
+chromosomeIndices() {
+    if [[ ! -v ___chromosomeIndices ]]; then
+        declare -g -a ___chromosomeIndices=( $(cut -f 1 "$CHROM_SIZES_FILE") )
+    fi
+    echo "${___chromosomeIndices[@]}"
+}
+
+shortChromosomeGroupSpec() {
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
+    echo -n "${CHR_GROUP_NOT_MATCHING:-nonmatching}="
+    declare -a shorts=()
+    for chr in "${chromosomeIndices[@]}"; do
+        if [[ $(matchesShortChromosomeName "$chr") == "true" ]]; then
+            set +u
+            shorts=("${shorts[@]}" "$chr")
+        fi
+    done
+    echo $(set +u; stringJoin "," "${shorts[@]}")
+}
+
+longChromosomeGroupSpec() {
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
+    echo -n "${CHR_GROUP_MATCHING:-matching}="
+    declare -a longs=()
+    for chr in "${chromosomeIndices[@]}"; do
+        if [[ $(matchesLongChromosomeName "$chr") == "true" ]]; then
+            set +u
+            longs=("${longs[@]}" "$chr")
+        fi
+    done
+    echo $(set +u; stringJoin "," "${longs[@]}")
+}
+
+groupLongAndShortChromosomeNames() {
+    local genomeCoverageFile="${1:-/dev/stdin}"
+    declare -a chromosomeIndices=( $(chromosomeIndices) )
+    $PERL_BINARY $TOOL_GROUPED_GENOME_COVERAGES \
+        "$genomeCoverageFile" \
+        $(shortChromosomeGroupSpec) \
+        $(longChromosomeGroupSpec)
 }
 
 

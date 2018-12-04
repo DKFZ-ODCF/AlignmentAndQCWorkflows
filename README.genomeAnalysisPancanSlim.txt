@@ -16,12 +16,35 @@ overrideBamFiles
 
 == Changelist
 
-* Version update to UPCOMING
+* Version update to 1.2.77
 
+- check ACEseq QC input file before start
+- dead code removal
+- fixed some Perl tests
+- Conda environment
+- contributors
+- MIT licence, where necessary copyleft licence
+- improved read-me
+- use externally provided trimmomatic
+- JVM code updated to depend on Roddy 3.1.0
+
+* Version update to 1.2.76
+
+- lifted to Roddy 3.0
+- support for loading environment modules (via DefaultPlugin 1.2.2)
+- refactoring: bamFileExists -> useOnlyExistingTargetBam
 - ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
+- bugfix: FASTQC code
+- bugfix: use existing BAM files
+- bugfix: BWA error recognition
 - fingerprinting for WGBS
-- turned off faulty fingerprinting on Conveys
+- check input BAMs for syntactic completeness (BAM trailer)
+- check FASTQ files before submission
 - classify FASTQs as QC-passed or QC-failed based on FASTQC output
+- turned off faulty fingerprinting on Conveys
+- unit tests for Bash functions in workflowLib.sh and bashLib.sh (based on https://github.com/kward/shunit2.git)
+- refactoring: removed dysfunctional bwa sampe and slow-pipeline code
+- more documentation
 
 * Version update to 1.1.73
 

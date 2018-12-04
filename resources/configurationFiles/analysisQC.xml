@@ -4,50 +4,89 @@
                runtimeServiceClass='de.dkfz.b080.co.common.COProjectsRuntimeService'
                imports="commonCOWorkflowsSettings"
                canCreateTestdata='true'
-               listOfUsedTools="alignment,accelerated:alignment,alignAndPair,accelerated:alignAndPair,alignAndPairSlim,accelerated:alignAndPairSlim,samtoolsIndex,samtoolsFlagstat,sampesort,sampesortSlim,qcSummary,mergeAndRemoveDuplicates,mergeAndRemoveDuplicatesSlimPicard,mergeAndRemoveDuplicatesSlimBioBambam,insertSizes,genomeCoverage,fastqc,coveragePlot,coveragePlotSingle,collectBamMetrics,chromosomeDiff"
                usedToolFolders="qcPipeline,qcPipelineTools,devel,tools"
                cleanupScript="cleanupScript">
     <configurationvalues>
-        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
-        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'/>
 
-        <cvalue name='analysisMethodNameOnInput' value='whole_genome_analysis' type='string'/>
-        <cvalue name='analysisMethodNameOnOutput' value='genome' type='string'/>
+        <!--ENVIRONMENT SETUP -->
+        <cvalue name="HTSLIB_VERSION" value="0.2.5" type="string"/>
+        <cvalue name="PERL_VERSION" value="5.20.2" type="string"/>
+        <cvalue name="PYTHON_VERSION" value="2.7.9" type="string"/>
+        <cvalue name="R_VERSION" value="3.4.0" type="string"/>
+        <cvalue name='BEDTOOLS_VERSION' value='2.16.2' type='string'/>
+        <cvalue name="VCFTOOLS_VERSION" value="0.1.10" type="string"/>
+        <cvalue name="SAMTOOLS_VERSION" value="0.1.19" type="string"/>
+        <cvalue name="SAMBAMBA_VERSION" value="0.5.9" type="string"
+                description="Only used for 'view' and 'sort'."/>
+        <cvalue name="SAMBAMBA_FLAGSTATS_VERSION" value="0.4.6" type="string"
+                description="Version 0.4.6 of sambamba produces the old samtools 0.1.19 compatible counts."/>
+        <cvalue name="SAMBAMBA_MARKDUP_VERSION" value="0.5.9" type="string"
+                description="Only used for duplication marking."/>
+        <cvalue name="PICARD_VERSION" value="1.125" type="string"/>
+        <cvalue name="LIBMAUS_VERSION" value="0.0.131" type="string"/>
+        <cvalue name="BIOBAMBAM_VERSION" value="0.0.148" type="string"/>
+        <cvalue name="JAVA_VERSION" value="1.8.0_131" type="string"/>
+        <cvalue name="BWA_VERSION" value="0.7.8" type="string"
+                description="Use e.g. 0.7.8-r2.05 for a specific revision of bb-bwa."/>
+        <cvalue name="FASTQC_VERSION" value="0.11.3" type="string"/>
+        <cvalue name="TRIMMOMATIC_VERSION" value="0.30" type="string"/>
 
-        <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
+        <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
 
-        <!-- Configuration options -->
-        <cvalue name="runSlimWorkflow" value="true" type="boolean"/>
-        <cvalue name='useRoddyScratchAsBigFileScratch' value='false' type='boolean'
-                description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
+        <cvalue name='CHR_PREFIX' value=""
+                description="Set this to e.g. chrMmu if you have xenograft data with mouse chromosomes prefixed by 'chrMmu' and human chromosomes without that prefix."/>
+        <cvalue name='CHR_SUFFIX' value="" description="Usually empty."/>
+        <cvalue name='CHROMOSOME_INDICES' value='( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT )' type='bashArray'
+                description="Bash array (enclosed in parentheses) of chromosome identifiers as found in the BAM headers. Include 'chr' prefixes! See also CHROM_SIZES_FILE. Needed for grouping data by short and long chromosome names, where long names match '$CHR_PREFIX$chr$CHR_SUFFIX'. For xenograft this may be e.g. '(1 2 chrMmu1 chrMmu2)'"/>
+        <cvalue name="CHR_GROUP_MATCHING" value="nonmatching"
+                description="Name of the short chromosome-name group, i.e. chr.-names not matching the $CHR_PREFIX*$CHR_SUFFIX pattern. E.g. 'human'. Default: nonmatching"/>
+        <cvalue name="CHR_GROUP_NOT_MATCHING" value="matching"
+                description="Name of the long chromosome-name group, i.e. chr.-names matching the $CHR_PREFIX*$CHR_SUFFIX pattern. E.g. 'mouse'. Default: matching"/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
 
+        <cvalue name="BWA_MEM_OPTIONS" value='" -T 0 "' type="string"/>
+
         <cvalue name="INSERT_SIZE_LIMIT" value="1000" type="integer" description="Make the value a lot larger for mate pair data."/>
 
-        <cvalue name="BWA_MEM_THREADS" value="8" type="integer"
-                description="Threads for bwa mem. NOTE: This does not change the number of threads requested via the batch processing system!"/>
+        <!-- Directories -->
+        <cvalue name="SEQUENCER_PROTOCOL" value="paired" type="string"
+                description="One of: single, paired, mate-paired"/>
+        <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
+        <cvalue name='sequenceDirectory' value='${sampleDirectory}/${run}/sequence' type='path'
+                description="Directory containing the FASTQ files."/>
 
-        <!-- Fingerprinting -->
-        <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
+        <!-- Reference Files -->
+        <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
+        <cvalue name="assembliesHG191000GenomesDirectory" value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes" type="path"/>
+
+        <cvalue name="CHROM_SIZES_FILE" value="${assembliesHG191000GenomesDirectory}/stats/hs37d5.fa.chrLenOnlyACGT_realChromosomes.tab"
+                description="Chromosome sizes including only A, T, C, G, i.e. excluding N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
+        <cvalue name="INDEX_PREFIX" value="${assembliesHG191000GenomesDirectory}/indexes/bwa/bwa06_1KGRef/hs37d5.fa"
+                description="Path to the genome FASTA file. The same directory should contain the BWA index. The prefix (-p) used for `bwa index` should be the same as the FASTA file, i.e. including the FASTA suffix."/>
+        <cvalue name='CLIP_INDEX' value='' type="path"
+                description="Absolute path to the sequences to be trimmed before alignment." />
+
+        <!-- Fingerprinting allows to identify sample swaps or samples belonging to other patients. -->
         <cvalue name='runFingerprinting' value='false' type='boolean'
                 description='Fingerprint the individuals using a set of reference positions.'/>
+        <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"
+                description="Name of the directory within the output directory within which the fingerprinting results will be written."/>
         <cvalue name="fingerprintingSitesFile_hs37"
-                value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes/databases/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
+                value="${assembliesHG191000GenomesDirectory}/databases/fingerprinting/hovestadt_v1.1/snp138Common.n1000.vh20140318.bed" type="path"/>
         <cvalue name="fingerprintingSitesFile" value="${fingerprintingSitesFile_hs37}" type="path"
                 description='BED file with the reference positions used for fingerprinting. Used for to discover sample swaps'/>
 
-        <!-- Former ACEseq QC configurations. -->
+        <!-- Quality checks from the ACEseq workflow. -->
         <cvalue name='runACEseqQc' value='true' type='boolean'
                 description="Turn on/off the GC correction."/>
 
-        <cvalue name='gccorOutputDirectory' value='correctedGcBias' type="path"/>
+        <cvalue name='gccorOutputDirectory' value='correctedGcBias' type="path"
+                description="Name of the directory within the output directory within which the GC-corrected results will be written."/>
         <cvalue name='gccorPlotOutputDirectory' value='${gccorOutputDirectory}/plots' type="path"/>
 
-
-        <!-- For ACEseq QC in the alignment plugin -->
-        <cvalue name="assembliesHG191000GenomesDirectory" value="${refDataBaseDirectory}/assemblies/hg19_GRCh37_1000genomes" type="path"/>
+        <!-- Reference files required for ACEseq QC. -->
         <cvalue name="gcContentFile_hg19_10kb" value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_10kb.txt" type="path"/>
         <cvalue name="gcContentFile_hg19_1kb"  value="${assembliesHG191000GenomesDirectory}/stats/hg19_GRch37_100genomes_gc_content_1kb.txt" type="path"/>
         <cvalue name="mappabilityFile_hg19" value="${assembliesHG191000GenomesDirectory}/databases/UCSC/wgEncodeCrgMapabilityAlign100mer_chr.bedGraph.gz" type="path"/>
@@ -55,34 +94,39 @@
         <cvalue name="chromosomeLengthFile_hg19" value="${assembliesHG191000GenomesDirectory}/stats/chrlengths.txt" type="path"/>
 
         <cvalue name="GC_CONTENT_FILE_ALN" value="${gcContentFile_hg19_10kb}" type="path"
-                description="Window size of this file must match WINDOW_SIZE parameter. For instance stats/hg19_GRch37_100genomes_gc_content_10kb.txt."/>
+                description="Window size of this file must match the WINDOW_SIZE parameter. For instance stats/hg19_GRch37_100genomes_gc_content_10kb.txt."/>
         <cvalue name="MAPPABILITY_FILE_ALN" value="${mappabilityFile_hg19}" type="path"
-                description="For the ACEseq workflow and the ACEseq QC in the alignment workflows. WARNING: There is a similar variable MAPABILITY in the variant calling workflows."/>
+                description="Gzipped bedGraph file including an accompanied tabix-index."/>
         <cvalue name="REPLICATION_TIME_FILE_ALN" value="${replicationTimingFile_hg19_10kb}" type="path"
                 description="Window size of this file must match WINDOW_SIZE parameter. For instance ENCODE/ReplicationTime_10cellines_mean_10KB.Rda."/>
         <cvalue name="CHROMOSOME_LENGTH_FILE_ALN" value="${chromosomeLengthFile_hg19}" type="path"
-                description="Window size must match WINDOW_SIZE parameter. For instance stats/chrlengths.txt"/>
+                description="For instance stats/chrlengths.txt"/>
 
-        <!-- annotateCnvFiles Opts-->
+        <!-- ACEseq QC: annotateCnvFiles Opts-->
         <cvalue name='min_X_ratio_ALN' value='0.8' type="float"/>
         <cvalue name='min_Y_ratio_ALN' value='0.12' type="float"/>
 
-        <!-- cnvMergeFilter Opts-->
-
-        <!-- cnv_min_coverage should be 50 for controls and 0 for tumors. Take care that you correctly set the possible{Tumor,Control}SampleNamePrefixes variables! -->
+        <!-- ACEseq QC: cnv_min_coverage should be 50 for controls and 0 for tumors. Take care that you correctly set the possible{Tumor,Control}SampleNamePrefixes variables! -->
         <cvalue name='cnv_min_coverage_ALN' value='50' type="integer"/>
         <cvalue name='mapping_quality_ALN' value='1000' type="integer"/>
         <cvalue name='min_windows_ALN' value='5' type="integer"/>
 
-        <!-- correctGC Opts-->
+        <!-- ACEseq QC: correctGC Opts-->
         <cvalue name='LOWESS_F_ALN' value='0.1' type="float"/>
         <cvalue name='SCALE_FACTOR_ALN' value='0.9' type="float"/>
         <cvalue name='COVERAGEPLOT_YLIMS_ALN' value='4' type="float"/>
         <cvalue name='GC_bias_json_key_ALN' value='gc-bias' type="string"/>
 
         <!-- Duplication marking -->
-        <cvalue name='markDuplicatesVariant' value='' type="string"
+        <cvalue name='markDuplicatesVariant' value='sambamba' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
+
+        <cvalue name='useRoddyScratchAsBigFileScratch' value='false' type='boolean'
+                description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
+
+        <cvalue name="BWA_MEM_THREADS" value="8" type="integer"
+                description="Threads for bwa mem. NOTE: This does not change the number of threads requested via the batch processing system!"/>
+        <cvalue name="BWA_MEM_CONVEY_ADDITIONAL_OPTIONS" value='"--bb_cny_timeout=5000000000 --bb_profile=1 -t 8"' type="string"/>
 
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'
                 description="Please use -l 0, the workflow unpacks the BAM directly with samtools. Compression is faster and more stable with samtools."/>
@@ -94,19 +138,25 @@
                 description="Number of threads for sorting the SAM output when running on Convey."/>
         <cvalue name="CONVEY_SAMBAMBA_SAMSORT_MEMSIZE" value="96G" type="string"
                 description="Estimated memory for sorting SAM output on Convey. Conveys have 128 GB. Safety margin for sambamba GC is included."/>
+        <cvalue name="SAMPESORT_MEMSIZE" value="10G" type="integer"
+                description="Value for the -m parameter of samtools sort."/>
+
+        <cvalue name="MBUFFER_SIZE_LARGE" value="2g" type="string"/>
+        <cvalue name="MBUFFER_SIZE_SMALL" value="100m" type="string"/>
+
+        <!--<cvalue name="enableJobProfiling" value="false"/>-->
+        <!--<cvalue name="JOB_PROFILER_BINARY" value="strace.sh"/>-->
 
     </configurationvalues>
-    <!--<testdataoptions>-->
-        <!--&lt;!&ndash; id is the name of the test data option set-->
-             <!--Size has either a relative or absolute ratio, with absolute being the default-->
-             <!--If path is not set testdataOutputBaseDirectory is used &ndash;&gt;-->
-        <!--<testdataoption id="small" size="10000" ratio="absolute" testDataPath="${testDataDirectory}" outputPath="${testDataOutputBaseDirectory}"/>-->
-        <!--<testdataoption id="large" size="100000" ratio="absolute"/>-->
-    <!--</testdataoptions>-->
 
     <processingTools>
+        <tool name="workflowEnvironment_tbiLsf" value="tbi-lsf-cluster.sh" basepath="qcPipeline/environments"/>
+        <tool name="workflowEnvironment_tbiPbs" value="tbi-pbs-cluster.sh" basepath="qcPipeline/environments"/>
+        <tool name="workflowEnvironment_conda" value="conda.sh" basepath="qcPipeline/environments"/>
         <tool name="bashLib" value="bashLib.sh" basepath="qcPipeline"/>
         <tool name="workflowLib" value="workflowLib.sh" basepath="qcPipeline"/>
+
+        <tool name="groupedGenomeCoverages" value="groupedGenomeCoverages.pl" basepath="qcPipeline"/>
         <tool name="cleanupScript" value="cleanupScript.sh" basepath="qcPipeline" >
             <resourcesets>
                 <!-- Test -->
@@ -128,94 +178,6 @@
                 <output type="file" typeof="de.dkfz.b080.co.files.FastqcFile" scriptparameter="FILENAME_FASTQC"/>
                 <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FASTQ_QC_STATUS"/>
             </output>
-        </tool>
-        <tool name='adaptorTrimming' value='trimmomatic/trimmomatic-0.30.jar' basepath="qcPipelineTools"/>
-        <tool name='alignment' value='bwaAlignSequence.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="4" cores="8" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="l" memory="4" cores="8" nodes="1" walltime="10"/>
-                <rset size="xl" memory="8" cores="8" nodes="1" walltime="10"/>
-            </resourcesets>
-        </tool>
-        <tool name='accelerated:alignment' value='bwaAlignSequence.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="24" cores="12" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="m" memory="24" cores="12" nodes="1" walltime="1" queue="convey"/>
-                <rset size="l" memory="24" cores="12" nodes="1" walltime="2" queue="convey"/>
-                <rset size="xl" memory="36" cores="12" nodes="1" walltime="5" queue="convey"/>
-            </resourcesets>
-        </tool>
-        <tool name='sampesort' value='bwaSampeSort.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="25" cores="6" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="s" memory="38" cores="6" nodes="1" walltime="2"/>
-                <rset size="m" memory="42" cores="6" nodes="1" walltime="4"/>
-                <rset size="l" memory="52" cores="6" nodes="1" walltime="10"/>
-                <rset size="xl" memory="75" cores="6" nodes="1" walltime="12"/>
-            </resourcesets>
-        </tool>
-        <tool name='sampesortSlim' value='bwaSampeSortSlim.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="25" cores="6" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="s" memory="25" cores="6" nodes="1" walltime="1"/>
-                <rset size="m" memory="30" cores="6" nodes="1" walltime="2"/>
-                <rset size="l" memory="35" cores="8" nodes="1" walltime="7"/>
-                <rset size="xl" memory="35" cores="6" nodes="1" walltime="12"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.AlignedSequenceFile" scriptparameter="FILENAME_SEQ_1" />
-            <input type="file" typeof="de.dkfz.b080.co.files.AlignedSequenceFile" scriptparameter="FILENAME_SEQ_2" />
-            <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_1" />
-            <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter="RAW_SEQ_2" />
-            <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
-            <input type="string" setby="callingCode" scriptparameter="RUN"/>
-            <input type="string" setby="callingCode" scriptparameter="LANE"/>
-            <input type="string" setby="callingCode" scriptparameter="LB"/>
-            <input type="string" setby="callingCode" scriptparameter="RAW_SEQ_FILE_1_INDEX"/>
-            <input type="string" setby="callingCode" scriptparameter="RAW_SEQ_FILE_2_INDEX"/>
-            <output type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME_SORTED_BAM">
-                <output type="file" variable="flagstatsFile" typeof="de.dkfz.b080.co.files.FlagstatsFile" scriptparameter="FILENAME_FLAGSTATS" />
-                <output type="file" variable="extendedFlagstatsFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_EXTENDED_FLAGSTATS" />
-                <output type="file" variable="chromosomeDiffStatisticsFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAME_DIFFCHROM_STATISTICS" />
-                <output type="file" variable="chromosomeDiffMatrixFile" typeof="de.dkfz.b080.co.files.ChromosomeDiffTextFile" scriptparameter="FILENAME_DIFFCHROM_MATRIX" />
-                <output type="file" variable="chromosomeDiffPlotFile" check="false" typeof="de.dkfz.b080.co.files.ChromosomeDiffPlotFile" scriptparameter="FILENAME_DIFFCHROM_PLOT" />
-                <output type="file" variable="insertSizesStatisticsFile" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAME_ISIZES_STATISTICS" />
-                <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX" />
-                <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT" />
-                <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE" />
-                <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE" />
-                <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY" />
-            </output>
-        </tool>
-        <tool name='alignAndPair' value='bwaMemSort.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="12" cores="8" nodes="1" walltime="00:10:00" queue="convey_fast"/>
-                <!-- Production -->
-                <rset size="s" memory="12" cores="8" nodes="1" walltime="2"/>
-                <rset size="m" memory="17" cores="8" nodes="1" walltime="6"/>
-                <rset size="l" memory="18" cores="8" nodes="1" walltime="35"/>
-                <rset size="xl" memory="20" cores="8" nodes="1" walltime="50"/>
-            </resourcesets>
-        </tool>
-        <tool name='accelerated:alignAndPair' value='bwaMemSort.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="20" cores="12" nodes="1" queue="convey_fast"/>
-                <!-- Production -->
-                <rset size="xs" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
-                <rset size="s" memory="20" cores="12" nodes="1" walltime="1" queue="convey"/>
-                <rset size="m" memory="20" cores="12" nodes="1" walltime="5" queue="convey"/>
-                <rset size="l" memory="26" cores="12" nodes="1" walltime="15" queue="convey"/>
-                <rset size="xl" memory="26" cores="12" nodes="1" walltime="30" queue="convey"/>
-            </resourcesets>
         </tool>
         <tool name='alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
@@ -248,13 +210,14 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
             </output>
         </tool>
-        <tool name='accelerated:alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
+        <tool name='accelerated_alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
                 <rset size="t" memory="126" cores="12" nodes="1" walltime="00:10:00" queue="convey_fast"/>
@@ -280,6 +243,7 @@
                 <output type="file" variable="insertSizesStatisticsFile" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAME_ISIZES_STATISTICS"/>
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE"/>
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
@@ -289,26 +253,20 @@
 
         <tool name='commonAlignmentSettingsScript' value='bwaCommonAlignmentSettings.sh' basepath='qcPipeline'/>
 
-        <tool name='bwaErrorCheckingScript' value='bwaErrorChecking.sh' basepath='qcPipeline'/>
-        <tool name='insilicoGenotyperScript' value='insilicoGenotyper.py' basepath='qcPipeline'/>
-        <tool name='pairedEndReadAberrationsScript' value='pairedEndReadAberrations.py' basepath='qcPipeline'/>
         <tool name='coveragePlotScript' value='coveragePlot.R' basepath='qcPipeline'/>
-        <tool name='insertSizesBucketSortScript' value='isizes_bucketsort.pl' basepath='qcPipeline'/>
         <tool name='insertSizePlotScript' value='insertsizePlot.R' basepath='qcPipeline'/>
-        <!--<tool name='writeQcSummary' value='writeQCSummary.py' basepath='qcPipeline'/>-->
         <tool name='writeQcSummary' value='writeQCsummary.pl' basepath='qcPipeline'/>
         <tool name='qcJson' value='qcJson.pl' basepath='qcPipeline'/>
+        <tool name='sequencerDetection' value='PhredOrIllumina.pl' basepath='qcPipeline'/>
+	    <tool name='convertIlluminaScores' value='Illumina2PhredScore.pl' basepath='qcPipeline'/>
 
-        <tool name='samtoolsIndex' value='samtoolsIndexBamfile.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="l" memory="1" cores="1" nodes="1" walltime="5"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter='FILENAME'/>
-            <output type="file" typeof="de.dkfz.b080.co.files.BamIndexFile"/>
-        </tool>
+        <tool name='genomeCoverage' value='genomeCoverage.sh' basepath='qcPipeline'/>
+        <tool name='plotDiffchrom' value='chrom_diff.r' basepath='qcPipeline'/>
+        <tool name='filterReadBins' value='filter_readbins.pl' basepath='qcPipeline'/>
+        <tool name='coverageQcDImpl' value='coverageQcD/coverageQc' basepath="qcPipelineTools"/>
+        <tool name='genomeCoverageDImpl' value='genomeCoverage/genomeCoverage' basepath="qcPipelineTools"/>
+
+        <!-- Consider removing this tool. -->
         <tool name='collectBamMetrics' value='picardCollectMetrics.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
@@ -317,73 +275,13 @@
                 <rset size="l" memory="3" cores="1" nodes="1" walltime="5"/>
             </resourcesets>
         </tool>
-        <tool name='samtoolsFlagstat' value='samtoolsFlagstatBamfile.sh' basepath='qcPipeline'>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter='FILENAME' />
-                <!--<constraint method="hasIndex" methodonfail="index"/>-->
-            <!--</input>-->
-            <output type="file" typeof="de.dkfz.b080.co.files.FlagstatsFile" scriptparameter='FILENAME_FLAGSTAT'/>
-        </tool>
-        <tool name='sequencerDetection' value='PhredOrIllumina.pl' basepath='qcPipeline'/>
-	<tool name='convertIlluminaScores' value='Illumina2PhredScore.pl' basepath='qcPipeline'/>
-        <tool name='insertSizes' value='insertSizeDistribution.sh' basepath='qcPipeline'>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <output type="filegroup" typeof="de.dkfz.b080.co.files.InsertSizesFileGroup">
-                <output type="file" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAMED"/>
-                <output type="file" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAMEP"/>
-                <output type="file" typeof="de.dkfz.b080.co.files.InsertSizesValueFile" scriptparameter="FILENAMEV"/>
-            </output>
-        </tool>
-        <tool name='chromosomeDiff' value='differentiateChromosomes.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="s" memory="1" cores="1" nodes="1" walltime="1"/>
-                <rset size="l" memory="25" cores="1" nodes="1" walltime="5"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <output type="filegroup" typeof="de.dkfz.b080.co.files.ChromosomeDiffFileGroup">
-                <output type="file" typeof="de.dkfz.b080.co.files.ChromosomeDiffTextFile" scriptparameter="FILENAMED"/>
-                <output type="file" typeof="de.dkfz.b080.co.files.ChromosomeDiffPlotFile" scriptparameter="FILENAMEP"/>
-                <output type="file" typeof="de.dkfz.b080.co.files.ChromosomeDiffValueFile" scriptparameter="FILENAMEV"/>
-            </output>
-        </tool>
-        <tool name='genomeCoverage' value='genomeCoverage.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="0.05" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="s" memory="0.05" cores="4" nodes="1" walltime="1"/>
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamIndexFile" scriptparameter="FILENAME_INDEX"/>
-            <input type="string" setby="callingCode" scriptparameter="COVERAGE_TYPE"/>
-            <output type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_COVERAGE"/>
-        </tool>
-        <tool name='plotDiffchrom' value='chrom_diff.r' basepath='qcPipeline'/>
-        <tool name='coverageQc' value='coverageQc.py' basepath='qcPipeline'/>
-        <tool name='filterReadBins' value='filter_readbins.pl' basepath='qcPipeline'/>
-        <tool name='genomeCoveragePyScript' value='genomeCoverage.py' basepath='qcPipeline'/>
-        <tool name='coverageQcDImpl' value='coverageQcD/coverageQc' basepath="qcPipelineTools"/>
-        <tool name='genomeCoverageDImpl' value='genomeCoverage/genomeCoverage' basepath="qcPipelineTools"/>
 
-        <tool name='readBinsCoverage' value='genomeCoverageReadBins.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="0.05" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <output type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="OUTFILENAME"/>
-        </tool>
         <tool name='coveragePlot' value='genomeCoveragePlots.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="0.05" cores="4" nodes="1" queue="devel"/>
+                <rset size="t" memory="1" cores="4" nodes="1" queue="devel"/>
                 <!-- Production -->
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
+                <rset size="l" memory="5" cores="4" nodes="1" walltime="6"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_CONTROL"/>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_TUMOR"/>
@@ -392,25 +290,12 @@
         <tool name='coveragePlotSingle' value='genomeCoveragePlots.sh' basepath='qcPipeline'>
             <resourcesets>
                 <!-- Test -->
-                <rset size="t" memory="0.05" cores="4" nodes="1" walltime="00:10:00" queue="devel"/>
+                <rset size="t" memory="1" cores="4" nodes="1" walltime="00:10:00" queue="devel"/>
                 <!-- Production -->
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
+                <rset size="l" memory="5" cores="4" nodes="1" walltime="6"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_CONTROL"/>
             <output type="file" fnpatternselectiontag="singlePlot" typeof="de.dkfz.b080.co.files.GenomeCoveragePlotFile" scriptparameter="PLOTFILE"/>
-        </tool>
-        <tool name='qcSummary' value='writeQCSummary.sh' basepath='qcPipeline'/>
-        <tool name='mergeAndRemoveDuplicates' value='mergeAndRemoveDuplicates.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <!-- Test -->
-                <rset size="t" memory="73" cores="8" nodes="1" walltime="00:10:00" queue="devel"/>
-                <!-- Production -->
-                <rset size="xs" memory="73" cores="8" nodes="1" walltime="1"/>
-                <rset size="s" memory="73" cores="8" nodes="1" walltime="5"/>
-                <rset size="m" memory="73" cores="8" nodes="1" walltime="20"/>
-                <rset size="l" memory="73" cores="8" nodes="1" walltime="40"/>
-                <rset size="xl" memory="73" cores="8" nodes="1" walltime="80"/>
-            </resourcesets>
         </tool>
         <tool name='fingerprint' value="bsnp.py" basepath="qcPipeline"/>
         <tool name='mergeAndRemoveDuplicatesSlimPicard' value='mergeAndMarkOrRemoveDuplicatesSlim.sh' basepath='qcPipeline'>
@@ -440,6 +325,7 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
@@ -473,6 +359,7 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
@@ -506,6 +393,7 @@
                 <output type="file" variable="insertSizesMatrixFile" typeof="de.dkfz.b080.co.files.InsertSizesTextFile" scriptparameter="FILENAME_ISIZES_MATRIX"/>
                 <output type="file" variable="insertSizesPlotFile" check="false" typeof="de.dkfz.b080.co.files.InsertSizesPlotFile" scriptparameter="FILENAME_ISIZES_PLOT"/>
                 <output type="file" variable="genomeCoverageTextFile" fnpatternselectiontag="genomeCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_GENOME_COVERAGE"/>
+                <output type="file" variable="groupedGenomeCoverageTextFile" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GROUPED_GENOME_COVERAGE" />
                 <output type="file" variable="readBinsCoverageTextFile" fnpatternselectiontag="readBinsCoverage" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_READBINS_COVERAGE"/>
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
@@ -516,10 +404,8 @@
         <!-- not sure if that belongs here ... needed for sambamba markdup, which is no own tool -->
 	    <tool name='fakeDupmarkMetrics' value='fakeDupmarkMetrics.pl' basepath='qcPipeline'/>
 
-        <tool name="checkAlreadyMergedLanes" value="alreadyMergedLanes.pl" basepath="qcPipeline"/>
+        <tool name="printMissingReadGroups" value="missingReadGroups.pl" basepath="qcPipeline"/>
         <tool name='combinedBamAnalysis' value='flags_isizes_PEaberrations.pl' basepath='qcPipeline'/>
-
-
 
         <tool name="annotateCnvVcf" value="annotate_vcf.pl" basepath="qcPipeline"/>
         <tool name="addMappability" value="addMappability.py" basepath="qcPipeline"/>
@@ -530,7 +416,7 @@
 
         <tool name="annotateCovWindows" value="vcfAnno.sh" basepath="qcPipeline">
             <resourcesets>
-                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00"/>
+                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
                 <rset size="l" memory="0.2" cores="2" nodes="1" walltime="4"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS"/>
@@ -543,7 +429,7 @@
 
         <tool name="mergeAndFilterCovWindows" value="cnvMergeFilter.sh" basepath="qcPipeline">
             <resourcesets>
-                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00"/>
+                <rset size="t" memory="0.2" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
                 <rset size="l" memory="0.2" cores="2" nodes="1" walltime="5"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_ANNO"/>
@@ -552,16 +438,20 @@
 
         <tool name="correctGc" value="correct_gc_bias.sh" basepath="qcPipeline">
             <resourcesets>
-                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00"/>
+                <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
                 <rset size="l" memory="2" cores="1" nodes="1" walltime="1"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_COV_WINDOWS_WG"/>
             <input type="string" setby="callingCode" scriptparameter="SAMPLE"/>
             <output type="tuple">
-                <output type="file" fnpatternselectiontag="correctedWindows" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_WINDOWS"/>
-                <output type="file" fnpatternselectiontag="tab" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_GC_CORRECTED_QUALITY"/>
-                <output type="file" fnpatternselectiontag="correctedGcPlot" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter='FILENAME_GC_CORRECT_PLOT'/>
-                    <output type="file" fnpatternselectiontag="tabSlim" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QC_GC_CORRECTION_JSON" />
+                <output type="file" fnpatternselectiontag="correctedWindows" typeof="de.dkfz.b080.co.files.TextFile"
+                        scriptparameter="FILENAME_GC_CORRECTED_WINDOWS"/>
+                <output type="file" fnpatternselectiontag="correctedTabSlim" typeof="de.dkfz.b080.co.files.TextFile"
+                        scriptparameter="FILENAME_GC_CORRECTED_QUALITY"/>
+                <output type="file" fnpatternselectiontag="correctedGcPlot" typeof="de.dkfz.b080.co.files.TextFile"
+                        scriptparameter='FILENAME_GC_CORRECT_PLOT'/>
+                <output type="file" fnpatternselectiontag="correctedJson" typeof="de.dkfz.b080.co.files.TextFile"
+                        scriptparameter="FILENAME_QC_GC_CORRECTION_JSON" />
             </output>
         </tool>
 
@@ -614,6 +504,18 @@
         <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png_qcValues.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+
+        <filename class='TextFile' onScriptParameter='accelerated_alignAndPairSlim:FILENAME_GROUPED_GENOME_COVERAGE'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+        <filename class='TextFile' onScriptParameter='alignAndPairSlim:FILENAME_GROUPED_GENOME_COVERAGE'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+        <filename class='TextFile' onScriptParameter='mergeAndRemoveDuplicatesSlimSambamba:FILENAME_GROUPED_GENOME_COVERAGE'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+        <filename class='TextFile' onScriptParameter='mergeAndRemoveDuplicatesSlimPicard:FILENAME_GROUPED_GENOME_COVERAGE'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+        <filename class='TextFile' onScriptParameter='mergeAndRemoveDuplicatesSlimBioBambam:FILENAME_GROUPED_GENOME_COVERAGE'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
+
         <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
         <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
@@ -624,6 +526,7 @@
         <filename class='CoverageTextFile' onMethod='BamFile.targetCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}.DepthOfCoverage_Target.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="targetsWithCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_TargetsWithCov.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target.txt'/>
+
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="extendedFlagstats" pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
 
         <filename class='OnTargetCoverageTextFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}_TargetsWithCov.txt'/>
@@ -660,10 +563,10 @@
 
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedWindows"
                   pattern='${outputAnalysisBaseDirectory}/${gccorOutputDirectory}/${sample}_${pid}_readCoverage_10kb_windows.filtered.corrected.txt.gz'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="tabSlim"
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedJson"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.json'/>
-        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="tab"
-                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.tsv'/>
+        <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedTabSlim"
+                  pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_qc_gc_corrected.slim.tsv'/>
         <filename class="TextFile" onMethod="de.dkfz.b080.co.methods.ACEseq.correctGc" selectiontag="correctedGcPlot"
                   pattern='${outputAnalysisBaseDirectory}/${gccorPlotOutputDirectory}/${sample}_${pid}_gc_corrected.png'/>
 
