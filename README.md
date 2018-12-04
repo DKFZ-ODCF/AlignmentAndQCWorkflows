@@ -9,12 +9,6 @@ These are basically BWA alignment (bwa mem) workflows with plenty of additional 
 
 > <table><tr><td><a href="https://www.denbi.de/"><img src="docs/images/denbi.png" alt="de.NBI logo" width="300" align="left"></a></td><td><strong>Your opinion matters!</strong> The development of this workflow is supported by the <a href="https://www.denbi.de/">German Network for Bioinformatic Infrastructure (de.NBI)</a>. By completing <a href="https://www.surveymonkey.de/r/denbi-service?sc=hd-hub&tool=AlignmentAndQCWorkflows">this very short (30-60 seconds) survey</a> you support our efforts to improve this tool.</td></tr></table>
 
- 
-# Configuration
-
-All configuration variables are documented in the XML files in the `resources/configurationFiles/` directory. There is one XML for each workflow. Note that the workflows depend on each other, i.e. the WES and WGBS workflows are extension of the WGS workflow -- this can be recognized from the `imports` attribute of the top-level configuration tag in the XMLs. This means that most options of the WGS workflow also affect the other two workflows. Conversely, settings in the WGBS and WES workflow may override those in the WGS workflow. Some processing steps, notably those of the ACEseq quality control (QC) are not valid for the WES workflow. Note that the plugin depends on the [COWorkflowBasePlugin](https://github.com/TheRoddyWMS/COWorkflowsBasePlugin), which has its own configurations affecting this alignment plugin.
-
-See the [Roddy](https://github.com/TheRoddyWMS/Roddy) documentation for a description of how to configure and run workflows.
 
 # Software Requirements
 
@@ -63,28 +57,6 @@ Two programs in this repository -- `genomeCoverage.d` and `coverageQc.d` -- were
   * the D-compiler [LDC 0.12.1](https://github.com/ldc-developers/ldc/releases/tag/v0.12.1) compiler
   * and [BioD](https://github.com/lomereiter/BioD) master branch (commit 8b633de) 
 
-# Workflow Job Structure
-
-The workflow submits various jobs. The exact job-types depend on whether you analyse WGS, WES or WGBS data.
-
-## Whole Genome Sequencing (WGS) 
-
-The WGS variant does some GC- and replication-timing bias corrections for the coverage estimates, as are described is the documentation of the [ACEseq workflow](https://aceseq.readthedocs.io/en/latest/methods.html#gc-replication-timing-bias-correction).
-
-![WGS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgs.puml)
-
-## Whole Exome Sequencing (WES)
-
-For exome sequencing the QC statistics need to account for the target regions only, otherwise the estimates would be widely off any relevant value.
-
-![WES job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wes.puml)
-
-## Whole Genome Bisulfite Sequencing (WGBS)
-
-The WGBS variant does bisulfite calling on the fly with a patched version of [methylCtools](https://github.com/hovestadt/methylCtools) that is included in this repository. The workflow can handle not only WGBS but also tagmentation-WGBS data as described by [Wang _et al._, 2013](https://doi.org/10.1038/nprot.2013.118). Tagmentation data is based on independently amplified libraries, which makes it necessary to do independent duplication marking for each individual library before merging everything into a final merged-BAM.
-
-![WGBS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgbs.puml)
-
 # Resource Requirements
 
 The workflow is rather tuned to minimize IO. For instance, the tools are glued together using pipes. However, the duplication marking and the BAM sorting steps produce temporary files. These two and the BWA step are also the memory-hungry steps, while BWA is the step that requires most CPU time. 
@@ -119,7 +91,11 @@ It depends on the set of parameters, which BAM file is used as input, e.g. when 
 
 Read group IDs in BAMs are determined (input files) from or stored in (output files) the `ID` attribute in `@RG` header lines. Usually, read group IDs in FASTQ files are determined from filenames using the patterns `${RUN}_${LANE}`. With a metadata input table you can provide FASTQ files with arbitrary file names, because the metadata is taken from the table's columns.
 
-# Running the Workflow
+# Configuration
+
+All configuration variables are documented in the XML files in the `resources/configurationFiles/` directory. There is one XML for each workflow. Note that the workflows depend on each other, i.e. the WES and WGBS workflows are extension of the WGS workflow -- this can be recognized from the `imports` attribute of the top-level configuration tag in the XMLs. This means that most options of the WGS workflow also affect the other two workflows. Conversely, settings in the WGBS and WES workflow may override those in the WGS workflow. Some processing steps, notably those of the ACEseq quality control (QC) are not valid for the WES workflow. Note that the plugin depends on the [COWorkflowBasePlugin](https://github.com/TheRoddyWMS/COWorkflowsBasePlugin), which has its own configurations affecting this alignment plugin.
+
+See the [Roddy](https://github.com/TheRoddyWMS/Roddy) documentation for a description of how to configure and run workflows.
 
 The most important parameters are:
 
@@ -148,6 +124,70 @@ If you want to have species-specific coverage you additionally need to set some 
 The result will be that in the files `$sample_$pid(_targetExtract)?.rmdup.bam.DepthOfCoverage(_Target)?_Grouped.txt` two lines are created called "matching" (or "mouse" in the example) and "nonmatching" (or "human in the example). Additionally, these values are collected into the `_qualitycontrol.json` files.
 
 *NOTE:* Currently, the WGBS workflow variant uses the `CHR_PREFIX`-variable for another purpose and, therefore, can not collect dedicated statistics for xenograft data.   
+
+## Information for specific protocols
+
+The plugin contains three related workflows for WGS, WES and WGBS data. The way to invoke a specific workflows is to set the `availableAnalyses` section in the project configuration to the configuration name of the desired workflow (i.e. the name of the configuration file in the plugin's `resources/configurationFiles` directory). E.g. the following would define an analysis "WGBS" referring to the bisulfite workflow configuration: 
+
+```xml
+<availableAnalyses>
+    <analysis id="WGBS" configuration="bisulfiteCoreAnalysis"/>
+</availableAnalyses>
+```
+
+## Whole Genome Sequencing (WGS) 
+
+The WGS variant does some GC- and replication-timing bias corrections for the coverage estimates, as are described is the documentation of the [ACEseq workflow](https://aceseq.readthedocs.io/en/latest/methods.html#gc-replication-timing-bias-correction).
+
+![WGS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgs.puml)
+
+## Whole Exome Sequencing (WES)
+
+For exome sequencing the QC statistics need to account for the target regions only, otherwise the estimates would be widely off any relevant value.
+
+![WES job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wes.puml)
+
+## Whole Genome Bisulfite Sequencing (WGBS)
+
+The WGBS variant does bisulfite calling on the fly with a patched version of [methylCtools](https://github.com/hovestadt/methylCtools) that is included in this repository. Also data generated with Post-Bisulfite Adapter Tagging (PBAT; [Miura _et al._, 2012](https://doi.org/10.1093/nar/gks454)) will probably work. 
+
+Additionally, the workflow can handle tagmentation-WGBS data as described by [Wang _et al._, 2013](https://doi.org/10.1038/nprot.2013.118). 
+
+![WGBS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgbs.puml)
+
+The WGBS workflow is invoked if the "bisulfiteCoreAnalysis" configuration is referenced in the `<availableAnalyses>` section of the config file. Here a complete example for a project configuration for a standard WGBS analysis. 
+
+```xml
+<configuration
+        configurationType="project"
+        name="configurationName"
+        description="The description">
+
+    <subconfigurations>
+        <configuration name="config" usedresourcessize="xl">
+            <availableAnalyses>
+                <analysis id="WGBS" configuration="bisulfiteCoreAnalysis"/>
+            </availableAnalyses>
+        </configuration>
+    </subconfigurations>
+</configuration>
+
+```
+
+For tagmentation-WGBS you need to set `IS_TAGMENTATION` to "true". In this case an alternative methylation caller will be used that ignores the outmost 9 bp of each fragment.
+
+
+### Swift Biosciences ACCEL-NGS 1S PLUS & METHYL-SEQ
+
+The protocol produces a second read (R2) fragment-end of on average 8 bp containing non-genomic sequences with low complexity. As these sequences are not of genomic origin they should be trimmed off. Because of read through with fragments shorter than the read length the advise by Swift Biosciences is to trim off this non-genomic 10 bp from *both* fragment ends (compare [here](https://www.westburg.eu/uploads/fckconnector/6f34a0c2-8c61-4ef2-b79d-fe45db09ba51/2888031684)). The trimming off is done by trimmomatic before the actual alignment and can be customized as described by adapting the option `ADAPTOR_TRIMMING_OPTIONS_1`:
+
+```xml
+<cvalue name="IS_TAGMENTATION" value="false"/>
+<cvalue name="ADAPTOR_TRIMMING_OPTIONS_1" value="${ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs}"/>
+```
+
+Note that here `IS_TAGMENTATION` is set to false, so no additional 9 bp are ignored during calling. 
+
 
 # Release Branches
 
