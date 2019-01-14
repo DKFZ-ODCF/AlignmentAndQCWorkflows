@@ -20,7 +20,7 @@ use warnings;
 
 # original grep commands:
 # cat ~/DEEP/tmp.fastq | grep -A 3 '^@.* [^:]*:N:[^:]*:'  | grep -v '^--$'
-# first grep gets the read ID and following 3 lines of not-failed reads, second omits the -- lines with which grep separates these matchesOn
+# first grep gets the read ID and following 3 lines of not-failed reads, second omits the -- lines with which grep separates these matches
 
 my $counter = 0;
 my $failed = 0;
