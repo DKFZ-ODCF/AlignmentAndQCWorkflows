@@ -134,6 +134,113 @@ stringJoin () {
     echo "$result"
 }
 
+normalizeBoolean() {
+    if [[ "${1:-false}" == "true" ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+isDebugSet() {
+    normalizeBoolean "${debug:-false}"
+}
+
+
+#####################################################################
+## Handling processes and tempfiles (original code from BamToFastoPlugin)
+#####################################################################
+
+# TODO: Make this based on associative array to have more information (some tag!) about the failed process later. Every tag only once (warn and save with extension!)
+registerPid() {
+    local pid="${1:-$!}"
+    declare -gax pids=(${pids[@]} $pid)
+}
+
+listPids() {
+    for pid in "${pids[@]}"; do
+        if [[ "$pid" != "$ARRAY_ELEMENT_DUMMY" ]]; then
+            echo "$pid"
+        fi
+    done
+}
+
+registerTmpFile() {
+    local tmpFile="${1:?No temporary file name to register}"
+    # Note that the array is build in reversed order, which simplifies the deletion of nested directories.
+    declare -gax tmpFiles=("$tmpFile" "${tmpFiles[@]}")
+}
+
+reverseArray() {
+    local c=""
+    for b in "$@"; do
+        c="$b $c"
+    done
+    echo $c
+}
+
+# Bash sucks. An empty array does not exist! So if there are no tempfiles/pids, then there is no array and set -u will result an error!
+# Therefore we put a dummy value into the arrays and have to take care to remove the dummy before the processing.
+# The dummy contains a random string to avoid collision with possible filenames (the filename 'dummy' is quite likely).
+ARRAY_ELEMENT_DUMMY=$(mktemp -u "_dummy_XXXXX")
+
+waitForRegisteredPids_BashSucksVersion() {
+    jobs
+    declare -a realPids=$(listPids)
+    if [[ -v realPids && ${#realPids[@]} -gt 0 ]]; then
+        wait ${realPids[@]}
+        declare EXIT_CODE=$?
+        if [[ ${EXIT_CODE} -ne 0 ]]; then
+            throw ${EXIT_CODE} "One of the following processes ended with exit code ${EXIT_CODE}: ${realPids[@]}"
+        fi
+    fi
+    pids=("$ARRAY_ELEMENT_DUMMY")
+}
+setUp_BashSucksVersion() {
+    declare -g -a -x tmpFiles=("$ARRAY_ELEMENT_DUMMY")
+    declare -g -a -x pids=("$ARRAY_ELEMENT_DUMMY")
+
+    # Remove all registered temporary files upon exit
+    trap cleanUp_BashSucksVersion EXIT
+}
+cleanUp_BashSucksVersion() {
+    if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 1 ]]; then
+        for f in ${tmpFiles[@]}; do
+            if [[ "$f" == "$ARRAY_ELEMENT_DUMMY" ]]; then
+                continue
+            elif [[ -d "$f" ]]; then
+                rmdir "$f"
+            elif [[ -e "$f" ]]; then
+                rm -f "$f"
+            fi
+        done
+        tmpFiles=("$ARRAY_ELEMENT_DUMMY")
+    fi
+}
+
+# These versions only works with Bash >4.4. Prior version do not really declare the array variables with empty values and set -u results in error message.
+waitForRegisteredPids() {
+    jobs
+    wait ${pids[@]}
+    pids=()
+}
+setUp() {
+    declare -g -a -x tmpFiles=()
+    declare -g -a -x pids=()
+}
+cleanUp() {
+    if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 0 ]]; then
+        for f in "${tmpFiles[@]}"; do
+            if [[ -d "$f" ]]; then
+                rmdir "$f"
+            elif [[ -e "$f" ]]; then
+                rm "$f"
+            fi
+        done
+        tmpFiles=()
+    fi
+}
+
 
 
 #####################################################################
@@ -143,13 +250,24 @@ stringJoin () {
 _pipePath="$RODDY_SCRATCH"
 
 # Maintain a mapping of pipe-basenames to current pipe-ends.
-declare -A _pipeEnds=()
+initPipeEnds() {
+    unset _pipeEnds
+    declare -Ag _pipeEnds=()
+}
 
+listPipeEnds() {
+    for i in "${!_pipeEnds[@]}"; do
+        echo "'$i' => '${_pipeEnds[$i]}'"
+    done
+}
+
+# Make a path without registering it.
 mkPipePath() {
     local pipeName="${1:?Named-pipe base name}"
     echo "$_pipePath/$pipeName"
 }
 
+# Just get the path from the registry.
 getPipeEndPath() {
     local pipeName="${1:?No pipename}"
     if [[ ! ${_pipeEnds[$pipeName]+_} ]]; then
@@ -159,6 +277,7 @@ getPipeEndPath() {
     echo "$pipePath"
 }
 
+# Register a path in the registry under the key "pipeName".
 setPipeEndPath() {
     local pipeName="${1:?No pipename}"
     local pipePath="${2:?No pipe path}"
@@ -168,6 +287,7 @@ setPipeEndPath() {
     _pipeEnds[$pipeName]="$pipePath"
 }
 
+# Create a path from the name and the tag and register it as new pipe-end in the registry.
 updatePipeEndPath() {
     local pipeName="${1:?Named-pipe base name}"
     local tag="${2:?Pipe tag}"
@@ -176,8 +296,12 @@ updatePipeEndPath() {
     setPipeEndPath "$pipeName" "$pipePath"
 }
 
+# Create a pipe and register it as new pipe-end in the registry. It will be the source of pipe.
 mkPipeSource() {
     local pipeName="${1:?No pipename}"
+    if [[ ${_pipeEnds[$pipeName]+_} ]]; then
+        throw 154 "Cannot create new pipe source. Pipe named '$pipeName' -- already exists with value  '${_pipeEnds[$pipeName]}'"
+    fi
     updatePipeEndPath "$pipeName" "source"
 }
 
@@ -192,17 +316,19 @@ mkPipeSource() {
 extendPipe() {
     local pipeName="${1:?No pipe basename}"
     local tag="${2:?No tag}"
-    local command="${3:?No command/function}"
-    shift 3
+    shift 2
     if [[ "$1" == "--" ]]; then
         shift
     fi
-    local declare args=("$@")
+    local command="${1:?No command/function}"
+    shift
+    declare -a args=("$@")
 
     local inpipe=$(getPipeEndPath "$pipeName")
-    local outpipe=$(updatePipeEndPath "$pipeName" "$tag")
+    updatePipeEndPath "$pipeName" "$tag"
+    local outpipe=$(getPipeEndPath "$pipeName")
 
-    "$command" "$inpipe" "$outpipe" "${args[@]}"
+    "$command" "$inpipe" "$outpipe" "${args[@]}" & registerPid
 }
 
 

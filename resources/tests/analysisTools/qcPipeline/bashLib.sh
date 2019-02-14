@@ -32,7 +32,8 @@ testMkPipePath() {
 }
 
 setupPipePath() {
-    declare -A _pipeEnds=()
+    initPipeEnds
+    setUp_BashSucksVersion
     _pipePath=$(mktemp -d /tmp/bashlibTest_XXXXXX)
 }
 
@@ -40,6 +41,7 @@ teardownPipePath() {
     rm -rf "$_pipePath"
     unset _pipePath
     unset _pipeEnds
+    cleanUp_BashSucksVersion
 }
 
 testSetGetPipeEndPath() {
@@ -67,7 +69,27 @@ testMkPipeSource() {
     setupPipePath
     mkPipeSource "test"
     assertTrue "source pipe end exists" "getPipeEndPath 'test'"
-    #teardownPipePath
+    assertTrue "source pipe end exists" "test -p \$(getPipeEndPath 'test')"
+    teardownPipePath
 }
+
+echoInput() {
+    cat "$1" > "$2"
+}
+
+
+testExtendPipe() {
+    setupPipePath
+    mkPipeSource "test"
+    local sourcePipe=$(getPipeEndPath "test")
+    extendPipe "test" "step1" -- echoInput
+    extendPipe "test" "step2" echoInput
+    echo "hallo" > "$sourcePipe" &
+    local result=$(cat $(getPipeEndPath "test"))
+
+    assertEquals "hallo" "$result"
+    teardownPipePath
+}
+
 
 source ${SHUNIT2:?Oops}
