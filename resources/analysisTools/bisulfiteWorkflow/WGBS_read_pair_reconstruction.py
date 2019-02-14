@@ -8,22 +8,21 @@ R2R1_layout = (R1_T_C < R2_T_C) and (R2_A_G < R1_A_G)
 read pairs which don't fall into these categories are ignored
 
 Charles Imbusch (c.imbusch@dkfz.de), G200
-
 """
 
 import gzip
 import sys
 import argparse
 
-parser = argparse.ArgumentParser(description='Program trying to reconstruct correct R1-R2 reads relation from base ratio in WGBS data.')
+parser = argparse.ArgumentParser(description='Alignment-free program to reconstruct correct R1-R2 reads relation from T/C and A/G base ratio in TWGBS data.')
 parser.add_argument('--R1_in', help='R1 input file', required=True)
 parser.add_argument('--R2_in', help='R2 input file', required=True)
-parser.add_argument('--gzip_input', help='Set if input fastq files are compressed', action='store_true', required=False, default=False)
+parser.add_argument('--input_ascii', help='Set if input fastq files are *not* compressed', action='store_true', required=False, default=False)
 parser.add_argument('--R1_out', help='R1 output file', required=True)
 parser.add_argument('--R2_out', help='R2 output file', required=True)
 parser.add_argument('--R1_unassigned', help='Filename R1 for unassigned read pairs', required=True)
 parser.add_argument('--R2_unassigned', help='Filename R2 for unassigned read pairs', required=True)
-parser.add_argument('--gzip_output', help='Set if output fastq files should be compressed', action='store_true', required=False, default=False)
+parser.add_argument('--output_ascii', help='Set if output fastq files should be *not* compressed', action='store_true', required=False, default=False)
 parser.add_argument('--log', help='Write basic statistics to this file', required=False, default=False)
 parser.add_argument('--debug', help='Debug and write more output to console', action='store_true', required=False, default=False)
 
@@ -42,15 +41,15 @@ R1_unassigned = None
 R2_unassigned = None
 
 # file handlers for input files
-if args_dict['gzip_input'] == True:
-    f = open(args_dict['R1_in'], 'r')
-    f2 = open(args_dict['R2_in'], 'r')
-else:
+if args_dict['input_ascii'] == False:
     f = gzip.open(args_dict['R1_in'], 'r')
     f2 = gzip.open(args_dict['R2_in'], 'r')
+else:
+    f = open(args_dict['R1_in'], 'r')
+    f2 = open(args_dict['R2_in'], 'r')
 
 # file handlers for output files
-if args_dict['gzip_output'] == True:
+if args_dict['output_ascii'] == False:
     f_R1_out = gzip.open(args_dict['R1_out'], 'wb')
     f_R2_out = gzip.open(args_dict['R2_out'], 'wb')
     R1_unassigned = gzip.open(args_dict['R1_unassigned'], 'wb')
@@ -71,22 +70,11 @@ num_unsure = 0
 
 ### count A/T/C/G content in a given sequence
 def getContent(DNAsequence):
-    A = 0
-    T = 0
-    C = 0
-    G = 0
-    N = 0
-    for c in DNAsequence:
-        if c == 'A':
-            A+=1
-        if c == 'T':
-            T+=1
-        if c == 'C':
-            C+=1
-        if c == 'G':
-            G+=1
-        if c == 'N':
-            N+=1
+    A = DNAsequence.count("A")
+    T = DNAsequence.count("T")
+    C = DNAsequence.count("C")
+    G = DNAsequence.count("G")
+    N = DNAsequence.count("N")
     return (A, T, C, G, N)
 
 ### count base content masking CG/TG content
@@ -98,9 +86,9 @@ def getContentR1(DNAsequence):
 
 ### count base content masking GC/GT content
 def getContentR2(DNAsequence):
-        DNAsequence = DNAsequence.replace("GC", "")
-        DNAsequence = DNAsequence.replace("GT", "")
-        return getContent(DNAsequence)
+    DNAsequence = DNAsequence.replace("GC", "")
+    DNAsequence = DNAsequence.replace("GT", "")
+    return getContent(DNAsequence)
 
 
 if args_dict['debug'] == True:
@@ -134,15 +122,8 @@ while True:
         print "=="
         print "R1:R2\t" + str(R1_content) + "\t" + str(R2_content) + "\tR1:T:C|R1:A:G\t" + str(R1_T_C) + "\t" +str(R1_A_G)
         print "R2:R1\t" + str(R2_content) + "\t" + str(R1_content) + "\tR2:T:C|R2:A:G\t" + str(R2_T_C) + "\t" +str(R2_A_G)
-    # third idea
-    #R1R2_layout = ( (R1_T_C > R2_T_C) or (R1_T_C > R1_A_G) ) and ( (R2_A_G > R1_A_G) or (R2_A_G > R2_T_C) )
-    #R2R1_layout = ( (R1_T_C < R2_T_C) or (R1_T_C < R1_A_G) ) and ( (R2_A_G < R1_A_G) or (R2_A_G < R2_T_C) )
-    # second idea
     R1R2_layout = (R1_T_C > R2_T_C) and (R2_A_G > R1_A_G)
     R2R1_layout = (R1_T_C < R2_T_C) and (R2_A_G < R1_A_G)
-    # first idea
-    #R1R2_layout = (R1_T_C > R1_A_G) and (R2_A_G > R2_T_C)
-    #R2R1_layout = (R1_T_C < R1_A_G) and (R2_A_G < R2_T_C)
     if R1R2_layout:
         R1_output = header1 + "\n" + sequence1 + "\n" + spacer1 + "\n" + qual_scores1 + "\n"
         R2_output = header2 + "\n" + sequence2 + "\n" + spacer2 + "\n" + qual_scores2 + "\n"
