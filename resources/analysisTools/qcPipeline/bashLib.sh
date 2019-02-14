@@ -125,5 +125,76 @@ stringJoin () {
 }
 
 
+
+#####################################################################
+## Linear pipe management
+#####################################################################
+
+_pipePath="$RODDY_SCRATCH"
+
+# Maintain a mapping of pipe-basenames to current pipe-ends.
+declare -A _pipeEnds=()
+
+mkPipePath() {
+    local pipeName="${1:?Named-pipe base name}"
+    echo "$_pipePath/$pipeName"
+}
+
+getPipeEndPath() {
+    local pipeName="${1:?No pipename}"
+    if [[ ! ${_pipeEnds[$pipeName]+_} ]]; then
+        throw 152 "Could not find pipe by name '$pipeName'"
+    fi
+    local pipePath="${_pipeEnds[$pipeName]}"
+    echo "$pipePath"
+}
+
+setPipeEndPath() {
+    local pipeName="${1:?No pipename}"
+    local pipePath="${2:?No pipe path}"
+    if [[ -z "$pipeName" ]]; then
+        throw 153 "Cannot set empty pipename"
+    fi
+    _pipeEnds[$pipeName]="$pipePath"
+}
+
+updatePipeEndPath() {
+    local pipeName="${1:?Named-pipe base name}"
+    local tag="${2:?Pipe tag}"
+    local pipePath=$(mkPipePath "${pipeName}_$tag")
+    mkfifo "$pipePath" || throw 150 "Could not create named pipe at '$pipePath'"
+    setPipeEndPath "$pipeName" "$pipePath"
+}
+
+mkPipeSource() {
+    local pipeName="${1:?No pipename}"
+    updatePipeEndPath "$pipeName" "source"
+}
+
+# Linear extension of a pipeline.
+# For a command with the interface "command infile outfile @rest" take the pipe with the given basename
+# and use it as input file. Create a new output pipe and set that pipe as output file.
+# Set the new end of the linear pipeline to the output pipe. Call like this:
+#
+#   extendPipe $pipeName $tag -- commandName @restArgs
+#
+# The "--" is optional.
+extendPipe() {
+    local pipeName="${1:?No pipe basename}"
+    local tag="${2:?No tag}"
+    local command="${3:?No command/function}"
+    shift 3
+    if [[ "$1" == "--" ]]; then
+        shift
+    fi
+    local declare args=("$@")
+
+    local inpipe=$(getPipeEndPath "$pipeName")
+    local outpipe=$(updatePipeEndPath "$pipeName" "$tag")
+
+    "$command" "$inpipe" "$outpipe" "${args[@]}"
+}
+
+
 eval "$BASHLIB___SHELL_OPTIONS"
 

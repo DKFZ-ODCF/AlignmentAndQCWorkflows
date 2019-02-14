@@ -144,4 +144,113 @@ checkBamIsComplete () {
     fi
 }
 
+
+
+
+#############################################################################
+# Linear pipe management
+#############################################################################
+
+mkPairedPipeName() {
+    local end="${1:?No 1/2 as read identifier}"
+    local pipeName="${2:?No pipe basename}"
+    if [[ $end -ne 1 && $end -ne 2 ]]; then
+        throw 151 ""
+    fi
+    echo "r${end}_${pipeName}"
+}
+
+mkPipePair() {
+    local pipeName="${1:?Named-pipe basename}"
+    mkPipeSource $(mkPairedPipeName 1 "$pipeName")
+    mkPipeSource $(mkPairedPipeName 2 "$pipeName")
+}
+
+# Extend a pair of pipes by running a command with the interface "command inpipe1 inpipe2 outpipe1 outpipe2 @rest".
+# The pipeline end is automatically progressed. Call like this:
+#
+#   extendPipePair $pipeName $tag -- commandName @restArgs
+#
+# The "--" is optional.
+extendPipePair() {
+    local pipeName="${1:?Named-pipe base path}"
+    local tag="${1:?No processing step tag}"
+    local command="${2:?No command/function}"
+    shift 3
+    if [[ "$1" == "--" ]]; then
+        shift
+    fi
+    local declare args=("$@")
+
+    local pipe1Name=$(mkPairedPipeName 1 "$pipeName")
+    local pipe2Name=$(mkPairedPipeName 2 "$pipeName")
+
+    local r1_inpipe=$(getPipeEndPath "$pipe1Name")
+    updatePipeEndPath "$pipe1Name" "$tag"
+    local r1_outpipe=$(getpPipeEndPath "$pipe1Name")
+
+    local r2_inpipe=$(getPipeEndPath "$pipe2Name")
+    updatePipeEndPath "$pipe2Name" "$tag"
+    local r2_outpipe=$(getPipeEndPath "$pipe2Name")
+
+    "$command" "$r1_inpipe" "$r2_inpipe" "$r1_outpipe" "$r2_outpipe" "${args[@]}"
+}
+
+getPairPipeEndPath() {
+    local pipeName="${1:?Named-pipe basename}"
+    local readNo="${2:?No read-number}"
+    getPipeEndPath $(mkPairedPipeName "$readNo" "$pipeName")
+}
+
+
+#############################################################################
+
+getFastqAsciiStream() {
+    local name="${1:?No FASTQ filename given}"
+    "$UNZIPTOOL" "$UNZIPTOOL_OPTIONS" "$name"
+}
+
+reorderUndirectionalReads() {
+    local r1Input="${1:?No input R1}"
+    local r2Input="${2:?No input R2}"
+    local r1Output="${3:?No output R1}"
+    local r2Output="${4:?No output R2}"
+    "$TOOL_UNIDIRECTIONAL_WGBS_READ_REORDERING" \
+        --input_ascii \
+        --R1_in "$r1Input" \
+        --R2_in "$r2Input" \
+        --output_ascii \
+        --R1_out "$r1Output" \
+        --R2_out "$r2Output" \
+        --R1_unassigned /dev/null \
+        --R2_unassigned /dev/null
+}
+
+toIlluminaScore() {
+    local inFile="${1:?No input file}"
+    local outFile="${2:?No output file}"
+    "$PERL_BINARY" "$TOOL_CONVERT_ILLUMINA_SCORES" "$inFile" > "$outFile"
+}
+
+fqconv() {
+    local inFile="${1:?No input file}"
+    local outFile="${2:?No output file}"
+    local readNo="${1:?No read number}"
+    "$PYTHON_BINARY" "$TOOL_METHYL_C_TOOLS" fqconv "-$readNo" "$inFile" "$outFile"
+}
+
+trimmomatic() {
+    local i1="${1:?No R1 input}"
+    local i2="${2:?No R2 input}"
+    local o1="${3:?No R1 output}"
+    local o2="${4:?No R2 output}"
+
+    local u1=/dev/null
+    local u2=/dev/null
+
+    "$TRIMMOMATIC_BINARY" "$ADAPTOR_TRIMMING_OPTIONS_0" "$i1" "$i2" "$o1" "$u1" "$o2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
+}
+
+
+
 eval "$WORKFLOWLIB___SHELL_OPTIONS"
