@@ -57,6 +57,7 @@ mkfifo ${NP_BAMSORT}
 TMP_FILE=${tempSortedBamFile}
 # error tracking
 FILENAME_BWA_LOG=${DIR_TEMP}/${bamname}_errlog_bwamem
+FILENAME_BWA_EC=${DIR_TEMP}/${bamname}_ec
 
 bamFileExists=false
 # in case the BAM already exists, but QC files are missing, create these only
@@ -74,53 +75,44 @@ LENGTH_SEQ_2=`${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} 2>/dev/null | head 
 # make biobambam sort default
 useBioBamBamSort=${useBioBamBamSort-true}
 
-if [[ ${bamFileExists} == false ]]; then	# we have to make the BAM 
-	mkfifo ${FNPIPE1} ${FNPIPE2}
-	if [[ $useAdaptorTrimming == true ]]; then # [[ "$ADAPTOR_TRIMMING_TOOL" == *.jar ]]
-		if [ "${qualityScore}" = "illumina" ]; then
-			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - > $i1" &
-			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - > $i2" &
-		else
-			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} > $i1" &
-			eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} > $i2" &
-		fi
-		# done in the sourced script designed for bwa aln:
-		#     i1=$DIR_SCRATCH/at_i1
-		#     i2=$DIR_SCRATCH/at_i2
-		#     o1=$DIR_SCRATCH/at_o1
-		#     o2=/dev/null
-		#     u1=/dev/null
-		#     u2=/dev/null
-		#     mkfifo $i1 $i2 $o1
+# Default: Dummy process IDs to simplify downstream logic.
+true & procTrim=$!
+true & procUnpack1=$!
+true & procUnpack2=$!
+true & procQscore1=$!
+true & procQscore2=$!
+true & procReorderReads=$!
+true & procFqconv1=$!
+true & procFqconv2=$!
 
-		# But o2 now has to contain read2 here:
-		o2=${RODDY_SCRATCH}/at_o2
-		mkfifo $o2
-		"$TRIMMOMATIC_BINARY" "$ADAPTOR_TRIMMING_OPTIONS_0" "$i1" "$i2" "$o1" "$u1" "$o2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1 & procTrim=$!
+fqName="fastq"
+mkPipePair "$fqName"
+if [[ "$bamFileExists" == "false" ]]; then	# we have to make the BAM
+    getFastqAsciiStream "$RAW_SEQ_1" > $(getPairPipeEndPath 1 "$fqName") & procUnpack1=$!
+    getFastqAsciiStream "$RAW_SEQ_2" > $(getPairPipeEndPath 2 "$fqName") & procUnpack2=$!
 
-		# trimming with fastx does not work in combination with Trimmomatic!
-		# besides, bwa mem automagically reverts mate pair data
-		cat $o1 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1 & procID_fqconv_r1=$!
-		cat $o2 | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - > $FNPIPE2 & procID_fqconv_r2=$!
-	elif [ "${qualityScore}" = "illumina" ]; then	# bwa mem has no possibility to convert Illumina 1.3 scores
-	    true & procTrim=$!     # dummy process id
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | \
-		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1" & procID_fqconv_r1=$!
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PERL_BINARY} ${TOOL_CONVERT_ILLUMINA_SCORES} - | \
-		      ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconf -2 - - > $FNPIPE2" & procID_fqconv_r2=$!
-	else
-	    true & procTrim=$!     # dummy process id
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -1 - - > $FNPIPE1" & procID_fqconv_r1=$!
-		eval "${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} | ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} fqconv -2 - - > $FNPIPE2" & procID_fqconv_r2=$!
-	fi
+    if [[ "$qualityScore" == "illumina" ]]; then
+	    extendPipe $(mkPairedPipeName 1 "$fqName") "qScore" -- toIlluminaScore & procQscore1=$!
+		extendPipe $(mkPairedPipeName 2 "$fqName") "qScore" -- toIlluminaScore & procQscore2=$!
+    fi
 
-	INPUT_PIPES=""
+    if [[ "$useAdaptorTrimming" == "true" ]]; then
+        extendPipePair "$fastqPipename" "trimmomatic" -- trimmomatic & procTrim=$!
+    fi
+
+    if [[ "$..." == "true" ]]; then
+        extendPipePair "$fqName" "reorder" -- reorderUndirectionalReads & procReorderReads=$!
+    fi
+
+    extendPipe $(mkPairedPipeName 1 "$fqName") "fqconv" -- fqconv 1 & procFqconv1=$!
+	extendPipe $(mkPairedPipeName 2 "$fqName") "fqconv" -- fqconv 2 & procFqconv2=$!
+
+    INPUT_PIPES=""
+
 	[[ ${LENGTH_SEQ_1} != 0 ]] && INPUT_PIPES="$FNPIPE1"
 	[[ ${LENGTH_SEQ_2} != 0 ]] && INPUT_PIPES="${INPUT_PIPES} $FNPIPE2"
-	[[ ${LENGTH_SEQ_1} == 0 ]] && cat $FNPIPE1 >/dev/null
-	[[ ${LENGTH_SEQ_2} == 0 ]] && cat $FNPIPE2 >/dev/null
-else
-    true & procTrim=$!
+	[[ ${LENGTH_SEQ_1} == 0 ]] && cat $FNPIPE1 > /dev/null
+	[[ ${LENGTH_SEQ_2} == 0 ]] && cat $FNPIPE2 > /dev/null
 fi
 
 # Try to read from pipes BEFORE they are filled.
@@ -175,7 +167,7 @@ else
 			${NP_READBINS_IN} \
 			${NP_FLAGSTATS} \
 			${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
-		    echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+		    echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
 
 		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
@@ -210,14 +202,18 @@ else	# make sure to rename BAM file when it has been produced correctly
 fi
 
 wait $procTrim || throw 38 "Error from trimming"
+wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
+wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
+wait $procQscore1 || throw 41 "Error during quality score conversion 1"
+wait $procQscore2 || throw 42 "Error during quality score conversion 2"
+wait $procReorderReads || throw 43 "Error during undirectional read reordering"
+wait $procFqconv1 || throw 18 "Error in FQCONV (read 1)"
+wait $procFqconv2 || throw 19 "Error in FQCONV (read 2)"
+
 wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
 wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
 wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
 wait $procIDCBA || throw 17 "Error from combined QC perl script"
-if [[ ${bamFileExists} == false ]]; then
-    wait $procID_fqconv_r1 || throw 18 "Error in FQCONV (read 1)"
-    wait $procID_fqconv_r2 || throw 19 "Error in FQCONV (read 2)"
-fi
 
 # rename QC files
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"

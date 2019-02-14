@@ -27,4 +27,47 @@ testStringJoin() {
     assertEquals "a,B" "$(stringJoin ',' a B)"
 }
 
+testMkPipePath() {
+    assertEquals "$_pipePath/test" "$(mkPipePath 'test')"
+}
+
+setupPipePath() {
+    declare -A _pipeEnds=()
+    _pipePath=$(mktemp -d /tmp/bashlibTest_XXXXXX)
+}
+
+teardownPipePath() {
+    rm -rf "$_pipePath"
+    unset _pipePath
+    unset _pipeEnds
+}
+
+testSetGetPipeEndPath() {
+    setupPipePath
+    assertFalse "test getPipeEndPath 'doesnotexist'"
+    setPipeEndPath "test" "/a/b/c"
+    assertEquals "/a/b/c" "$(getPipeEndPath 'test')"
+    teardownPipePath
+}
+
+testUpdatePipeEndPath() {
+    setupPipePath
+    updatePipeEndPath "test" "tag1"
+    local sourcePath1=$(getPipeEndPath 'test')
+    updatePipeEndPath "test" "tag2"
+    local sourcePath2=$(getPipeEndPath 'test')
+    assertNotEquals "$sourcePath1" "$sourcePath2"
+    assertTrue "$sourcePath1 exists" "test -p \"$sourcePath1\""
+    assertTrue "$sourcePath2 exists" "test -p \"$sourcePath2\""
+    assertEquals "$sourcePath2" "$(getPipeEndPath 'test')"
+    teardownPipePath
+}
+
+testMkPipeSource() {
+    setupPipePath
+    mkPipeSource "test"
+    assertTrue "source pipe end exists" "getPipeEndPath 'test'"
+    #teardownPipePath
+}
+
 source ${SHUNIT2:?Oops}

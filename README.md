@@ -85,6 +85,16 @@ The WGBS variant does bisulfite calling on the fly with a patched version of [me
 
 ![WGBS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgbs.puml)
 
+### Read-Reordering with Unidirectional WGBS Data
+
+By setting `reorderUnidirectionalWGBSReadPairs` the read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may swap the two reads.
+
+Note that after the swapping, the read-numbers are reversed. What was R1 in the input FASTQ will be R2 in the output BAM, and vice versa.
+
+Furthermore, not all reads can be unambiguously classified. These unclassified reads are currently dropped. 
+
+The original script can be found [here](https://github.com/cimbusch/TWGBS.git).
+
 # Resource Requirements
 
 The workflow is rather tuned to minimize IO. For instance, the tools are glued together using pipes. However, the duplication marking and the BAM sorting steps produce temporary files. These two and the BWA step are also the memory-hungry steps, while BWA is the step that requires most CPU time. 
@@ -158,3 +168,30 @@ Various versions are or have been in production mode at the DKFZ/ODCF. These oft
   * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
   
 > Note that [ReleaseBranch_1.2.182](../../tree/ReleaseBranch_1.0.182) is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
+
+## Change Logs
+
+* 1.2.73-3 (branch-specific change)
+  - Updated unidirectional WGBS read-reordering script from [here](https://github.com/cimbusch/TWGBS.git)
+  - Actually include the WGBS read-reordering script
+
+* 1.2.73-2 (branch-specific changes)
+  - Improved error checking and reporting for BWA and surrounding pipe
+  
+* 1.2.73-1 (branch-specific changes)
+  - Lifted to Roddy 3.0 release (official LSF-capable release)
+  - Bugfix with wrong Bash function export
+
+* 1.2.73
+  - Lifted 1.1.73 to Roddy 2.4 (development-only release)
+  - Fingerprinting support also for WGBS
+  - sambamba 0.5.9 for sorting and viewing BAMS
+  - BAM termination sequence check
+
+* 1.1.73
+  - Bugfix mergeOnly step WGBS
+  - Substituted sambamba-based compression by samtools compression for improved stability, time, and memory consumption
+  - Tuning (tee -> mbuffer)
+  - Node-local scratch by default
+  - Fingerprinting (not for WGBS, yet)
+  - Bugfix affecting CLIP_INDEX in configuration 

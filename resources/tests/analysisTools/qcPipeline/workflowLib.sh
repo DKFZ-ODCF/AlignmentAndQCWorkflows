@@ -58,41 +58,44 @@ testToIEqualsList() {
     assertEquals "I=a I=b I=c " "$(toIEqualsList a b c)"
 }
 
+
 testArrayContains() {
-    assertFalse "arrayContains x"
-    assertFalse "arrayContains x a b c d"
-    assertTrue "arrayContains x x b c d"
-    assertTrue "arrayContains x a b x d"
-    assertTrue "arrayContains x a b c x"
+    assertFalse "Fail on empty arrai" "arrayContains x"
+    assertFalse "Fail non-existing" "arrayContains x a b c d"
+    assertTrue "Succeed existing at start" "arrayContains x x b c d"
+    assertTrue "Succeed existing in the middle" "arrayContains x a b x d"
+    assertTrue "Succeed existing in the end" "arrayContains x a b c x"
 }
 
 testMatchPrefixInArray() {
-    assertFalse "matchPrefixInArray x"
-    assertFalse "matchPrefixInArray x a b cx"
-    assertTrue "matchPrefixInArray x x a b c"
-    assertTrue "matchPrefixInArray x xa a b c"
-    assertTrue "matchPrefixInArray x a xb c"
-    assertTrue "matchPrefixInArray x a b xc"
+    assertFalse "Empty match prefix" "matchPrefixInArray x"
+    assertFalse "Empty match prefix with suffix" "matchPrefixInArray x a b cx"
+    assertTrue "Match fully" "matchPrefixInArray x x a b c"
+    assertTrue "Match prefix at start" "matchPrefixInArray x xa a b c"
+    assertTrue "Match prefix in the middle" "matchPrefixInArray x a xb c"
+    assertTrue "Match prefix in the end" "matchPrefixInArray x a b xc"
 }
 
 testIsControlSample() {
     local possibleControlSampleNamePrefixes="(ax by cz)"
-    assertFalse "isControlSample x"
-    assertFalse "isControlSample z"
-    assertTrue "isControlSample a"
-    assertTrue "isControlSample b"
-    assertTrue "isControlSample c"
-    assertTrue "isControlSample cz"
+
+    assertFalse "Mismatch control sample 1" "isControlSample x"
+    assertFalse "Mismatch control sample 2" "isControlSample z"
+    assertTrue "Match control prefix beginning" "isControlSample a"
+    assertTrue "Match control prefix middle" "isControlSample b"
+    assertTrue "Match control prefix end" "isControlSample c"
+    assertTrue "Match control fully" "isControlSample cz"
 }
 
 testIsTumorSample() {
     local possibleTumorSampleNamePrefixes="(ax by cz)"
-    assertFalse "isTumorSample x"
-    assertFalse "isTumorSample z"
-    assertTrue "isTumorSample a"
-    assertTrue "isTumorSample b"
-    assertTrue "isTumorSample c"
-    assertTrue "isTumorSample cz"
+
+    assertFalse "Mismatch tumor 1" "isTumorSample x"
+    assertFalse "Mismatch tumor 2" "isTumorSample z"
+    assertTrue "Match control prefix start" "isTumorSample a"
+    assertTrue "Match control prefix middle" "isTumorSample b"
+    assertTrue "Match control prefix end" "isTumorSample c"
+    assertTrue "Match control fully" "isTumorSample cz"
 }
 
 testSampleType() {
