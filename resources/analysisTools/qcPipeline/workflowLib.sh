@@ -151,19 +151,28 @@ checkBamIsComplete () {
 # Linear pipe management
 #############################################################################
 
+# Make a name for a read and a given pipe-name.
 mkPairedPipeName() {
-    local end="${1:?No 1/2 as read identifier}"
+    local readNo="${1:?No 1/2 as read identifier}"
     local pipeName="${2:?No pipe basename}"
-    if [[ $end -ne 1 && $end -ne 2 ]]; then
-        throw 151 ""
+    if [[ $readNo -ne 1 && $readNo -ne 2 ]]; then
+        throw 151 "Read number must be 1 or 2. Got '$readNo'"
     fi
-    echo "r${end}_${pipeName}"
+    echo "r${readNo}_${pipeName}"
 }
 
-mkPipePair() {
+# Make and register a pair of named pipes from the pipe-name.
+mkPipePairSource() {
     local pipeName="${1:?Named-pipe basename}"
     mkPipeSource $(mkPairedPipeName 1 "$pipeName")
     mkPipeSource $(mkPairedPipeName 2 "$pipeName")
+}
+
+# Get the path to the pipe named pipename for read 1 or 2.
+getPairedPipeEndPath() {
+    local readNo="${1:?No read-number}"
+    local pipeName="${2:?Named-pipe basename}"
+    getPipeEndPath $(mkPairedPipeName "$readNo" "$pipeName")
 }
 
 # Extend a pair of pipes by running a command with the interface "command inpipe1 inpipe2 outpipe1 outpipe2 @rest".
@@ -174,33 +183,29 @@ mkPipePair() {
 # The "--" is optional.
 extendPipePair() {
     local pipeName="${1:?Named-pipe base path}"
-    local tag="${1:?No processing step tag}"
-    local command="${2:?No command/function}"
-    shift 3
+    local tag="${2:?No processing step tag}"
+    shift 2
     if [[ "$1" == "--" ]]; then
         shift
     fi
-    local declare args=("$@")
+    local command="${1:?No command/function}"
+    shift
+    local args=("$@")
 
     local pipe1Name=$(mkPairedPipeName 1 "$pipeName")
     local pipe2Name=$(mkPairedPipeName 2 "$pipeName")
 
     local r1_inpipe=$(getPipeEndPath "$pipe1Name")
     updatePipeEndPath "$pipe1Name" "$tag"
-    local r1_outpipe=$(getpPipeEndPath "$pipe1Name")
+    local r1_outpipe=$(getPipeEndPath "$pipe1Name")
 
     local r2_inpipe=$(getPipeEndPath "$pipe2Name")
     updatePipeEndPath "$pipe2Name" "$tag"
     local r2_outpipe=$(getPipeEndPath "$pipe2Name")
 
-    "$command" "$r1_inpipe" "$r2_inpipe" "$r1_outpipe" "$r2_outpipe" "${args[@]}"
+    "$command" "$r1_inpipe" "$r2_inpipe" "$r1_outpipe" "$r2_outpipe" "${args[@]}" & registerPid
 }
 
-getPairPipeEndPath() {
-    local pipeName="${1:?Named-pipe basename}"
-    local readNo="${2:?No read-number}"
-    getPipeEndPath $(mkPairedPipeName "$readNo" "$pipeName")
-}
 
 
 #############################################################################
