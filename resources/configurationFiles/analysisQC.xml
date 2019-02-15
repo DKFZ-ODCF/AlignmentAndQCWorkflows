@@ -144,9 +144,6 @@
         <cvalue name="MBUFFER_SIZE_LARGE" value="2g" type="string"/>
         <cvalue name="MBUFFER_SIZE_SMALL" value="100m" type="string"/>
 
-        <!--<cvalue name="enableJobProfiling" value="false"/>-->
-        <!--<cvalue name="JOB_PROFILER_BINARY" value="strace.sh"/>-->
-
     </configurationvalues>
 
     <processingTools>

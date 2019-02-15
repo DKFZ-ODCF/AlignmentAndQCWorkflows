@@ -100,8 +100,6 @@ then
 		"$TRIMMOMATIC_BINARY" "$ADAPTOR_TRIMMING_OPTIONS_0" "$i1" "$i2" "$o1" "$u1" "$o2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1 & procTrim=$!
 		# trimming with fastx does not work in combination with Trimmomatic!
 		# besides, bwa mem automagically reverts mate pair data
-		#cat $o1 ${TRIM_STEP} ${REVERSE_STEP} | $MBUF_LARGE > $FNPIPE1 &
-		#cat $o2 ${TRIM_STEP} ${REVERSE_STEP} | $MBUF_LARGE > $FNPIPE2 &
 		cat $o1 | $MBUF_LARGE > $FNPIPE1 &
 		cat $o2 | $MBUF_LARGE > $FNPIPE2 &
 	elif [ "${qualityScore}" = "illumina" ]	# bwa mem has no possibility to convert Illumina 1.3 scores
@@ -148,6 +146,9 @@ then
 	    | ${SAMBAMBA_BINARY} view /dev/stdin \
 	    | ${MBUF_LARGE} > $NP_COMBINEDANALYSIS_IN) \
 	    & procIDOutPipe=$!
+
+	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
+
 else
 	if [[ "$ON_CONVEY" == true ]]
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
@@ -165,8 +166,6 @@ else
 		    | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} > $tempSortedBamFile; \
 		  echo $? > "$FILENAME_BWA_ERRORCODE") & procID_MEMSORT=$!
 
-		wait $procID_MEMSORT;
-
 	elif [[ ${useBioBamBamSort} == false ]]
 	then	# we use samtools for making the index
 	    NP_SORT_ERRLOG="$RODDY_SCRATCH/NP_SORT_ERRLOG"
@@ -178,17 +177,13 @@ else
 		    | tee $NP_COMBINEDANALYSIS_IN \
 		    | ${SAMTOOLS_BINARY} view -uSbh - \
 		    | $MBUF_LARGE \
-		    | ${SAMTOOLS_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG \
+		    | ${SAMTOOLS_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${tempFileForSort} 2> $NP_SORT_ERRLOG \
 		    | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} ${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
 		  echo $? > "$FILENAME_BWA_ERRORCODE") & procID_MEMSORT=$!
+
    		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
 		wait $procID_logwrite	# do we need a check for it?
-		wait $procID_MEMSORT;
-		if [[ `cat "$FILENAME_BWA_ERRORCODE"` -ne "0" ]]; then
-		    echo "bwa mem - samtools pipe returned a non-zero exit code and the job will die now."
-		    exit 100
-		fi
 		wait $procID_IDX || throw 10 "Error from samtools index"
 
 	else	# biobambam makes the index
@@ -204,16 +199,13 @@ else
 		    | ${BAMSORT_BINARY} O=${NP_BAMSORT} level=1 inputthreads=2 outputthreads=2 \
 		        index=1 indexfilename=${tempBamIndexFile} calmdnm=1 calmdnmrecompindetonly=1 calmdnmreference=${INDEX_PREFIX} \
 		        tmpfile=${tempFileForSort} 2> $FILENAME_SORT_LOG; \
-		  echo $? > "$FILENAME_BWA_ERRORCODE") & procIDBamsort=$!
-		wait $procIDBamsort || throw 11 "Error from bamsort binary"
+		  echo $? > "$FILENAME_BWA_ERRORCODE") & procID_MEMSORT=$!
+
 		wait $procIDview || throw 12 "Error from cat from bamsort output for pipes"
 	fi
-fi
 
-if [[ ${bamFileExists} == true ]]
-then
-	wait $procIDOutPipe; [[ $? -gt 0 ]] && echo "Error from sambamba view pipe" && exit 13
-else	# Rename BAM file when it has been produced correctly.
+	# Rename BAM file when it has been produced correctly.
+    wait $procID_MEMSORT || throw 11 "Error from BWA MEM and sorting pipeline"
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	rm $FNPIPE1
 	rm $FNPIPE2
@@ -225,7 +217,6 @@ else	# Rename BAM file when it has been produced correctly.
 	fi
 	# Clean up adapter trimming pipes if they exist.
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
-	
 fi
 
 wait $procTrim || throw 38 "Error from trimming"

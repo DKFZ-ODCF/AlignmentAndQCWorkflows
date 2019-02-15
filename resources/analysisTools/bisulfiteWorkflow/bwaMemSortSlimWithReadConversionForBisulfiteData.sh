@@ -7,9 +7,10 @@
 
 source "$TOOL_WORKFLOW_LIB"
 
-printInfo 
+set -o pipefail
 
-set -o pipefail 
+setUp_BashSucksVersion
+trap cleanUp_BashSucksVersion EXIT
 
 ID=${RUN}_${LANE}
 SM=sample_${SAMPLE}_${PID}
@@ -19,8 +20,6 @@ RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME_SORTED_BAM}_TEMP")
 mkdir -p "$RODDY_BIG_SCRATCH"
 
 # pipes via local scratch dir
-FNPIPE1=${RODDY_SCRATCH}/NAMED_PIPE1
-FNPIPE2=${RODDY_SCRATCH}/NAMED_PIPE2
 NP_READBINS_IN=${RODDY_SCRATCH}/np_readbins_in
 NP_COVERAGEQC_IN=${RODDY_SCRATCH}/np_coverageqc_in
 NP_COMBINEDANALYSIS_IN=${RODDY_SCRATCH}/np_combinedanalysis_in
@@ -47,9 +46,6 @@ tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
 NP_SORT_ERRLOG=${RODDY_SCRATCH}/NP_SORT_ERRLOG
 FILENAME_SORT_LOG=${DIR_TEMP}/${bamname}_errlog_sort
 
-RAW_SEQ=${RAW_SEQ_1}
-source ${TOOL_COMMON_ALIGNMENT_SETTINGS_SCRIPT}
-
 NP_BAMSORT=${RODDY_SCRATCH}/NAMED_PIPE_BAMSORT
 mkfifo ${NP_BAMSORT}
 
@@ -59,8 +55,14 @@ TMP_FILE=${tempSortedBamFile}
 FILENAME_BWA_LOG=${DIR_TEMP}/${bamname}_errlog_bwamem
 FILENAME_BWA_EC=${DIR_TEMP}/${bamname}_ec
 
+if [[ -n "$RAW_SEQ_1" ]]; then
+    source "$TOOL_DEFAULT_PLUGIN_LIB"
+    setCompressionToolsBasedOnFileCompression "$RAW_SEQ_1"
+fi
+
 bamFileExists=false
 # in case the BAM already exists, but QC files are missing, create these only
+# TODO: This logic currently is not directly/simply reflected. Instead there are multiple if branches. Consider refactoring.
 if [[ -f ${FILENAME_SORTED_BAM} ]] && [[ -s ${FILENAME_SORTED_BAM} ]]
 then
     checkBamIsComplete "$FILENAME_SORTED_BAM"
@@ -68,51 +70,63 @@ then
 fi
 
 # test if one of the fastq files is a fake fastq file to simulate paired end sequencing in PIDs with mixed sequencing (single and paired end)
-LENGTH_SEQ_1=`${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_1} 2>/dev/null | head | wc -l`
-LENGTH_SEQ_2=`${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} ${RAW_SEQ_2} 2>/dev/null | head | wc -l`
-[[ ${LENGTH_SEQ_1} == 0 || ${LENGTH_SEQ_2} == 0 ]] && useSingleEndProcessing=true
+LENGTH_SEQ_1=$(getFastqAsciiStream "$RAW_SEQ_1" | head | wc -l)
+LENGTH_SEQ_2=$(getFastqAsciiStream "$RAW_SEQ_2" | head | wc -l)
+if [[ $LENGTH_SEQ_1 == 0 || $LENGTH_SEQ_2 == 0 ]]; then
+    useSingleEndProcessing=true
+elif [[ $LENGTH_SEQ_1 == 0 && $LENGTH_SEQ_2 == 0 ]]; then
+    throw 1 "Both input files are empty: '$RAW_SEQ_1' and '$RAW_SEQ_2'"
+fi
+
+# Determine the quality score
+if [[ $LENGTH_SEQ_1 != 0 ]]; then
+    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_1" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
+else
+    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_2" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
+fi
 
 # make biobambam sort default
 useBioBamBamSort=${useBioBamBamSort-true}
 
 # Default: Dummy process IDs to simplify downstream logic.
-true & procTrim=$!
+# TODO Remove after completely switching to PID registry system.
 true & procUnpack1=$!
 true & procUnpack2=$!
-true & procQscore1=$!
-true & procQscore2=$!
-true & procReorderReads=$!
-true & procFqconv1=$!
-true & procFqconv2=$!
 
 fqName="fastq"
-mkPipePair "$fqName"
+mkPipePairSource "$fqName"
 if [[ "$bamFileExists" == "false" ]]; then	# we have to make the BAM
-    getFastqAsciiStream "$RAW_SEQ_1" > $(getPairPipeEndPath 1 "$fqName") & procUnpack1=$!
-    getFastqAsciiStream "$RAW_SEQ_2" > $(getPairPipeEndPath 2 "$fqName") & procUnpack2=$!
+    getFastqAsciiStream "$RAW_SEQ_1" > $(getPairedPipeEndPath 1 "$fqName") & procUnpack1=$!
+    getFastqAsciiStream "$RAW_SEQ_2" > $(getPairedPipeEndPath 2 "$fqName") & procUnpack2=$!
 
     if [[ "$qualityScore" == "illumina" ]]; then
-	    extendPipe $(mkPairedPipeName 1 "$fqName") "qScore" -- toIlluminaScore & procQscore1=$!
-		extendPipe $(mkPairedPipeName 2 "$fqName") "qScore" -- toIlluminaScore & procQscore2=$!
+	    extendPipe $(mkPairedPipeName 1 "$fqName") "qScore" -- toIlluminaScore
+		extendPipe $(mkPairedPipeName 2 "$fqName") "qScore" -- toIlluminaScore
     fi
 
-    if [[ "$useAdaptorTrimming" == "true" ]]; then
-        extendPipePair "$fastqPipename" "trimmomatic" -- trimmomatic & procTrim=$!
+    if [[ "$useAdaptorTrimming:-false" == "true" ]]; then
+        extendPipePair "$fqName" "trimmomatic" -- trimmomatic
     fi
 
-    if [[ "$..." == "true" ]]; then
-        extendPipePair "$fqName" "reorder" -- reorderUndirectionalReads & procReorderReads=$!
+    if [[ "${reorderUndirectionalWGBSReadPairs:-false}" == "true" ]]; then
+        extendPipePair "$fqName" "reorder" -- reorderUndirectionalReads
     fi
 
-    extendPipe $(mkPairedPipeName 1 "$fqName") "fqconv" -- fqconv 1 & procFqconv1=$!
-	extendPipe $(mkPairedPipeName 2 "$fqName") "fqconv" -- fqconv 2 & procFqconv2=$!
+    extendPipe $(mkPairedPipeName 1 "$fqName") "fqconv" -- methylCfqconv 1
+	extendPipe $(mkPairedPipeName 2 "$fqName") "fqconv" -- methylCfqconv 2
 
     INPUT_PIPES=""
+    if [[ ${LENGTH_SEQ_1} == 0 ]]; then
+        cat "$(getPairedPipeEndPath 1 $fqName)" > /dev/null
+    else
+	    INPUT_PIPES="$(getPairedPipeEndPath 1 $fqName)"
+    fi
 
-	[[ ${LENGTH_SEQ_1} != 0 ]] && INPUT_PIPES="$FNPIPE1"
-	[[ ${LENGTH_SEQ_2} != 0 ]] && INPUT_PIPES="${INPUT_PIPES} $FNPIPE2"
-	[[ ${LENGTH_SEQ_1} == 0 ]] && cat $FNPIPE1 > /dev/null
-	[[ ${LENGTH_SEQ_2} == 0 ]] && cat $FNPIPE2 > /dev/null
+    if [[ ${LENGTH_SEQ_2} == 0 ]]; then
+        cat "$(getPairedPipeEndPath 2 $fqName)" > /dev/null
+    else
+	    INPUT_PIPES="${INPUT_PIPES} $(getPairedPipeEndPath 2 $fqName)"
+    fi
 fi
 
 # Try to read from pipes BEFORE they are filled.
@@ -186,9 +200,6 @@ fi
 if [[ ${bamFileExists} == true ]]; then
 	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
 else	# make sure to rename BAM file when it has been produced correctly
-	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
-	rm $FNPIPE1
-	rm $FNPIPE2
 	checkBwaLog "$TMP_FILE" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG"
 	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
@@ -196,19 +207,10 @@ else	# make sure to rename BAM file when it has been produced correctly
 	if [[ -f ${tempBamIndexFile} ]]; then
 	 	mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
 	fi
-	# clean up adapter trimming pipes if they exist
-	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
-	
 fi
 
-wait $procTrim || throw 38 "Error from trimming"
 wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
 wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
-wait $procQscore1 || throw 41 "Error during quality score conversion 1"
-wait $procQscore2 || throw 42 "Error during quality score conversion 2"
-wait $procReorderReads || throw 43 "Error during undirectional read reordering"
-wait $procFqconv1 || throw 18 "Error in FQCONV (read 1)"
-wait $procFqconv2 || throw 19 "Error in FQCONV (read 2)"
 
 wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
 wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
@@ -246,15 +248,9 @@ ${PERL_BINARY} $TOOL_WRITE_QC_SUMMARY \
     && mv ${FILENAME_QCSUMMARY}_temp $FILENAME_QCSUMMARY \
     || throw 12 "Error from writeQCsummary.pl"
 
-groupLongAndShortChromosomeNames "$FILENAME_GENOME_COVERAGE" \
-    > "$FILENAME_GROUPED_GENOME_COVERAGE.tmp"  \
-    || throw 43 "Error grouping reads by having (=long) or not having (=short) prefix/suffix"
-mv "$FILENAME_GROUPED_GENOME_COVERAGE.tmp" "$FILENAME_GROUPED_GENOME_COVERAGE" || throw 27 "Could not move file"
-
 # Produced qualitycontrol.json for OTP.
 ${PERL_BINARY} ${TOOL_QC_JSON} \
     ${FILENAME_GENOME_COVERAGE} \
-    ${FILENAME_GROUPED_GENOME_COVERAGE} \
     ${FILENAME_ISIZES_STATISTICS} \
     ${FILENAME_FLAGSTATS} \
     ${FILENAME_DIFFCHROM_STATISTICS} \
@@ -268,3 +264,5 @@ mv ${FILENAME_QCJSON}.tmp ${FILENAME_QCJSON} || throw 27 "Could not move file"
 ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${bamname}" && mv ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || ( echo "Error from insert sizes plotter" && exit 22)
 
 ${RSCRIPT_BINARY} ${TOOL_PLOT_DIFFCHROM} -i "$FILENAME_DIFFCHROM_MATRIX" -s "$FILENAME_DIFFCHROM_STATISTICS" -o "${FILENAME_DIFFCHROM_PLOT}_temp" && mv  ${FILENAME_DIFFCHROM_PLOT}_temp ${FILENAME_DIFFCHROM_PLOT} || ( echo "Error from chrom_diff.r" && exit 23)
+
+
