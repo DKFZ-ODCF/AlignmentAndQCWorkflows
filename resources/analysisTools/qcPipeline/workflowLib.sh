@@ -39,7 +39,7 @@ mbuf () {
 
 ## The return the directory, to which big temporary files should be written, e.g. for sorting.
 getBigScratchDirectory () {
-    local suggestedLocation="${1}"
+    local suggestedLocation="${1:-}"
     local scratchDir
     if [[ "${useRoddyScratchAsBigFileScratch:-false}" == true ]]; then
         scratchDir="${RODDY_SCRATCH}"
@@ -212,7 +212,7 @@ extendPipePair() {
 
 getFastqAsciiStream() {
     local name="${1:?No FASTQ filename given}"
-    "$UNZIPTOOL" "$UNZIPTOOL_OPTIONS" "$name"
+    $UNZIPTOOL $UNZIPTOOL_OPTIONS "$name"
 }
 
 reorderUndirectionalReads() {
@@ -237,10 +237,10 @@ toIlluminaScore() {
     "$PERL_BINARY" "$TOOL_CONVERT_ILLUMINA_SCORES" "$inFile" > "$outFile"
 }
 
-fqconv() {
+methylCfqconv() {
     local inFile="${1:?No input file}"
     local outFile="${2:?No output file}"
-    local readNo="${1:?No read number}"
+    local readNo="${3:?No read number}"
     "$PYTHON_BINARY" "$TOOL_METHYL_C_TOOLS" fqconv "-$readNo" "$inFile" "$outFile"
 }
 

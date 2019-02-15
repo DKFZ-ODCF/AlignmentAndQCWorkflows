@@ -22,7 +22,7 @@
 				description="true: Trim Adaptor sequences before alignment. If true, then CLIP_INDEX has to be set; false: Don't trim"/>
         <cvalue name='IS_TAGMENTATION' value="false" type="boolean"
                 description="true: tagmentation; false: standard WGBS."/>
-        <cvalue name="reorderUnidirectionalWGBSReadPairs" value="false" type="boolean"
+        <cvalue name="reorderUndirectionalWGBSReadPairs" value="false" type="boolean"
                 description="Try to infer the correct orientation of unidirectional WGBS reads from the TC and AG dinucleotide frequencies in both reads."/>
 		<cvalue name='runFastQC' value='true' type="boolean"
 				description="true: FASTQC analysis is performed; false: FASTQC analysis is not performed" />

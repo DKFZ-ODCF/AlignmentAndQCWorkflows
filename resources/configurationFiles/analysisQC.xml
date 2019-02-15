@@ -81,6 +81,8 @@
         <cvalue name="INDEX_PREFIX" value=""
                 description="Path to the genome FASTA file. The same directory should contain the BWA index using the FASTA file, including the FASTA suffix (whatever that may be)."/>
 
+        <cvalue name="MBUFFER_SIZE_LARGE" value="2g" type="string"/>
+        <cvalue name="MBUFFER_SIZE_SMALL" value="100m" type="string"/>
 
     </configurationvalues>
     <!--<testdataoptions>-->

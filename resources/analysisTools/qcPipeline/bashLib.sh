@@ -138,10 +138,10 @@ isDebugSet() {
 
 
 #####################################################################
-## Handling processes and tempfiles (original code from BamToFastoPlugin)
+## Handling processes and tempfiles (original code from BamToFastqPlugin)
 #####################################################################
 
-# TODO: Make this based on associative array to have more information (some tag!) about the failed process later. Every tag only once (warn and save with extension!)
+# TODO: Make this based on associative array to have more information (some tag!) about the failed process. Every tag only once (warn and save with extension!)
 registerPid() {
     local pid="${1:-$!}"
     declare -gax pids=(${pids[@]} $pid)
@@ -189,6 +189,7 @@ waitForRegisteredPids_BashSucksVersion() {
 setUp_BashSucksVersion() {
     declare -g -a -x tmpFiles=("$ARRAY_ELEMENT_DUMMY")
     declare -g -a -x pids=("$ARRAY_ELEMENT_DUMMY")
+    initPipeEnds
 
     # Remove all registered temporary files upon exit
     trap cleanUp_BashSucksVersion EXIT
@@ -217,6 +218,7 @@ waitForRegisteredPids() {
 setUp() {
     declare -g -a -x tmpFiles=()
     declare -g -a -x pids=()
+    initPipeEnds
 }
 cleanUp() {
     if [[ $(isDebugSet) == "false" && -v tmpFiles && ${#tmpFiles[@]} -gt 0 ]]; then
@@ -236,6 +238,15 @@ cleanUp() {
 #####################################################################
 ## Linear pipe management
 #####################################################################
+# The pipe-extension API follows this pattern:
+#
+# * pipeExtenderFunction pipeBaseName pipeStepExtension -- command
+#
+# * The pipeBaseName is the name under which the pipe (or derived from this: pipe pair) is registered.
+# * The pipeStepExtension is used to tag the actual pipe used in the specific step. Use a name describing the content flowing through the pipe,
+#   i.e. the output of the extension step you are declaring.
+# * Current pipe extender functions are extendPipe (for single pipes) and extendPipePair (for r1/r2 pipes)
+# * To work with paired pipes (r1/r2) mkPairedPipeName is used to calculate the r1_ or r2_ pipeBaseName
 
 _pipePath="$RODDY_SCRATCH"
 
@@ -278,11 +289,13 @@ setPipeEndPath() {
 }
 
 # Create a path from the name and the tag and register it as new pipe-end in the registry.
+# Note that the pipe is registered as tempfile and will be deleted upon cleanUp.
 updatePipeEndPath() {
     local pipeName="${1:?Named-pipe base name}"
     local tag="${2:?Pipe tag}"
     local pipePath=$(mkPipePath "${pipeName}_$tag")
     mkfifo "$pipePath" || throw 150 "Could not create named pipe at '$pipePath'"
+    registerTmpFile "$pipePath"
     setPipeEndPath "$pipeName" "$pipePath"
 }
 
