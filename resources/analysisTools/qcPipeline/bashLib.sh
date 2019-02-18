@@ -188,6 +188,7 @@ waitForRegisteredPids_BashSucksVersion() {
     jobs
     declare -a realPids=$(listPids)
     if [[ -v realPids && ${#realPids[@]} -gt 0 ]]; then
+        # TODO Make this a look and report the exact pid that failed (or the key, after switching from array to dictionary).
         wait ${realPids[@]}
         declare EXIT_CODE=$?
         if [[ ${EXIT_CODE} -ne 0 ]]; then
@@ -223,6 +224,10 @@ cleanUp_BashSucksVersion() {
 waitForRegisteredPids() {
     jobs
     wait ${pids[@]}
+    declare EXIT_CODE=$?
+    if [[ ${EXIT_CODE} -ne 0 ]]; then
+        throw ${EXIT_CODE} "One of the following processes ended with exit code ${EXIT_CODE}: ${pids[@]}"
+    fi
     pids=()
 }
 setUp() {
@@ -261,6 +266,7 @@ cleanUp() {
 _pipePath="$RODDY_SCRATCH"
 
 # Maintain a mapping of pipe-basenames to current pipe-ends.
+# Please read https://www.artificialworlds.net/blog/2012/10/17/bash-associative-array-examples/ to understand the associative array syntax below.
 initPipeEnds() {
     unset _pipeEnds
     declare -Ag _pipeEnds=()
@@ -279,6 +285,7 @@ mkPipePath() {
 }
 
 # Just get the path from the registry.
+# Please read https://www.artificialworlds.net/blog/2012/10/17/bash-associative-array-examples/ to understand the associative array syntax below.
 getPipeEndPath() {
     local pipeName="${1:?No pipename}"
     if [[ ! ${_pipeEnds[$pipeName]+_} ]]; then
@@ -310,6 +317,7 @@ updatePipeEndPath() {
 }
 
 # Create a pipe and register it as new pipe-end in the registry. It will be the source of pipe.
+# Please read https://www.artificialworlds.net/blog/2012/10/17/bash-associative-array-examples/ to understand the associative array syntax below.
 mkPipeSource() {
     local pipeName="${1:?No pipename}"
     if [[ ${_pipeEnds[$pipeName]+_} ]]; then
@@ -335,13 +343,19 @@ extendPipe() {
     fi
     local command="${1:?No command/function}"
     shift
-    declare -a args=("$@")
+    declare -a rest=("$@")
 
     local inpipe=$(getPipeEndPath "$pipeName")
     updatePipeEndPath "$pipeName" "$tag"
     local outpipe=$(getPipeEndPath "$pipeName")
 
-    "$command" "$inpipe" "$outpipe" "${args[@]}" & registerPid
+    # This &#"@! is because Bash SUCKS! Empty arrays do not exist Bash < 4.4
+    if [[ -v rest ]]; then
+        "$command" "$inpipe" "$outpipe" "${rest[@]}" & registerPid
+    else
+        "$command" "$inpipe" "$outpipe" & registerPid
+    fi
+
 }
 
 

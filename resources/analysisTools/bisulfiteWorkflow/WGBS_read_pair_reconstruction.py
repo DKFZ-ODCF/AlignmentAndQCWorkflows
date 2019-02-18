@@ -3,6 +3,7 @@
 # Copyright (c) 2018 German Cancer Research Center (DKFZ).
 #
 # Distributed under the MIT License (license terms are at https://github.com/cimbusch/TWGBS).
+# Commit: a202ae5d9b19c46b348c58523a17a4a7c66d116f
 #
 """
 Code to reconstruct correct R1-R2 reads relation from base ratio:

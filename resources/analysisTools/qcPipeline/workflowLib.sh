@@ -38,7 +38,7 @@ mbuf () {
     local bufferSize="$1"
     shift
     assertNonEmpty "$bufferSize" "No buffer size defined for mbuf()" || return $?
-    "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null ${@}
+    "$MBUFFER_BINARY" -m "$bufferSize" -q -l /dev/null "$@"
 }
 
 
@@ -378,7 +378,7 @@ extendPipePair() {
     fi
     local command="${1:?No command/function}"
     shift
-    local args=("$@")
+    declare -a rest=("$@")
 
     local pipe1Name=$(mkPairedPipeName 1 "$pipeName")
     local pipe2Name=$(mkPairedPipeName 2 "$pipeName")
@@ -391,7 +391,12 @@ extendPipePair() {
     updatePipeEndPath "$pipe2Name" "$tag"
     local r2_outpipe=$(getPipeEndPath "$pipe2Name")
 
-    "$command" "$r1_inpipe" "$r2_inpipe" "$r1_outpipe" "$r2_outpipe" "${args[@]}" & registerPid
+    # This &#"@! is because Bash SUCKS! Empty arrays do not exist Bash < 4.4
+    if [[ -v rest ]]; then
+        "$command" "$r1_inpipe" "$r2_inpipe" "$r1_outpipe" "$r2_outpipe" "${rest[@]}" & registerPid
+    else
+        "$command" "$r1_inpipe" "$r2_inpipe" "$r1_outpipe" "$r2_outpipe" & registerPid
+    fi
 }
 
 
@@ -433,15 +438,15 @@ methylCfqconv() {
 }
 
 trimmomatic() {
-    local i1="${1:?No R1 input}"
-    local i2="${2:?No R2 input}"
-    local o1="${3:?No R1 output}"
-    local o2="${4:?No R2 output}"
+    local input1="${1:?No R1 input}"
+    local input2="${2:?No R2 input}"
+    local output1="${3:?No R1 output}"
+    local output2="${4:?No R2 output}"
 
     local u1=/dev/null
     local u2=/dev/null
 
-    "$TRIMMOMATIC_BINARY" "$ADAPTOR_TRIMMING_OPTIONS_0" "$i1" "$i2" "$o1" "$u1" "$o2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
+    "$TRIMMOMATIC_BINARY" $ADAPTOR_TRIMMING_OPTIONS_0 "$input1" "$input2" "$output1" "$u1" "$output2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
 }
 
 

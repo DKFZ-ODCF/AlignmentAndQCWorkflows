@@ -93,7 +93,7 @@ Note that after the swapping, the read-numbers are reversed. What was R1 in the 
 
 Furthermore, not all reads can be unambiguously classified. These unclassified reads are currently dropped. 
 
-The original script can be found [here](https://github.com/cimbusch/TWGBS.git).
+The original script with a documentation of the underlying ideas can be found [here](https://github.com/cimbusch/TWGBS.git).
 
 # Resource Requirements
 

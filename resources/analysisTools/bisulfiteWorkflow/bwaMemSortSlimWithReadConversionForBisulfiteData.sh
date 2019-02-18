@@ -100,11 +100,11 @@ if [[ "$bamFileExists" == "false" ]]; then	# we have to make the BAM
     getFastqAsciiStream "$RAW_SEQ_2" > $(getPairedPipeEndPath 2 "$fqName") & procUnpack2=$!
 
     if [[ "$qualityScore" == "illumina" ]]; then
-	    extendPipe $(mkPairedPipeName 1 "$fqName") "qScore" -- toIlluminaScore
-		extendPipe $(mkPairedPipeName 2 "$fqName") "qScore" -- toIlluminaScore
+        extendPipe $(mkPairedPipeName 1 "$fqName") "qScore" -- toIlluminaScore
+        extendPipe $(mkPairedPipeName 2 "$fqName") "qScore" -- toIlluminaScore
     fi
 
-    if [[ "$useAdaptorTrimming:-false" == "true" ]]; then
+    if [[ "${useAdaptorTrimming:-false}" == "true" ]]; then
         extendPipePair "$fqName" "trimmomatic" -- trimmomatic
     fi
 
@@ -209,6 +209,7 @@ else	# make sure to rename BAM file when it has been produced correctly
 	fi
 fi
 
+waitForRegisteredPids_BashSucksVersion
 wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
 wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
 
