@@ -16,11 +16,9 @@ The original script with a documentation of the underlying ideas can be found [h
 
 ## Change Logs
 
-* 1.2.73-3 (branch-specific change)
-  - Updated unidirectional WGBS read-reordering script from [here](https://github.com/cimbusch/TWGBS.git)
+* 1.2.73-2 (branch-specific change)
+  - Updated undirectional WGBS read-reordering script from [here](https://github.com/cimbusch/TWGBS.git)
   - Actually include the WGBS read-reordering script
-
-* 1.2.73-2 (branch-specific changes)
   - Improved error checking and reporting for BWA and surrounding pipe
   
 * 1.2.73-1 (branch-specific changes)
