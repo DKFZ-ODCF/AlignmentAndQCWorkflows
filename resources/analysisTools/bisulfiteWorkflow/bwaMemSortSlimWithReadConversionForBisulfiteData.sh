@@ -1,19 +1,20 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+# Copyright (c) 2019 German Cancer Research Center (DKFZ).
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 
-source "$TOOL_WORKFLOW_LIB"
-
 set -o pipefail
+set -ue
+
+source "$TOOL_WORKFLOW_LIB"
 
 setUp_BashSucksVersion
 trap cleanUp_BashSucksVersion EXIT
 
-ID=${RUN}_${LANE}
-SM=sample_${SAMPLE}_${PID}
+ID="${RUN}_${LANE}"
+SM="sample_${SAMPLE}_${PID}"
 
 # RODDY_SCRATCH is used here. Is for PBS $PBS_SCRATCH_DIR/$PBS_JOBID, for SGE /tmp/roddyScratch/jobid
 RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME_SORTED_BAM}_TEMP")
@@ -34,26 +35,26 @@ MBUF_LARGE="${MBUFFER_BINARY} -m ${MBUFFER_SIZE_LARGE} -q -l /dev/null"
 mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS} ${NP_BWA_OUT} ${NP_BCONV_OUT}
 
 bamname=`basename ${FILENAME_SORTED_BAM}`
-INDEX_FILE=${FILENAME_SORTED_BAM}.bai
-tempSortedBamFile=${FILENAME_SORTED_BAM}.tmp
-tempFileForSort=${RODDY_BIG_SCRATCH}/${bamname}_forsorting
-tempBamIndexFile=${FILENAME_SORTED_BAM}.tmp.bai
-tempFlagstatsFile=${FILENAME_FLAGSTATS}.tmp
+INDEX_FILE="$FILENAME_SORTED_BAM.bai"
+tempSortedBamFile="$FILENAME_SORTED_BAM.tmp"
+tempFileForSort="$RODDY_BIG_SCRATCH/${bamname}_forsorting"
+tempBamIndexFile="$FILENAME_SORTED_BAM.tmp.bai"
+tempFlagstatsFile="$FILENAME_FLAGSTATS.tmp"
 
 # samtools sort may complain about truncated temp files and for each line outputs
 # the error message. This happens when the same files are written at the same time,
 # see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
-NP_SORT_ERRLOG=${RODDY_SCRATCH}/NP_SORT_ERRLOG
-FILENAME_SORT_LOG=${DIR_TEMP}/${bamname}_errlog_sort
+NP_SORT_ERRLOG="$RODDY_SCRATCH/NP_SORT_ERRLOG"
+FILENAME_SORT_LOG="$DIR_TEMP/${bamname}_errlog_sort"
 
-NP_BAMSORT=${RODDY_SCRATCH}/NAMED_PIPE_BAMSORT
-mkfifo ${NP_BAMSORT}
+NP_BAMSORT="$RODDY_SCRATCH/NAMED_PIPE_BAMSORT"
+mkfifo "$NP_BAMSORT"
 
 # Create the following variable for error checking issues
-TMP_FILE=${tempSortedBamFile}
+TMP_FILE="$tempSortedBamFile"
 # error tracking
-FILENAME_BWA_LOG=${DIR_TEMP}/${bamname}_errlog_bwamem
-FILENAME_BWA_EC=${DIR_TEMP}/${bamname}_ec
+FILENAME_BWA_LOG="$DIR_TEMP/${bamname}_errlog_bwamem"
+FILENAME_BWA_EC="$DIR_TEMP/${bamname}_ec"
 
 if [[ -n "$RAW_SEQ_1" ]]; then
     source "$TOOL_DEFAULT_PLUGIN_LIB"
@@ -61,32 +62,34 @@ if [[ -n "$RAW_SEQ_1" ]]; then
 fi
 
 bamFileExists=false
-# in case the BAM already exists, but QC files are missing, create these only
+# In case the BAM already exists, but QC files are missing, create these only
 # TODO: This logic currently is not directly/simply reflected. Instead there are multiple if branches. Consider refactoring.
-if [[ -f ${FILENAME_SORTED_BAM} ]] && [[ -s ${FILENAME_SORTED_BAM} ]]
-then
+if [[ -f ${FILENAME_SORTED_BAM} ]] && [[ -s ${FILENAME_SORTED_BAM} ]]; then
     checkBamIsComplete "$FILENAME_SORTED_BAM"
 	bamFileExists=true
 fi
 
-# test if one of the fastq files is a fake fastq file to simulate paired end sequencing in PIDs with mixed sequencing (single and paired end)
-LENGTH_SEQ_1=$(getFastqAsciiStream "$RAW_SEQ_1" | head | wc -l)
-LENGTH_SEQ_2=$(getFastqAsciiStream "$RAW_SEQ_2" | head | wc -l)
-if [[ $LENGTH_SEQ_1 == 0 || $LENGTH_SEQ_2 == 0 ]]; then
-    useSingleEndProcessing=true
-elif [[ $LENGTH_SEQ_1 == 0 && $LENGTH_SEQ_2 == 0 ]]; then
+# Test whether one of the fastq files is a fake fastq file to simulate paired-end sequencing in PIDs with mixed sequencing (single- and paired-end)
+declare -i LENGTH_SEQ_1=$(getFastqAsciiStream "$RAW_SEQ_1" | head | wc -l)
+declare -i LENGTH_SEQ_2=$(getFastqAsciiStream "$RAW_SEQ_2" | head | wc -l)
+if [[ $LENGTH_SEQ_1 -eq 0 ]] && [[ $LENGTH_SEQ_2 -eq 0 ]]; then
     throw 1 "Both input files are empty: '$RAW_SEQ_1' and '$RAW_SEQ_2'"
+elif [[ $LENGTH_SEQ_1 -eq 0 ]] || [[ $LENGTH_SEQ_2 -eq 0 ]]; then
+    useSingleEndProcessing=true
 fi
 
+
 # Determine the quality score
-if [[ $LENGTH_SEQ_1 != 0 ]]; then
+set +e   # The following few lines fail with exit 141 due to unknown reasons is `set -e` is set.
+if [[ $LENGTH_SEQ_1 -ne 0 ]]; then
     qualityScore=$(getFastqAsciiStream "$RAW_SEQ_1" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
 else
     qualityScore=$(getFastqAsciiStream "$RAW_SEQ_2" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
 fi
+set -e
 
-# make biobambam sort default
-useBioBamBamSort=${useBioBamBamSort-true}
+# Make biobambam sort default
+useBioBamBamSort="${useBioBamBamSort:-true}"
 
 # Default: Dummy process IDs to simplify downstream logic.
 # TODO Remove after completely switching to PID registry system.
@@ -130,7 +133,7 @@ if [[ "$bamFileExists" == "false" ]]; then	# we have to make the BAM
 fi
 
 # Try to read from pipes BEFORE they are filled.
-# in all cases:
+# In all cases:
 # SAM output is piped to perl script that calculates various QC measures
 (${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} ) & procIDCBA=$!
 
@@ -200,7 +203,8 @@ fi
 if [[ ${bamFileExists} == true ]]; then
 	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
 else	# make sure to rename BAM file when it has been produced correctly
-	checkBwaLog "$TMP_FILE" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG"
+    errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
+    source "$TOOL_BWA_ERROR_CHECKING_SCRIPT"
 	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
 	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp

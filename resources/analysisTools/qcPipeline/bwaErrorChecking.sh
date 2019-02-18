@@ -21,20 +21,20 @@ then
     fi
 
     # TODO Check that?
-    [[ "$?" != "0"  ]] && echo $errorString && exit 32
+    [[ $? -ne 0  ]] && echo $errorString && exit 32
 fi
 
 # test for success before renaming!
-success=`grep " fault" ${FILENAME_BWA_LOG}`
+success=$(grep " fault" ${FILENAME_BWA_LOG} || true)
 [[ ! -z "$success" ]] && echo found segfault $success in bwa logfile! && exit 31
 
 # Barbara Aug 10 2015: I can't remember what bwa aln and sampe reported as "error".
 # bluebee bwa has "error_count" in bwa-0.7.8-r2.05; and new in bwa-0.7.8-r2.06: "WARNING:top_bs_ke_be_hw: dummy be execution, only setting error."
 # these are not errors that would lead to fail, in contrast to "ERROR: Bus error" 
-success=`grep -i "error" ${FILENAME_BWA_LOG} | grep -v "error_count" | grep -v "dummy be execution"`
+success=$(grep -i "error" ${FILENAME_BWA_LOG} | grep -v "error_count" | grep -v "dummy be execution" || true)
 [[ ! -z "$success" ]] && echo found error $success in bwa logfile! && exit 36
 
-success=`grep "Abort. Sorry." ${FILENAME_BWA_LOG}`
+success=$(grep "Abort. Sorry." ${FILENAME_BWA_LOG} || true)
 [[ ! -z "$success" ]] && echo found error $success in bwa logfile! && exit 37
 
 
@@ -46,7 +46,7 @@ success=`grep "Abort. Sorry." ${FILENAME_BWA_LOG}`
 echo "testing $FILENAME_SORT_LOG"
 if [ ! -z $FILENAME_SORT_LOG ] && [ -f $FILENAME_SORT_LOG ]
 then
-	success=`grep "is truncated. Continue anyway." $FILENAME_SORT_LOG`
+	success=$(grep "is truncated. Continue anyway." "$FILENAME_SORT_LOG" || true)
 	[[ ! -z "$success" ]] && echo found error $success in samtools sorting logfile! && exit 38
 else
 	echo "there is no samtools sort log file"
