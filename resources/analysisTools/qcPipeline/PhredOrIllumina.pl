@@ -34,4 +34,4 @@ while (<>)
 # gunzip or awk always complain about broken pipe, so maybe that helps?
 # "close" Closes the file or pipe associated with the file handle.
 # close (STDIN);
-exit;
+exit 0;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+# Copyright (c) 2019 German Cancer Research Center (DKFZ).
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
@@ -12,6 +12,7 @@
 
 source "$TOOL_BASH_LIB"
 
+WORKFLOWLIB___ERREXIT=$(if [[ $SHELLOPTS =~ "errexit" ]]; then echo "errexit"; fi)
 WORKFLOWLIB___SHELL_OPTIONS=$(set +o)
 set +o verbose
 set +o xtrace
@@ -183,7 +184,7 @@ removeRoddyBigScratch () {
 
 checkBamIsComplete () {
     local bamFile="${1:?No BAM file given}"
-    local result
+    local result      # AFAIR the assigment and declaration together did not work; presumably because of a Bash bug!
     result=$("$TOOL_BAM_IS_COMPLETE" "$bamFile")
     if [[ $? ]]; then
         echo "BAM is terminated! $bamFile" >> /dev/stderr
@@ -391,8 +392,8 @@ extendPipePair() {
     updatePipeEndPath "$pipe2Name" "$tag"
     local r2_outpipe=$(getPipeEndPath "$pipe2Name")
 
-    # This &#"@! is because Bash SUCKS! Empty arrays do not exist Bash < 4.4
-    if [[ -v rest ]]; then
+    # Bash SUCKS! Empty arrays do give an error with set -u with Bash < 4.4, but -v varName still succeeds! Therefore test the content, here.
+    if [[ "${rest:-}" != "" ]]; then
         "$command" "$r1_inpipe" "$r2_inpipe" "$r1_outpipe" "$r2_outpipe" "${rest[@]}" & registerPid
     else
         "$command" "$r1_inpipe" "$r2_inpipe" "$r1_outpipe" "$r2_outpipe" & registerPid
@@ -413,7 +414,7 @@ reorderUndirectionalReads() {
     local r2Input="${2:?No input R2}"
     local r1Output="${3:?No output R1}"
     local r2Output="${4:?No output R2}"
-    "$TOOL_UNIDIRECTIONAL_WGBS_READ_REORDERING" \
+    "$PYTHON_BINARY" "$TOOL_UNIDIRECTIONAL_WGBS_READ_REORDERING" \
         --input_ascii \
         --R1_in "$r1Input" \
         --R2_in "$r2Input" \
@@ -446,8 +447,11 @@ trimmomatic() {
     local u1=/dev/null
     local u2=/dev/null
 
-    "$TRIMMOMATIC_BINARY" $ADAPTOR_TRIMMING_OPTIONS_0 "$input1" "$input2" "$output1" "$u1" "$output2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
+    "$JAVA_BINARY" -jar "$TOOL_ADAPTOR_TRIMMING" $ADAPTOR_TRIMMING_OPTIONS_0 "$input1" "$input2" "$output1" "$u1" "$output2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
 }
 
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"
+if [[ "$WORKFLOWLIB___ERREXIT" == "errexit" ]]; then
+    set -e
+fi

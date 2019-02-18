@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+# Copyright (c) 2019 German Cancer Research Center (DKFZ).
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
@@ -8,6 +8,7 @@
 #        source "$TOOL_BASH_LIB"
 
 
+BASHLIB___ERREXIT=$(if [[ $SHELLOPTS =~ "errexit" ]]; then echo "errexit"; fi)
 BASHLIB___SHELL_OPTIONS=$(set +o)
 set +o verbose
 set +o xtrace
@@ -349,8 +350,8 @@ extendPipe() {
     updatePipeEndPath "$pipeName" "$tag"
     local outpipe=$(getPipeEndPath "$pipeName")
 
-    # This &#"@! is because Bash SUCKS! Empty arrays do not exist Bash < 4.4
-    if [[ -v rest ]]; then
+    # Bash SUCKS! Empty arrays do give an error with set -u with Bash < 4.4, but -v varName still succeeds! Therefore test the content, here.
+    if [[ "${rest:-}" != "" ]]; then
         "$command" "$inpipe" "$outpipe" "${rest[@]}" & registerPid
     else
         "$command" "$inpipe" "$outpipe" & registerPid
@@ -360,4 +361,6 @@ extendPipe() {
 
 
 eval "$BASHLIB___SHELL_OPTIONS"
-
+if [[ "$BASHLIB___ERREXIT" == "errexit" ]]; then
+    set -e
+fi
