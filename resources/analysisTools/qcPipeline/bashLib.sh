@@ -189,7 +189,7 @@ waitForRegisteredPids_BashSucksVersion() {
     jobs
     declare -a realPids=$(listPids)
     if [[ -v realPids && ${#realPids[@]} -gt 0 ]]; then
-        # TODO Make this a look and report the exact pid that failed (or the key, after switching from array to dictionary).
+        # TODO Make this a loop and report the exact pid that failed (or the key, after switching from array to dictionary).
         wait ${realPids[@]}
         declare EXIT_CODE=$?
         if [[ ${EXIT_CODE} -ne 0 ]]; then
