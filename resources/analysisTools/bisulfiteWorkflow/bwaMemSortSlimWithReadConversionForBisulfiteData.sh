@@ -80,7 +80,7 @@ fi
 
 
 # Determine the quality score
-set +e   # The following few lines fail with exit 141 due to unknown reasons is `set -e` is set.
+set +e   # The following few lines fail with exit 141 due to unknown reasons if `set -e` is set.
 if [[ $LENGTH_SEQ_1 -ne 0 ]]; then
     qualityScore=$(getFastqAsciiStream "$RAW_SEQ_1" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
 else
