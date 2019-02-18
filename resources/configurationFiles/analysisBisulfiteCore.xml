@@ -22,6 +22,8 @@
 				description="true: Trim Adaptor sequences before alignment. If true, then CLIP_INDEX has to be set; false: Don't trim"/>
         <cvalue name='IS_TAGMENTATION' value="false" type="boolean"
                 description="true: tagmentation; false: standard WGBS."/>
+        <cvalue name="reorderUndirectionalWGBSReadPairs" value="false" type="boolean"
+                description="Try to infer the correct orientation of unidirectional WGBS reads from the TC and AG dinucleotide frequencies in both reads."/>
 		<cvalue name='runFastQC' value='true' type="boolean"
 				description="true: FASTQC analysis is performed; false: FASTQC analysis is not performed" />
 		<cvalue name="runCoveragePlots" value="false" type="boolean"
@@ -136,6 +138,8 @@
         <tool name="methylationCallingScriptTagmentation" value="bcall_tagmentation_2012Nov25.py" basepath="bisulfiteWorkflow"></tool>
 
         <tool name="convertMethCallsMoabs" value="convert_meth_calls_moabs.sh" basepath="bisulfiteWorkflow"></tool>
+
+        <tool name="unidirectionalWgbsReadReordering" value="WGBS_read_pair_reconstruction.py" basepath="bisulfiteWorkflow"></tool>
 
     </processingTools>
 
