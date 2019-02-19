@@ -240,7 +240,7 @@ checkBwaOutput() {
         echo "there is no samtools sort log file" >> /dev/stderr
     fi
 
-    checkBamIsComplete "$tempSortedBamFile"
+    checkBamIsComplete "$bamFile"
 
     echo all OK
 }
