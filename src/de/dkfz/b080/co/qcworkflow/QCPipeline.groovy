@@ -72,7 +72,7 @@ class QCPipeline extends Workflow {
         }
 
         if (mergedBamFiles.getFilesInGroup().size() == 0) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."))
+            context.addError(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."))
             return false
         }
 
@@ -94,7 +94,7 @@ class QCPipeline extends Workflow {
 
         if (aqcfg.useOnlyExistingLaneBams) {
             // Start from the paired BAMs instead of the FASTQ files.
-            sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(aqcfg.context, sample)
+            sortedBamFiles = runtimeService.getPairedBamFilesForDataSetFromFilesystem(aqcfg.context, sample)
 
         } else {
             // Create bam files out of the FASTQ files.
@@ -135,12 +135,12 @@ class QCPipeline extends Workflow {
                     !context.valueIsEmpty(config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
         if (config.useOnlyExistingTargetBam && config.fastqFileListIsSet) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+            context.addError(ExecutionContextError.EXECUTION_NOINPUTDATA.
                     expand("Both 'fastq_list' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
             returnValue = false
         }
         if (config.useOnlyExistingTargetBam && config.useOnlyExistingLaneBams) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+            context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.
                     expand("Both 'useExistingLaneBams' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
             returnValue = false
         }
@@ -151,7 +151,7 @@ class QCPipeline extends Workflow {
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() == 0) {
-            context.addErrorEntry(getInvalidError("No samples found for PID ${context.getDataSet()}!"))
+            context.addError(getInvalidError("No samples found for PID ${context.getDataSet()}!"))
             return false
         } else {
             logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId())
@@ -161,7 +161,7 @@ class QCPipeline extends Workflow {
 
     private boolean checkFile(ExecutionContext context, File file) {
         if (!context.fileIsAccessible(file)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+            context.addError(ExecutionContextError.EXECUTION_NOINPUTDATA.
                     expand("Could not access '${file}'."))
             return false
         }
@@ -215,7 +215,7 @@ class QCPipeline extends Workflow {
                 logger.postAlwaysInfo("Processed sample " + sample.getName() + " and found " + laneFileGroups.size() + " groups of lane files.")
             }
             if (cnt <= 0) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                context.addError(ExecutionContextError.EXECUTION_NOINPUTDATA.
                         expand("No lane files found for PID ${context.getDataSet()}!"))
                 returnValue = false
             }
@@ -231,7 +231,7 @@ class QCPipeline extends Workflow {
         boolean returnValue = true
 
         if (aqcfg.useOnlyExistingTargetBam) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+            context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.
                     expand("Both 'bam' and 'useOnlyExistingTargetBam' are set. Set only one of them!"))
             returnValue &= false
         }
@@ -239,7 +239,7 @@ class QCPipeline extends Workflow {
         BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() > 1) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+            context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.
                     expand("A 'bam' parameter for a single BAM, but there is more than one sample available."))
             returnValue &= false
         }
@@ -247,7 +247,7 @@ class QCPipeline extends Workflow {
         def accessProvider = FileSystemAccessProvider.getInstance()
         def bamFile = new File(aqcfg.getSingleBamParameter())
         if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+            context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.
                     expand("A 'bam' parameter was set, but the BAM file is not readable: '${bamFile}'"))
             returnValue &= false
         }
@@ -283,21 +283,21 @@ class QCPipeline extends Workflow {
             // Kortine: The mappability file may have other than the same window size as the input data (i.e. WINDOW_SIZE),
             //          the replication timing and GC content files need to have the same window size as the input.
             if (aqcfg.mappabilityFile == null) {
-                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                aqcfg.context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.
                         expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE} to be set."))
                 result = false
             }
             result &= context.fileIsAccessible(aqcfg.mappabilityFile, AlignmentAndQCConfig.CVALUE_MAPPABILITY_FILE)
 
             if (aqcfg.replicationTimeFile == null) {
-                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                aqcfg.context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.
                         expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE} to be set."))
                 result = false
             }
             result &= context.fileIsAccessible(aqcfg.replicationTimeFile, AlignmentAndQCConfig.CVALUE_REPLICATION_TIME_FILE)
 
             if (aqcfg.gcContentFile == null) {
-                aqcfg.context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                aqcfg.context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.
                         expand("The ACEseq QC steps require ${AlignmentAndQCConfig.CVALUE_GC_CONTENT_FILE} to be set."))
                 result = false
             }

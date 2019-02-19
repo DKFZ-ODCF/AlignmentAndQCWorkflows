@@ -112,7 +112,7 @@ class BisulfiteCoreWorkflow extends QCPipeline {
         }
 
         if (!mergedBamFiles.getFilesInGroup()) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."))
+            context.addError(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."))
             return false
         }
 
@@ -138,7 +138,7 @@ class BisulfiteCoreWorkflow extends QCPipeline {
                 for (LaneFileGroup group : runtimeService.loadLaneFilesForSampleAndLibrary(context, sample, lib)) {
                     String key = group.getRun() + " " + group.getId()
                     if (laneFileGroups.containsKey(key)) {
-                        context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                        context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.
                                     expand("Duplicate lane identifiers for ${group.getRun()}_${group.getId()} among libraries " +
                                             "(pid=${context.getDataSet()}, sample=${sample.getName()})! Check run and FASTQ names."))
                         returnValue = false
@@ -150,7 +150,7 @@ class BisulfiteCoreWorkflow extends QCPipeline {
             }
         }
         if (cnt <= 0) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+            context.addError(ExecutionContextError.EXECUTION_NOINPUTDATA.
                         expand("No lane files found for PID ${context.getDataSet()}!"))
             returnValue = false
         }
@@ -162,11 +162,11 @@ class BisulfiteCoreWorkflow extends QCPipeline {
         FileSystemAccessProvider accessProvider = FileSystemAccessProvider.getInstance()
         File cposidx = aqcfg.getCytosinePositionIndex()
         if (cposidx.toString().equals("")) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_CYTOSINE_POSITIONS_INDEX} is not defined!"))
+            context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_CYTOSINE_POSITIONS_INDEX} is not defined!"))
             return false
         } else if (!accessProvider.fileExists(cposidx)
                 || !accessProvider.isReadable(cposidx)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cytosine position index '${cposidx}' is not accessible!"))
+            context.addError(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cytosine position index '${cposidx}' is not accessible!"))
             return false
         } else {
             return true

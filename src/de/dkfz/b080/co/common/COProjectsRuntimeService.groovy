@@ -89,7 +89,7 @@ class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
             laneFiles = getLaneFileGroupsFromFilesystem(context, sample, libraryID)
         }
         if (laneFiles.size() == 0) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no lane files available for sample ${sample.getName()}"))
+            context.addError(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no lane files available for sample ${sample.getName()}"))
         } else {
             setFileCompressionInLaneFileGroups(context, laneFiles)
         }
@@ -233,7 +233,7 @@ class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         return laneFiles
     }
 
-    BamFileGroup getPairedBamFilesForDataSet(ExecutionContext context, Sample sample) {
+    BamFileGroup getPairedBamFilesForDataSetFromFilesystem(ExecutionContext context, Sample sample) {
         File alignmentDirectory = getAlignmentDirectory(context)
         final String pairedBamSuffix = context.getConfiguration().getConfigurationValues().get("pairedBamSuffix", "paired.bam.sorted.bam")
         //TODO Create constants
@@ -241,7 +241,7 @@ class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         List<File> pairedBamPaths = FileSystemAccessProvider.getInstance().listFilesInDirectory(alignmentDirectory, filters)
 
         int laneID = 0
-        List<BamFile> bamFiles = pairedBamPaths.collect({
+        List<BamFile> bamFiles = pairedBamPaths.collect {
             File f ->
                 laneID++
                 String name = f.getName()
@@ -258,7 +258,7 @@ class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
                 BamFile bamFile = COBaseFile.constructSourceFile(BamFile, f, context,
                         new COFileStageSettings(new LaneID(lane), new RunID(run), null, sample, context.getDataSet())) as BamFile
                 return bamFile
-        })
+        }
         logger.info("Found ${bamFiles.size()} paired bam files for sample ${sample.getName()}")
         return new BamFileGroup(bamFiles)
     }

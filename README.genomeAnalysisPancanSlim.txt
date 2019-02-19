@@ -16,7 +16,7 @@ overrideBamFiles
 
 == Changelist
 
-* Version update to 1.2.77
+* Version update to 1.3.0
 
 - check ACEseq QC input file before start
 - dead code removal
@@ -26,11 +26,14 @@ overrideBamFiles
 - MIT licence, where necessary copyleft licence
 - improved read-me
 - use externally provided trimmomatic
-- JVM code updated to depend on Roddy 3.1.0
+- JVM code updated to depend on Roddy 3.2.0
+- depth of coverage for human separate from mouse for xenograft
+- cleanup "fat" workflow variants and unused SNP scripts
+- improved handling of small datasets (lack of data and empty files) for improved execution testing
 
 * Version update to 1.2.76
 
-- lifted to Roddy 3.0
+- lifted 1.1.76 to Roddy 3
 - support for loading environment modules (via DefaultPlugin 1.2.2)
 - refactoring: bamFileExists -> useOnlyExistingTargetBam
 - ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
@@ -46,6 +49,14 @@ overrideBamFiles
 - refactoring: removed dysfunctional bwa sampe and slow-pipeline code
 - more documentation
 
+For the lift to Roddy 3 all workflow branches were increased in the minor number. Thus
+
+- 1.1.51 -> 1.2.51
+- 1.1.73 -> 1.2.73
+- 1.0.186 -> 1.2.186
+
+From this timepoint we switched to semantic versioning 2.0. Workflow branches are increased by build number (-# suffix).
+
 * Version update to 1.1.73
 
 - fingerprinting for WES and WGS (runFingerprinting:Boolean, fingerprintingSitesFile)
@@ -54,7 +65,7 @@ overrideBamFiles
 * Version update to 1.1.51
 
 - sambamba support
-- use local scratch on nodes ()
+- use local scratch on nodes
 - resource size 't' for testing purposes
 - fixed off-by-one error in moabs output
 

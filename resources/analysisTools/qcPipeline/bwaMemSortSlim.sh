@@ -118,6 +118,10 @@ then
 	[[ ${LENGTH_SEQ_2} != 0 ]] && INPUT_PIPES="${INPUT_PIPES} $FNPIPE2"
 	[[ ${LENGTH_SEQ_1} == 0 ]] && cat $FNPIPE1 >/dev/null
 	[[ ${LENGTH_SEQ_2} == 0 ]] && cat $FNPIPE2 >/dev/null
+
+	if [[ -z "$INPUT_PIPES" ]]; then
+	    throw 100 "Your input FASTQs are empty: '$RAW_SEQ_1', '$RAW_SEQ_2'"
+	fi
 else
     true & procTrim=$!
 fi
@@ -155,7 +159,7 @@ else
 		# Here, we always use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
 		(set -o pipefail; ${BWA_ACCELERATED_BINARY} mem ${BWA_MEM_CONVEY_ADDITIONAL_OPTIONS} \
-		    -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG \
+		    -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS "$INDEX_PREFIX" ${INPUT_PIPES} 2> $FILENAME_BWA_LOG \
 		    | $MBUF_LARGE \
 		    | tee $NP_COMBINEDANALYSIS_IN \
 		    | ${SAMBAMBA_BINARY} view -f bam -S -l 0 -t 8 /dev/stdin \

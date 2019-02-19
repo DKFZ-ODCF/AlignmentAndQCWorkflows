@@ -33,7 +33,7 @@
                 description="Parameter to methylationCallingScript (see tools below)."/>
 		<cvalue name="INDEX_PREFIX" value="${indexPrefix_bwa06_methylCtools_mm10_GRC}" type="path"
 				description="Absolute path to the in-silico bisulfite converted reference sequenced used for alignment." />
-		<cvalue name='CLIP_INDEX' value='$DIR_EXECUTION/analysisTools/qcPipelineTools/trimmomatic/adapters/tagmentationPlassGroup.fa' type="path"
+		<cvalue name='CLIP_INDEX' value='Path to adapters for trimming not set' type="path"
 				description="Absolute path to the sequences to be trimmed before alignment." />
 		<cvalue name='CHROM_SIZES_FILE' value='${chromosomeSizesFile_mm10_GRC_bisulfite}' type="path"
 				description="Absolute path to the chromosome sizes file. This file is related to the INDEX_PREFIX." />
@@ -44,6 +44,10 @@
 
         <cvalue name='methCallingOutputDirectory' value='methylationCalling' type="path" />
         <cvalue name='methCallingMetricsOutputDirectory' value='methylationCallingMetrics' type="path" />
+
+        <cvalue name='ADAPTOR_TRIMMING_OPTIONS_1_Standard'      value='ILLUMINACLIP:$CLIP_INDEX:2:30:10:8:true SLIDINGWINDOW:4:15 MINLEN:36"'/>
+        <cvalue name='ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs' value='ILLUMINACLIP:$CLIP_INDEX:2:30:10:8:true SLIDINGWINDOW:4:15 MINLEN:36 HEADCROP:10"'
+                description="Swift Biosciences Accel-NGS Methyl-Seq DNA Library Kit"/>
 
 		<!-- The following parameters set up the folder structure of the project
 				inputBaseDirectory (type="path")
