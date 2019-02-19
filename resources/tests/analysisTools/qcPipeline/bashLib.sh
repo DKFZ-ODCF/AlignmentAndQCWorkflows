@@ -46,8 +46,7 @@ teardownPipePath() {
 
 testSetGetPipeEndPath() {
     setupPipePath
-    test getPipeEndPath 'doesnotexist'
-    assertFalse "Error exit on non-existent pipe-name access" $?
+    assertFalse "Error exit on non-existent pipe-name access" "getPipeEndPath 'doesnotexist'"
     setPipeEndPath "test" "/a/b/c"
     assertEquals "/a/b/c" "$(getPipeEndPath 'test')"
     teardownPipePath
