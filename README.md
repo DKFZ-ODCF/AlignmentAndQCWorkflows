@@ -6,7 +6,7 @@ This is the branch for 1.2.73 maintenance branch with only minimal documentation
 
 ## Read-Reordering with Unidirectional WGBS Data
 
-By setting `reorderUnidirectionalWGBSReadPairs` the read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may swap the two reads.
+By setting `reorderUndirectionalWGBSReadPairs` the read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may swap the two reads.
 
 Note that after the swapping, the read-numbers are reversed. What was R1 in the input FASTQ will be R2 in the output BAM, and vice versa.
 
