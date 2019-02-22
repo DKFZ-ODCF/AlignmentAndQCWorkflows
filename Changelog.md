@@ -20,11 +20,18 @@ In exception to this strategy backports etc. for maintenance branches are create
 
 * 1.4.0
   - Recognize truncated FASTQs from BWA error log
-  - 
- 
+  - Update to Roddy 3.5
+  - Major documentation update (workflow structure plots)
+  - JVM code refactorings
+  - Merged in changes from 1.2.73-2
+    - Updated undirectional read-reordering script and integrated into WGBS pipeline
+    - Improved error checking and reporting for BWA and surrounding pipe (set -e, PID registry)
+    - Got (most of) the BWA methyl-seq code to run with set -e to improve error robustness and handling.
+    - Imported BamToFastqPlugin tempfile and process ID registry code (already well tested)
+    - Backported bash unit tests from master
+    - Bash pipe extension framework
 
 * 1.3.0
-
   - Depth of coverage for human separate from mouse for xenograft
   - Coverage separate for mouse and human in xengraft assemblies
   - Check ACEseq QC input file before start
@@ -39,7 +46,6 @@ In exception to this strategy backports etc. for maintenance branches are create
   - MIT licence, where necessary copyleft licence
 
 * 1.2.76
-
   - Lifted 1.1.76 to Roddy 3
   - LSF support
   - Support for loading environment modules (via DefaultPlugin 1.2.2)
@@ -63,8 +69,13 @@ In exception to this strategy backports etc. for maintenance branches are create
   - bugfix: BWA error recognition
 
 * 1.2.73-2 (branch-specific changes)
-  - Improved error checking and reporting for BWA and surrounding pipe
-  
+  - Updated undirectional read-reordering script and integrated into WGBS pipeline
+  - Improved error checking and reporting for BWA and surrounding pipe (set -e; PID registry)
+  - Got (most of) the BWA methyl-seq code to run with set -e to improve error robustness and handling.
+  - Imported BamToFastqPlugin tempfile and process ID registry code (already well tested)
+  - Backported bash unit tests from master
+  - Bash pipe extension framework
+   
 * 1.2.73-1 (branch-specific changes)
   - Lifted to Roddy 3.0 release (official LSF-capable release)
   - Bugfix with wrong Bash function export
@@ -120,7 +131,6 @@ In exception to this strategy backports etc. for maintenance branches are create
 ## QualityControlWorkflows
 
 * 1.0.186
-
   - Updated dependency on COWorkflows version 1.1.23
   - Sambamba support for duplication marking
   - Fixed the merging of new lanes into existing merged BAM
