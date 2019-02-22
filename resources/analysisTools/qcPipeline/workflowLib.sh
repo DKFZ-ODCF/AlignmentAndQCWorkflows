@@ -193,14 +193,38 @@ checkBamIsComplete () {
     fi
 }
 
+throwIfFileInaccessible() {
+    local filename="${1:?No file given}"
+    if [[ ! -r "$filename" ]]; then
+        throw 100 "Cannot access file: $filename"
+    fi
+}
+
+throwIfMatching() {
+    local filename="${1:?No BWA STDERR output file given}"
+    local pattern="${2:?No pattern to match given}"
+    local errorCode="${3:?No error code to report given}"
+    if [[ -r "$filename" ]]; then
+        throw 37 "Cannot access '$filename'"            # Because of the `|| true` below let's check the basics first.
+    fi
+    errorMsg=$(grep -P "$pattern" "$filename" || true)  # The `|| true` copes with grep's silly exit 1 upon no-match.
+    if [[ ! -z "$errorMsg" ]]; then
+        throw 36 "Found error in logfile '$filename': [$errorMsg]"
+    fi
+}
+
 checkBwaOutput() {
     local bamFile="${1:?No BAM file given}"
     local bwaOutput="${2:?No BWA STDERR output file given}"
     local sortLog="${3:?No sort log given}"
     local errorCodeFile="${4:?No error code file given}"
 
+    throwIfFileInaccessible "$bamFile"
+    throwIfFileInaccessible "$bwaOutput"
+    throwIfFileInaccessible "$errorCodeFile"
+
     if [[ $(cat "$errorCodeFile") != "0" ]]; then
-        throw 32 "There was a non-zero exit code in bwa pipe (w/ pipefail); exiting..."
+        throw 32 "There was a non-zero exit code in bwa pipe (w/ pipefail): $(cat '$errorCodeFile'); exiting..."
     fi
 
     if [[ "2048" -gt `stat -c %s $bamFile` ]]; then
@@ -208,34 +232,25 @@ checkBwaOutput() {
     fi
 
     # Check for segfault messages
-    success=`grep " fault" ${bwaOutput}`
-    if [[ ! -z "$success" ]]; then
-        throw 31 "found segfault $success in bwa logfile!"
-    fi
+    throwIfMatching "$bwaOutput" " fault" 31
 
     # Barbara Aug 10 2015: I can't remember what bwa aln and sampe reported as "error".
     # bluebee bwa has "error_count" in bwa-0.7.8-r2.05; and new in bwa-0.7.8-r2.06: "WARNING:top_bs_ke_be_hw: dummy be execution, only setting error."
     # these are not errors that would lead to fail, in contrast to "ERROR: Bus error"
-    success=`grep -i "error" ${bwaOutput} | grep -v "error_count" | grep -v "dummy be execution"`
-    if [[ ! -z "$success" ]]; then
-        throw 36 "found error $success in bwa logfile!"
-    fi
+    throwIfMatching <(cat "$bwaOutput" | grep -v "error_count" | grep -v "dummy be execution") "error" 36
 
     # Check for BWA abortion.
-    success=`grep "Abort. Sorry." ${bwaOutput}`
-    if [[ ! -z "$success" ]]; then
-        throw 37 "found error $success in bwa logfile!"
-    fi
+    throwIfMatching "$bwaOutput" "Abort. Sorry." 37
+
+    # An assumption of the workflow is violated.
+    throwIfMatching "$bwaOutput" "file has fewer sequences." 41
 
     # samtools sort may complain about truncated temp files and for each line outputs
-    # the error message. This happens when the same files are written at the same time,
-    # see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
-    # This happens when the scheduler puts the same job on 2 nodes bc. the prefix for samtools-0.1.19 -o $prefix is constructed using the job ID
+    # the error message. This happens when the same files are written to at the same time,
+    # See http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
+    # This happens when the scheduler puts the same job on 2 nodes bc. The prefix for samtools-0.1.19 -o $prefix is constructed using the job ID.
     if [[ ! -z $sortLog ]] && [[ -f $sortLog ]]; then
-        success=`grep "is truncated. Continue anyway." $sortLog`
-        if [[ ! -z "$success" ]]; then
-            throw 38 "echo found error $success in samtools sorting logfile!"
-        fi
+        throwIfMatching "$sortLog" "is truncated. Continue anyway." 38
     else
         echo "there is no samtools sort log file" >> /dev/stderr
     fi
