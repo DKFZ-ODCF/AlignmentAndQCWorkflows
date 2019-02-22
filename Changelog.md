@@ -35,6 +35,7 @@ overrideBamFiles
 
 - lifted 1.1.76 to Roddy 3
 - support for loading environment modules (via DefaultPlugin 1.2.2)
+- removed references to PBS to allow running on LSF cluster
 - refactoring: bamFileExists -> useOnlyExistingTargetBam
 - ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
 - bugfix: FASTQC code
@@ -69,6 +70,10 @@ From this timepoint we switched to semantic versioning 2.0. Workflow branches ar
 - resource size 't' for testing purposes
 - fixed off-by-one error in moabs output
 
+* Version upgrade to 1.1.39  
+ 
+- Initial WGBS support. Duplication marking with Picard or Sambamba.
+
 * AlignmentAndQCWorkflows-1.1.2
 
 - Renamed plugin to AlignmentAndQCWorkflows.
@@ -86,6 +91,9 @@ From this timepoint we switched to semantic versioning 2.0. Workflow branches ar
 
 * Version update to 1.0.180
 
+- WES: Added qualitycontrol_targetExtract.json
+
+
 * Version update to 1.0.178
 
 * Version update to 1.0.177
@@ -97,7 +105,7 @@ From this timepoint we switched to semantic versioning 2.0. Workflow branches ar
 
 * Version update to 1.0.173
 
-- qualitycontrol.json
+- Added qualitycontrol.json
 
 * Version update to 1.0.168
 

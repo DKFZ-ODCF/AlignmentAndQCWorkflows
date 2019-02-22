@@ -189,12 +189,9 @@ waitForRegisteredPids_BashSucksVersion() {
     jobs
     declare -a realPids=$(listPids)
     if [[ -v realPids && ${#realPids[@]} -gt 0 ]]; then
-        # TODO Make this a loop and report the exact pid that failed (or the key, after switching from array to dictionary).
-        wait ${realPids[@]}
-        declare EXIT_CODE=$?
-        if [[ ${EXIT_CODE} -ne 0 ]]; then
-            throw ${EXIT_CODE} "One of the following processes ended with exit code ${EXIT_CODE}: ${realPids[@]}"
-        fi
+        for pid in "${realPids[@]}"; do
+            wait "$pid" || throw $? "Process with PID '$pid' failed with exit code $?"
+        done
     fi
     pids=("$ARRAY_ELEMENT_DUMMY")
 }
@@ -224,11 +221,9 @@ cleanUp_BashSucksVersion() {
 # These versions only works with Bash >4.4. Prior version do not really declare the array variables with empty values and set -u results in error message.
 waitForRegisteredPids() {
     jobs
-    wait ${pids[@]}
-    declare EXIT_CODE=$?
-    if [[ ${EXIT_CODE} -ne 0 ]]; then
-        throw ${EXIT_CODE} "One of the following processes ended with exit code ${EXIT_CODE}: ${pids[@]}"
-    fi
+    for pid in "${pids[@]}"; do
+        wait || throw $? "Process with PID '$pid' failed with exit code $?"
+    done
     pids=()
 }
 setUp() {

@@ -41,7 +41,6 @@ tempFileForSort="$RODDY_BIG_SCRATCH/${bamname}_forsorting"
 tempBamIndexFile="$FILENAME_SORTED_BAM.tmp.bai"
 tempFlagstatsFile="$FILENAME_FLAGSTATS.tmp"
 
-
 # Error tracking
 # samtools sort may complain about truncated temp files and for each line outputs
 # the error message. This happens when the same files are written at the same time,
@@ -61,15 +60,15 @@ if [[ -n "$RAW_SEQ_1" ]]; then
     setCompressionToolsBasedOnFileCompression "$RAW_SEQ_1"
 fi
 
-bamFileExists=false
 # In case the BAM already exists, but QC files are missing, create these only
 # TODO: This logic currently is not directly/simply reflected. Instead there are multiple if branches. Consider refactoring.
+bamFileExists=false
 if [[ -f ${FILENAME_SORTED_BAM} ]] && [[ -s ${FILENAME_SORTED_BAM} ]]; then
     checkBamIsComplete "$FILENAME_SORTED_BAM"
 	bamFileExists=true
 fi
 
-# Test whether one of the fastq files is a fake fastq file to simulate paired-end sequencing in PIDs with mixed sequencing (single- and paired-end)
+# Test whether one of the fastq files is a fake fastq file to simulate paired-end sequencing in PIDs with mixed sequencing (single- and paired-end).
 declare -i LENGTH_SEQ_1=$(getFastqAsciiStream "$RAW_SEQ_1" | head | wc -l)
 declare -i LENGTH_SEQ_2=$(getFastqAsciiStream "$RAW_SEQ_2" | head | wc -l)
 if [[ $LENGTH_SEQ_1 -eq 0 ]] && [[ $LENGTH_SEQ_2 -eq 0 ]]; then
@@ -79,58 +78,6 @@ elif [[ $LENGTH_SEQ_1 -eq 0 ]] || [[ $LENGTH_SEQ_2 -eq 0 ]]; then
 fi
 
 
-# Determine the quality score
-set +e   # The following few lines fail with exit 141 due to unknown reasons if `set -e` is set.
-if [[ $LENGTH_SEQ_1 -ne 0 ]]; then
-    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_1" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
-else
-    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_2" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
-fi
-set -e
-
-# Make biobambam sort default
-useBioBamBamSort="${useBioBamBamSort:-true}"
-
-# Default: Dummy process IDs to simplify downstream logic.
-# TODO Remove after completely switching to PID registry system.
-true & procUnpack1=$!
-true & procUnpack2=$!
-
-fqName="fastq"
-mkPipePairSource "$fqName"
-if [[ "$bamFileExists" == "false" ]]; then	# we have to make the BAM
-    getFastqAsciiStream "$RAW_SEQ_1" > $(getPairedPipeEndPath 1 "$fqName") & procUnpack1=$!
-    getFastqAsciiStream "$RAW_SEQ_2" > $(getPairedPipeEndPath 2 "$fqName") & procUnpack2=$!
-
-    if [[ "$qualityScore" == "illumina" ]]; then
-        extendPipe $(mkPairedPipeName 1 "$fqName") "qScore" -- toIlluminaScore
-        extendPipe $(mkPairedPipeName 2 "$fqName") "qScore" -- toIlluminaScore
-    fi
-
-    if [[ "${useAdaptorTrimming:-false}" == "true" ]]; then
-        extendPipePair "$fqName" "trimmomatic" -- trimmomatic
-    fi
-
-    if [[ "${reorderUndirectionalWGBSReadPairs:-false}" == "true" ]]; then
-        extendPipePair "$fqName" "reorder" -- reorderUndirectionalReads
-    fi
-
-    extendPipe $(mkPairedPipeName 1 "$fqName") "fqconv" -- methylCfqconv 1
-	extendPipe $(mkPairedPipeName 2 "$fqName") "fqconv" -- methylCfqconv 2
-
-    INPUT_PIPES=""
-    if [[ ${LENGTH_SEQ_1} == 0 ]]; then
-        cat "$(getPairedPipeEndPath 1 $fqName)" > /dev/null
-    else
-	    INPUT_PIPES="$(getPairedPipeEndPath 1 $fqName)"
-    fi
-
-    if [[ ${LENGTH_SEQ_2} == 0 ]]; then
-        cat "$(getPairedPipeEndPath 2 $fqName)" > /dev/null
-    else
-	    INPUT_PIPES="${INPUT_PIPES} $(getPairedPipeEndPath 2 $fqName)"
-    fi
-fi
 
 # Try to read from pipes BEFORE they are filled.
 # In all cases:
@@ -146,7 +93,71 @@ fi
 # use sambamba for flagstats
 (set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
 
-if [[ ${bamFileExists} == true ]]; then
+
+fqName="fastq"
+mkPipePairSource "$fqName"
+if [[ "$bamFileExists" == "false" ]]; then	# We have to make the BAM
+    if [[ "$useSingleEndProcessing" == "true" ]]; then
+        preprocessWgbsSingleEndReads "$fqName"
+        INPUT_PIPES="$(getPairedPipeEndPath 1 $fqName)"
+    else
+        preprocessWgbsPairedEndReads "$fqName"
+        INPUT_PIPES="$(getPairedPipeEndPath 1 $fqName) $(getPairedPipeEndPath 2 $fqName)"
+    fi
+
+    # We use samtools for making the index
+    # Filter secondary and supplementary alignments (flag 2304) after alignment
+    mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
+
+    # Index bam file
+    ${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
+
+    # Align converted fastq files
+    ${BWA_BINARY} mem \
+        -t ${BWA_MEM_THREADS} \
+        -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
+        $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG \
+        > ${NP_BWA_OUT} & procID_BWA=$!
+
+    # Convert aligned reads back to original state
+    ${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
+        ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - \
+        > ${NP_BCONV_OUT} & procID_BCONV=$!
+
+    # Sort bam file
+    (set -o pipefail; \
+        ${SAMTOOLS_BINARY} view -h ${NP_BCONV_OUT} | \
+        tee ${NP_COMBINEDANALYSIS_IN} | \
+        ${SAMTOOLS_BINARY} view -uSbh -F 2304 - | \
+        $MBUF_LARGE | \
+        ${SAMTOOLS_BINARY} sort -@ 8 \
+            -m ${SAMPESORT_MEMSIZE} \
+            -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
+        tee ${NP_COVERAGEQC_IN} \
+            ${NP_READBINS_IN} \
+            ${NP_FLAGSTATS} \
+            ${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
+      echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > "$FILENAME_BWA_ERRORCODE") & procID_MEMSORT=$!
+
+    # Filter samtools error log
+    (cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
+
+    # Check for errors
+    wait $procID_logwrite	# Do we need a check for it?
+    wait $procID_BWA || throw 20 "Error in BWA alignment"
+    wait $procID_BCONV || throw 21 "Error in BCONV"
+    wait $procID_MEMSORT || throw 24 "Error in samtools sort"
+    wait $procID_IDX || throw 10 "Error from samtools index"
+
+	checkBwaOutput "$tempSortedBamFile" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG" "$FILENAME_BWA_ERRORCODE"
+	mv "$tempSortedBamFile" "$FILENAME_SORTED_BAM" || throw 36 "Could not move file"
+
+	# Index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp.
+	if [[ -f "$tempBamIndexFile" ]]; then
+	 	mv "$tempBamIndexFile" "$INDEX_FILE" && touch "$INDEX_FILE" || throw 37 "Could not move file"
+	fi
+
+else
 	echo "The BAM file already exists, re-creating other output files."
 	(cat ${FILENAME_SORTED_BAM} \
 	    | ${MBUF_LARGE} \
@@ -157,74 +168,16 @@ if [[ ${bamFileExists} == true ]]; then
 
 	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
 
-else
-	if [[ ${useBioBamBamSort} == false ]]; then
-		# we use samtools for making the index
-		# filter secondary and supplementary alignments (flag 2304) after alignment
-		mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
-
-		# Index bam file
-		${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
-
-		# Align converted fastq files
-		${BWA_BINARY} mem \
-			-t ${BWA_MEM_THREADS} \
-			-R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
-			$BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG \
-		    > ${NP_BWA_OUT} & procID_BWA=$!
-
-		# Convert aligned reads back to original state
-		${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
-		    ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - \
-		    > ${NP_BCONV_OUT} & procID_BCONV=$!
-
-		# Sort bam file
-		(set -o pipefail; \
-		    ${SAMTOOLS_BINARY} view -h ${NP_BCONV_OUT} | \
-		    tee ${NP_COMBINEDANALYSIS_IN} | \
-		    ${SAMTOOLS_BINARY} view -uSbh -F 2304 - | \
-		    $MBUF_LARGE | \
-		    ${SAMTOOLS_BINARY} sort -@ 8 \
-		    	-m ${SAMPESORT_MEMSIZE} \
-		    	-o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
-		    tee ${NP_COVERAGEQC_IN} \
-		    	${NP_READBINS_IN} \
-		    	${NP_FLAGSTATS} \
-		    	${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
-		  echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > "$FILENAME_BWA_ERRORCODE") & procID_MEMSORT=$!
-
-		# filter samtools error log
-		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
-
-		# Check for errors
-		wait $procID_logwrite	# Do we need a check for it?
-		wait $procID_BWA || throw 20 "Error in BWA alignment"
-		wait $procID_BCONV || throw 21 "Error in BCONV"
-		wait $procID_MEMSORT || throw 24 "Error in samtools sort"
-		wait $procID_IDX || throw 10 "Error from samtools index"
-	else
-		throw 11 "biobambam sort not implemented yet";
-	fi
-
-	checkBwaOutput "$tempSortedBamFile" "$FILENAME_BWA_LOG" "$FILENAME_SORT_LOG" "$FILENAME_BWA_ERRORCODE"
-	mv "$tempSortedBamFile" "$FILENAME_SORTED_BAM" || throw 36 "Could not move file"
-	# Index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp.
-	if [[ -f "$tempBamIndexFile" ]]; then
-	 	mv "$tempBamIndexFile" "$INDEX_FILE" && touch "$INDEX_FILE" || throw 37 "Could not move file"
-	fi
-
 fi
 
 waitForRegisteredPids_BashSucksVersion
-wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
-wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
 
 wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
 wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
 wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
 wait $procIDCBA || throw 17 "Error from combined QC perl script"
 
-# rename QC files
+# Rename QC files
 mv "$FILENAME_DIFFCHROM_MATRIX}.tmp" "$FILENAME_DIFFCHROM_MATRIX" || throw 28 "Could not move file"
 mv "$FILENAME_ISIZES_MATRIX.tmp" "$FILENAME_ISIZES_MATRIX" || throw 29 "Could not move file"
 mv "$FILENAME_EXTENDED_FLAGSTATS.tmp" "$FILENAME_EXTENDED_FLAGSTATS" || throw 30 "Could not move file"
@@ -267,7 +220,7 @@ ${PERL_BINARY} ${TOOL_QC_JSON} \
 
 mv "$FILENAME_QCJSON.tmp" "$FILENAME_QCJSON" || throw 27 "Could not move file"
 
-# plots are only made for paired end and not on convey
+# Plots are only made for paired end and not on convey
 if [[ ${useSingleEndProcessing-false} == true ]]; then
     exit 0
 else

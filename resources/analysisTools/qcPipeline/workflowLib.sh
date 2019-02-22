@@ -231,7 +231,7 @@ checkBwaOutput() {
     # the error message. This happens when the same files are written at the same time,
     # see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
     # This happens when the scheduler puts the same job on 2 nodes bc. the prefix for samtools-0.1.19 -o $prefix is constructed using the job ID
-    if [ ! -z $sortLog ] && [ -f $sortLog ]; then
+    if [[ ! -z $sortLog ]] && [[ -f $sortLog ]]; then
         success=`grep "is truncated. Continue anyway." $sortLog`
         if [[ ! -z "$success" ]]; then
             throw 38 "echo found error $success in samtools sorting logfile!"
@@ -244,6 +244,7 @@ checkBwaOutput() {
 
     echo all OK
 }
+
 
 readGroupsInBam() {
     local bamFile="${1:?No bam file given}"
@@ -449,6 +450,78 @@ trimmomatic() {
 
     "$JAVA_BINARY" -jar "$TOOL_ADAPTOR_TRIMMING" $ADAPTOR_TRIMMING_OPTIONS_0 "$input1" "$input2" "$output1" "$u1" "$output2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
 }
+
+
+trimmomaticSingleEnd() {
+    local input1="${1:?No R1 input}"
+    local input2="${2:?No R2 input}"
+    local output1="${3:?No R1 output}"
+    local output2="${4:?No R2 output}"
+
+    throw 254 "Not implemented"
+}
+
+
+preprocessWgbsPairedEndReads() {
+    local fqName="${1:?No pipe-name given}"
+
+    # Determine the quality score
+    set +e   # The following few lines fail with exit 141 due to unknown reasons if `set -e` is set.
+    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_1" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
+    set -e
+
+    getFastqAsciiStream "$RAW_SEQ_1" > $(getPairedPipeEndPath 1 "$fqName") & registerPid
+    getFastqAsciiStream "$RAW_SEQ_2" > $(getPairedPipeEndPath 2 "$fqName") & registerPid
+
+    if [[ "$qualityScore" == "illumina" ]]; then
+        extendPipe $(mkPairedPipeName 1 "$fqName") "qScore" -- toIlluminaScore
+        extendPipe $(mkPairedPipeName 2 "$fqName") "qScore" -- toIlluminaScore
+    fi
+
+    if [[ "${useAdaptorTrimming:-false}" == "true" ]]; then
+        extendPipePair "$fqName" "trimmomatic" -- trimmomatic
+    fi
+
+    if [[ "${reorderUndirectionalWGBSReadPairs:-false}" == "true" ]]; then
+        if [[ "$useSingleEndProcessing" == "true" ]]; then
+            throw 50 "Cannot reorder undirectional read pairs with single-end data"
+        fi
+        extendPipePair "$fqName" "reorder" -- reorderUndirectionalReads
+    fi
+
+    extendPipe $(mkPairedPipeName 1 "$fqName") "fqconv" -- methylCfqconv 1
+	extendPipe $(mkPairedPipeName 2 "$fqName") "fqconv" -- methylCfqconv 2
+}
+
+
+preprocessWgbsSingleEndReads() {
+    local fqName="${1:?No pipe-name given}"
+
+    # Determine the quality score
+    set +e   # The following few lines fail with exit 141 due to unknown reasons if `set -e` is set.
+    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_1" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
+    set -e
+
+    cat "$(getPairedPipeEndPath 2 $fqName)" > /dev/null
+    getFastqAsciiStream "$RAW_SEQ_1" > $(getPairedPipeEndPath 1 "$fqName") & registerPid
+
+    if [[ "$qualityScore" == "illumina" ]]; then
+        extendPipe $(mkPairedPipeName 1 "$fqName") "qScore" -- toIlluminaScore
+    fi
+
+    if [[ "${useAdaptorTrimming:-false}" == "true" ]]; then
+        extendPipePair "$fqName" "trimmomatic" -- trimmomaticSingleEnd
+    fi
+
+    if [[ "${reorderUndirectionalWGBSReadPairs:-false}" == "true" ]]; then
+        if [[ "$useSingleEndProcessing" == "true" ]]; then
+            throw 50 "Cannot reorder undirectional read pairs with single-end data"
+        fi
+    fi
+
+    extendPipe $(mkPairedPipeName 1 "$fqName") "fqconv" -- methylCfqconv 1
+}
+
 
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"

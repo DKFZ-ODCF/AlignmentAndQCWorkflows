@@ -106,10 +106,6 @@ if [[ "$bamFileExists" == "false" ]]; then	# we have to make the BAM
 	    INPUT_PIPES="${INPUT_PIPES} $(getPairedPipeEndPath 2 $fqName)"
     fi
 
-    if [[ -z "$INPUT_PIPES" ]]; then
-	    throw 100 "Your input FASTQs are empty: '$RAW_SEQ_1', '$RAW_SEQ_2'"
-	fi
-
 fi
 
 # Try to read from pipes BEFORE they are filled.

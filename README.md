@@ -57,38 +57,6 @@ Two programs in this repository -- `genomeCoverage.d` and `coverageQc.d` -- were
   * the D-compiler [LDC 0.12.1](https://github.com/ldc-developers/ldc/releases/tag/v0.12.1) compiler
   * and [BioD](https://github.com/lomereiter/BioD) master branch (commit 8b633de) 
 
-# Workflow Job Structure
-
-The workflow submits various jobs. The exact job-types depend on whether you analyse WGS, WES or WGBS data.
-
-## Whole Genome Sequencing (WGS) 
-
-The WGS variant does some GC- and replication-timing bias corrections for the coverage estimates, as are described is the documentation of the [ACEseq workflow](https://aceseq.readthedocs.io/en/latest/methods.html#gc-replication-timing-bias-correction).
-
-![WGS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgs.puml)
-
-## Whole Exome Sequencing (WES)
-
-For exome sequencing the QC statistics need to account for the target regions only, otherwise the estimates would be widely off any relevant value.
-
-![WES job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wes.puml)
-
-## Whole Genome Bisulfite Sequencing (WGBS)
-
-The WGBS variant does bisulfite calling on the fly with a patched version of [methylCtools](https://github.com/hovestadt/methylCtools) that is included in this repository. The workflow can handle not only WGBS but also tagmentation-WGBS data as described by [Wang _et al._, 2013](https://doi.org/10.1038/nprot.2013.118). Tagmentation data is based on independently amplified libraries, which makes it necessary to do independent duplication marking for each individual library before merging everything into a final merged-BAM.
-
-![WGBS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgbs.puml)
-
-### Read-Reordering with Unidirectional WGBS Data
-
-By setting `reorderUnidirectionalWGBSReadPairs` the read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may swap the two reads.
-
-Note that after the swapping, the read-numbers are reversed. What was R1 in the input FASTQ will be R2 in the output BAM, and vice versa.
-
-Furthermore, not all reads can be unambiguously classified. These unclassified reads are currently dropped. 
-
-The original script with a documentation of the underlying ideas can be found [here](https://github.com/cimbusch/TWGBS.git).
-
 # Resource Requirements
 
 The workflow is rather tuned to minimize IO. For instance, the tools are glued together using pipes. However, the duplication marking and the BAM sorting steps produce temporary files. These two and the BWA step are also the memory-hungry steps, while BWA is the step that requires most CPU time. 
@@ -140,8 +108,12 @@ The most important parameters are:
 | CHR_GROUP_NOT_MATCHING | human | See CHR_PREFIX. Default: "nonmatching" |
 | CHR_GROUP_MATCHING | mouse | See CHR_PREFIX. Default" "matching" |
 | CHROMOSOME_INDICES | "( 1 2 3 )" | Needed for the WGBS workflow to select chromosomes to be processed. This should be a quoted bash array, i.e. with spaces as element separators and including the parentheses. |
+| ??? | Trimming is done before alignment. |
+| ADAPTOR_TRIMMING_OPTIONS_1 | ? | |
+| ADAPTOR_TRIMMING_OPTIONS_1 | ? | |
 
 A full description of all options in the different workflows can be found in the XML files in `resources/configurationFiles`. Note that workflow configurations inherit from each other in the order "WGS" <- "WES" <- "WGBS". Thus the WGS configuration (analysisQc.xml) contains variables that are overridden by values in the WES configuration (analysisExome.xml), and so forth.
+
 
 ## Xenograft
 
@@ -179,11 +151,15 @@ For exome sequencing the QC statistics need to account for the target regions on
 
 ![WES job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wes.puml)
 
+exome-related options
+
+
+
 ## Whole Genome Bisulfite Sequencing (WGBS)
 
-The WGBS variant does bisulfite calling on the fly with a patched version of [methylCtools](https://github.com/hovestadt/methylCtools) that is included in this repository. Also data generated with Post-Bisulfite Adapter Tagging (PBAT; [Miura _et al._, 2012](https://doi.org/10.1093/nar/gks454)) will probably work. 
+The WGBS variant does bisulfite calling on the fly with a patched version of [methylCtools](https://github.com/hovestadt/methylCtools) that is included in this repository. The patched version was extended to also be able to handle tagmentation-based data (see next sections).
 
-Additionally, the workflow can handle tagmentation-WGBS data as described by [Wang _et al._, 2013](https://doi.org/10.1038/nprot.2013.118). 
+Here is the overall structure of the WGBS workflow. The additional "library"-merging step is only invoked if there are multiple libraries provided, which is usually only the case for tagmentation data.
 
 ![WGBS job structure](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/master/docs/images/jobs-wgbs.puml)
 
@@ -206,22 +182,46 @@ The WGBS workflow is invoked if the "bisulfiteCoreAnalysis" configuration is ref
 
 ```
 
-For tagmentation-WGBS you need to set `IS_TAGMENTATION` to "true". In this case an alternative methylation caller will be used that ignores the outmost 9 bp of each fragment.
-
-
 ### Swift Biosciences ACCEL-NGS 1S PLUS & METHYL-SEQ
 
-The protocol produces a second read (R2) fragment-end of on average 8 bp containing non-genomic sequences with low complexity. As these sequences are not of genomic origin they should be trimmed off. Because of read through with fragments shorter than the read length the advise by Swift Biosciences is to trim off this non-genomic 10 bp from *both* fragment ends (compare [here](https://www.westburg.eu/uploads/fckconnector/6f34a0c2-8c61-4ef2-b79d-fe45db09ba51/2888031684)). The trimming off is done by trimmomatic before the actual alignment and can be customized as described by adapting the option `ADAPTOR_TRIMMING_OPTIONS_1`:
+The protocol produces a second read (R2) fragment-end of on average 8 bp containing non-genomic sequences with low complexity. As these sequences are not of genomic origin they should be trimmed off. Because of read through with fragments shorter than the read length, the advise by Swift Biosciences is to trim off this non-genomic 10 bp from *both* fragment ends (compare [here](https://www.westburg.eu/uploads/fckconnector/6f34a0c2-8c61-4ef2-b79d-fe45db09ba51/2888031684)). Like for the WGS workflow, the trimming off is done by trimmomatic before the actual alignment and can be customized as described by adapting the option `ADAPTOR_TRIMMING_OPTIONS_1`. The variable `ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs` has the correct trimming parameters for the Swift ACCEL-NGS protocol predefined.  
 
 ```xml
 <cvalue name="IS_TAGMENTATION" value="false"/>
 <cvalue name="ADAPTOR_TRIMMING_OPTIONS_1" value="${ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs}"/>
 ```
 
-Note that here `IS_TAGMENTATION` is set to false, so no additional 9 bp are ignored during calling. 
+Note that here `IS_TAGMENTATION` is set to false, so no additionally ignore 9 bp during bisulphite calling. 
 
+### WGBS-Tagmentation
 
-# Release Branches
+WGBS-tagmentation ([Wang _et al._, 2013](https://doi.org/10.1038/nprot.2013.118)) produces about 9 bp of genomic sequences on both fragment ends that show a conversion bias. Because these sequences are genomic, they contain information for the alignment and should not get trimmed off completely. However, because they are biased they need to be ignored during the bisulphite calling. This is the function of the patch of [methylCtools](https://github.com/hovestadt/methylCtools), to ignore the biased 9 bp. Therefore, for tagmentation you need to set 
+
+```xml
+<cvalue name="IS_TAGMENTATION" value="true"/>
+``` 
+
+in your configuration.
+
+Note that tagmentation data is based on independently amplified libraries, which makes it necessary to do independent duplication marking for each individual library before merging everything into a final merged-BAM.
+
+### PBAT
+
+The Post-Bisulfite Adapter Tagging (PBAT; [Miura _et al._, 2012](https://doi.org/10.1093/nar/gks454)) protocol produces undirectional read pairs. 
+
+By setting `reorderUnidirectionalWGBSReadPairs` the a read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may then swap the two reads. Reads that cannot be unambiguously classified are currently dropped. Note that after the swapping, the read-numbers of swapped reads are reversed: What was R1 in the input FASTQ will be R2 in the output BAM, and vice versa. The original script for swapping, including a documentation of the underlying ideas, can be found [here](https://github.com/cimbusch/TWGBS.git).
+
+```xml
+<cvalue name="IS_TAGMENTATION" value="false"/>
+<cvalue name="reorderUnidirectionalWGBSReadPairs" value="true"/>
+
+```
+
+# Change Logs
+
+See [here](Changelog.md) for the general change logs of the master branch.
+
+## Release Branches
 
 Various versions are or have been in production mode at the DKFZ/ODCF. These often have dedicated release branches named "ReleaseBranch_$major.$minor\[.$patch\]" in which only certain changes have been made:
 
@@ -231,29 +231,3 @@ Various versions are or have been in production mode at the DKFZ/ODCF. These oft
   
 > Note that [ReleaseBranch_1.2.182](../../tree/ReleaseBranch_1.0.182) is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
 
-## Change Logs
-
-* 1.3.0 (branch-specific change)
-  - Updated undirectional WGBS read-reordering script from [here](https://github.com/cimbusch/TWGBS.git)
-  - Actually include the WGBS read-reordering script
-
-* 1.2.73-2 (branch-specific changes)
-  - Improved error checking and reporting for BWA and surrounding pipe
-  
-* 1.2.73-1 (branch-specific changes)
-  - Lifted to Roddy 3.0 release (official LSF-capable release)
-  - Bugfix with wrong Bash function export
-
-* 1.2.73
-  - Lifted 1.1.73 to Roddy 2.4 (development-only release)
-  - Fingerprinting support also for WGBS
-  - sambamba 0.5.9 for sorting and viewing BAMS
-  - BAM termination sequence check
-
-* 1.1.73
-  - Bugfix mergeOnly step WGBS
-  - Substituted sambamba-based compression by samtools compression for improved stability, time, and memory consumption
-  - Tuning (tee -> mbuffer)
-  - Node-local scratch by default
-  - Fingerprinting (not for WGBS, yet)
-  - Bugfix affecting CLIP_INDEX in configuration 
