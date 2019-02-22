@@ -21,8 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-//import sun.net.www.content.text.Generic;
-
 /**
  * A bam file is the binary version of a sam file and contains sequence data.
  *
@@ -50,7 +48,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     private TextFile groupedGenomeCoverageTextFile;
     private BamMetricsFile bamMetricsFile;
     private BamFile targetExtractedBamFile;
-    private boolean _isTargetExractedFile;
+    private boolean _isTargetExtractedFile;
     private OnTargetCoverageTextFile onTargetCoverageTextFile;
     private QCSummaryFile qcSummaryFile;
     private TextFile qcJsonFile;
@@ -62,34 +60,6 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     public BamFile(ConstructionHelperForBaseFiles helper) {
         super(helper);
     }
-//
-//    private static ConstructionHelperForBaseFiles adaptHelperBasedOnInput(ConstructionHelperForBaseFiles helper) {
-//        if (helper instanceof ConstructionHelperForSourceFiles) {
-//            return helper;
-//        } else if (helper instanceof ConstructionHelperForGenericCreation) {
-//            ConstructionHelperForGenericCreation h = (ConstructionHelperForGenericCreation) (helper);
-//            /* This is a bit complicated and I did not know how to solve it in a more convenient way, but:
-//             * BamFile fomerly had a lot of different constructors for different input. Most of them
-//             * decreased the file stage level of the parent object. Now we have only one constructor, which just checks
-//             * if we have a BamFile as the parent file(in this case, we do not decrease levels)
-//             */
-//            FileStageSettings newFS = h.fileStageSettings;
-//            if (!(h.parentObject instanceof BamFile)) {
-//                if(h.parentObject instanceof FileGroup) {
-//                    newFS = ((BaseFile)((FileGroup)h.parentObject).getFilesInGroup().get(0)).getFileStage().decreaseLevel();
-//                } else {
-//                    newFS = ((BaseFile)h.parentObject).getFileStage().decreaseLevel();
-//                }
-//            } else {
-//                newFS = ((BamFile)h.parentObject).getFileStage();
-//            }
-//
-//            //Reset the previous construction helper with the new filestage settings. Do a copy?
-//
-//        } else {
-//            throw new RuntimeException("Oh oh, there is an unresolved case for the BamFile constructor.");
-//        }
-//    }
 
     /**
      * "Copy" constructor for Bam conversion.
@@ -101,7 +71,7 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     }
 
     public String getType() {
-        return _isTargetExractedFile ? "targetExtractedBam" : "commonBam";
+        return _isTargetExtractedFile ? "targetExtractedBam" : "commonBam";
     }
 
     public Sample getSample() {
@@ -141,15 +111,15 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
     }
 
     public boolean isRawBamFile() {
-        return !_isTargetExractedFile;
+        return !_isTargetExtractedFile;
     }
 
     public void setIsTargetExtracted() {
-        _isTargetExractedFile = true;
+        _isTargetExtractedFile = true;
     }
 
     public boolean isTargetExtractedBamFile() {
-        return _isTargetExractedFile;
+        return _isTargetExtractedFile;
     }
 
     public boolean hasTargetExtractedBamFile() {
@@ -442,11 +412,12 @@ public class BamFile extends BasicBamFile implements ITestdataSource {
 
     @Override
     public String toString() {
-        return String.format("BamFile\n  hasIndex=%b\n  hasFlagstats=%b\n  hasChromosomeDiff=%b  \nhasCoverage=%b", hasIndex(), hasFlagstats(), hasChromosomeDiff(), hasCoverage());
+        return String.format("BamFile %s hasIndex=%b hasFlagstats=%b hasChromosomeDiff=%b hasCoverage=%b",
+                super.toString(), hasIndex(), hasFlagstats(), hasChromosomeDiff(), hasCoverage());
     }
 
     @Override
     public boolean createTestData() {
-        throw new UnsupportedOperationException("Creating test data for bamfiles not supported yet.");
+        throw new UnsupportedOperationException("Creating test data for BamFile not supported yet.");
     }
 }
