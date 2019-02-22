@@ -105,7 +105,6 @@ if [[ "$bamFileExists" == "false" ]]; then	# we have to make the BAM
     else
 	    INPUT_PIPES="${INPUT_PIPES} $(getPairedPipeEndPath 2 $fqName)"
     fi
-
 fi
 
 # Try to read from pipes BEFORE they are filled.
@@ -207,6 +206,9 @@ else
 fi
 
 wait $procTrim || throw 38 "Error from trimming"
+wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
+wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
+
 wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 14
 wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomeCoverage read bins" && exit 15
 wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 16

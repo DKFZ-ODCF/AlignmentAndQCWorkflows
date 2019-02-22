@@ -43,7 +43,7 @@ declare -a INPUT_FILES="$INPUT_FILES"
 useOnlyExistingTargetBam=${useOnlyExistingTargetBam-false}
 
 if [[ -v bam && ! -z "$bam" ]]; then
-    # Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
+    # Handle existing BAM provided by 'bam' parameter xor present as target FILENAME.
     # When "bam" is used the target BAM (FILENAME is not taken as input (but moved)).
     if [[ "$useOnlyExistingTargetBam" == true ]]; then
         throw 1 "Inconsistent parameters: onlyUseExistingTargetBam is set to true and 'bam' is set"

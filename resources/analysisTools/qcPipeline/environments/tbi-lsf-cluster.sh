@@ -5,7 +5,7 @@
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
 
-set -xv
+set -uvex
 
 # Given a name of a tool version variable, get the name of the tool version variable. The
 # idea is that if the tool name variable is not defined, the name is interpreted as plain tool

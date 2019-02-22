@@ -1,6 +1,6 @@
 # Alignment and Quality Control Plugin for Roddy
 
-This plugins contains alignment and quality control related [Roddy](https://github.com/eilslabs/Roddy) workflows:
+This plugins contains alignment and quality control related [Roddy](https://github.com/TheRoddyWMS/Roddy) workflows:
 
 - PanCancer alignment workflow for whole genome (WGS) and exome (WES)
 - Bisulfite core workflow (WGBS) using [methylCtools](https://github.com/hovestadt/methylCtools)
@@ -220,14 +220,3 @@ By setting `reorderUnidirectionalWGBSReadPairs` the a read-reordering script wil
 # Change Logs
 
 See [here](Changelog.md) for the general change logs of the master branch.
-
-## Release Branches
-
-Various versions are or have been in production mode at the DKFZ/ODCF. These often have dedicated release branches named "ReleaseBranch_$major.$minor\[.$patch\]" in which only certain changes have been made:
-
-  * No changes that alter previous output.
-  * New important features are sometimes backported -- as long as they do not change the previous results.
-  * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
-  
-> Note that [ReleaseBranch_1.2.182](../../tree/ReleaseBranch_1.0.182) is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
-

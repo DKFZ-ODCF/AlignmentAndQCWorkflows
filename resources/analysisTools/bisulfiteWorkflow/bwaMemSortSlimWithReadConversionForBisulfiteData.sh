@@ -13,8 +13,8 @@ source "$TOOL_WORKFLOW_LIB"
 setUp_BashSucksVersion
 trap cleanUp_BashSucksVersion EXIT
 
-ID="${RUN}_${LANE}"
-SM="sample_${SAMPLE}_${PID}"
+ID="${RUN}_$LANE"
+SM="sample_${SAMPLE}_$PID"
 
 # RODDY_SCRATCH is used here. Is for PBS $PBS_SCRATCH_DIR/$PBS_JOBID, for SGE /tmp/roddyScratch/jobid
 RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME_SORTED_BAM}_TEMP")
@@ -34,7 +34,7 @@ MBUF_LARGE="${MBUFFER_BINARY} -m ${MBUFFER_SIZE_LARGE} -q -l /dev/null"
 
 mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS} ${NP_BWA_OUT} ${NP_BCONV_OUT}
 
-bamname=`basename ${FILENAME_SORTED_BAM}`
+bamname=`basename "$FILENAME_SORTED_BAM"`
 INDEX_FILE="$FILENAME_SORTED_BAM.bai"
 tempSortedBamFile="$FILENAME_SORTED_BAM.tmp"
 tempFileForSort="$RODDY_BIG_SCRATCH/${bamname}_forsorting"
@@ -76,7 +76,6 @@ if [[ $LENGTH_SEQ_1 -eq 0 ]] && [[ $LENGTH_SEQ_2 -eq 0 ]]; then
 elif [[ $LENGTH_SEQ_1 -eq 0 ]] || [[ $LENGTH_SEQ_2 -eq 0 ]]; then
     useSingleEndProcessing=true
 fi
-
 
 
 # Try to read from pipes BEFORE they are filled.

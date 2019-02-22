@@ -1,143 +1,193 @@
-== Description
+# Versioning Policy
 
-The workflow is based on the original qc genome workflow and uses most of its run flags.
-It utilizes a set of optimized methods leading to a very reduced workflow with only three steps.
-In addition it allows the usage of externally set bam files and fastq files.
+Note that for the lift from Roddy 2 to Roddy 3 all workflow branches were increased in the minor number. Thus
 
-== Run flags / switches
+  - 1.1.51 -> 1.2.51
+  - 1.1.73 -> 1.2.73
+  - 1.0.182 -> 1.2.182
 
-Switch                      Default Description
-runCoveragePlotsOnly        false
+> Therefore note that [ReleaseBranch_1.2.182](../../tree/ReleaseBranch_1.0.182) is __not the newest branch with minor number 2, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed.
 
-Value                       Description
-overrideSamples
-overrideBamFiles
+Starting with version 1.2.76 we switched to [Semantic Versioning 2.0](https://semver.org/) with a focus on user-oriented changes. This means the version numbers are increased according to semantic changes on the interface to the user, that is variables and output. The compatibility management with Roddy and upstream plugin versions is automatically managed. 
 
+In exception to this strategy backports etc. for maintenance branches are created by suffixing a number separated by '-' to the semantic version. Various versions are or have been in production mode at the DKFZ/ODCF. These often have dedicated release branches named "ReleaseBranch_$major.$minor\[.$patch\]" in which only the following kinds of changes have been made:
 
-== Changelist
+  * No changes that alter previous output.
+  * New important features are sometimes backported -- as long as they do not change the previous results.
+  * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
 
-* Version update to 1.3.0
+# Change Logs
 
-- check ACEseq QC input file before start
-- dead code removal
-- fixed some Perl tests
-- Conda environment
-- contributors
-- MIT licence, where necessary copyleft licence
-- improved read-me
-- use externally provided trimmomatic
-- JVM code updated to depend on Roddy 3.2.0
-- depth of coverage for human separate from mouse for xenograft
-- cleanup "fat" workflow variants and unused SNP scripts
-- improved handling of small datasets (lack of data and empty files) for improved execution testing
+* 1.4.0
+  - Recognize truncated FASTQs from BWA error log
+  - 
+ 
 
-* Version update to 1.2.76
+* 1.3.0
 
-- lifted 1.1.76 to Roddy 3
-- support for loading environment modules (via DefaultPlugin 1.2.2)
-- removed references to PBS to allow running on LSF cluster
-- refactoring: bamFileExists -> useOnlyExistingTargetBam
-- ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN)
-- bugfix: FASTQC code
-- bugfix: use existing BAM files
-- bugfix: BWA error recognition
-- fingerprinting for WGBS
-- check input BAMs for syntactic completeness (BAM trailer)
-- check FASTQ files before submission
-- classify FASTQs as QC-passed or QC-failed based on FASTQC output
-- turned off faulty fingerprinting on Conveys
-- unit tests for Bash functions in workflowLib.sh and bashLib.sh (based on https://github.com/kward/shunit2.git)
-- refactoring: removed dysfunctional bwa sampe and slow-pipeline code
-- more documentation
+  - Depth of coverage for human separate from mouse for xenograft
+  - Coverage separate for mouse and human in xengraft assemblies
+  - Check ACEseq QC input file before start
+  - Use externally provided trimmomatic
+  - Update to Roddy 3.2 dependency
+  - Better documentation
+  - Conda environment
+  - Further removal of unused/unmaintained scripts
+  - Better tolerance to small datasets (mostly for testing)
+  - Fixed some Perl tests
+  - Diverse bugfixes
+  - MIT licence, where necessary copyleft licence
 
-For the lift to Roddy 3 all workflow branches were increased in the minor number. Thus
+* 1.2.76
 
-- 1.1.51 -> 1.2.51
-- 1.1.73 -> 1.2.73
-- 1.0.186 -> 1.2.186
+  - Lifted 1.1.76 to Roddy 3
+  - LSF support
+  - Support for loading environment modules (via DefaultPlugin 1.2.2)
+  - Check input BAMs for syntactic completeness (BAM trailer)
+  - Check FASTQ files before submission
+  - Classify FASTQs as QC-passed or QC-failed based on FASTQC output
+  - ACEseq QC (runACEseqQc:Boolean, GC_CONTENT_FILE_ALN, REPLICATION_TIME_FILE_ALN, MAPPABILITY_FILE_ALN, CHROMOSOME_LENGTH_FILE_ALN); not on WES
+  - Stabilization WGBS
+  - Fingerprinting for WGBS
+  - Turned off faulty fingerprinting on Conveys
+  - Additionally to upper-case SAMPLE, RUN, etc. also send lower-case versions to jobs  
+  - Refactorings and code cleanup
+  - Deleted old BWA sampe code
+  - Renamed alreadyMergedLanes.pl to missingReadGroups.pl
+  - Removed bwaErrorCheckingScript; now function in workflowLib.sh
+  - Documentation (Readme.md)
+  - Unit tests for Bash functions in workflowLib.sh and bashLib.sh (based on [shunit2](https://github.com/kward/shunit2.git))
+  - Refactoring: bamFileExists -> useOnlyExistingTargetBam
+  - bugfix: FASTQC code
+  - bugfix: use existing BAM files
+  - bugfix: BWA error recognition
 
-From this timepoint we switched to semantic versioning 2.0. Workflow branches are increased by build number (-# suffix).
+* 1.2.73-2 (branch-specific changes)
+  - Improved error checking and reporting for BWA and surrounding pipe
+  
+* 1.2.73-1 (branch-specific changes)
+  - Lifted to Roddy 3.0 release (official LSF-capable release)
+  - Bugfix with wrong Bash function export
 
-* Version update to 1.1.73
+* 1.2.73
+  - Lifted 1.1.73 to Roddy 2.4 (development-only release)
+  - Fingerprinting support also for WGBS
+  - sambamba 0.5.9 for sorting and viewing BAMS
+  - BAM termination sequence check
 
-- fingerprinting for WES and WGS (runFingerprinting:Boolean, fingerprintingSitesFile)
-- tuned parameters for sambamba support and extracted BAM compression into separate step for performance reasons
+* 1.1.73
+  - Bugfix mergeOnly step WGBS
+  - Substituted sambamba-based compression by samtools compression for improved stability, time, and memory consumption
+  - Tuning (tee -> mbuffer)
+  - Node-local scratch by default
+  - Fingerprinting for WES and WGS (runFingerprinting:Boolean, fingerprintingSitesFile); not for WGBS yet
+  - Bugfix affecting CLIP_INDEX in configuration 
+  - Tuned parameters for sambamba support and extracted BAM compression into separate step for performance reasons
 
-* Version update to 1.1.51
+* 1.2.51-2 (branch-specific changes)
+  - Improved error checking and reporting for BWA and surrounding pipe
 
-- sambamba support
-- use local scratch on nodes
-- resource size 't' for testing purposes
-- fixed off-by-one error in moabs output
+* 1.2.51-1 (branch-specific changes)
+  - Update to Roddy 3.0 release (official LSF-capable release)
+  - Bugfix in tbi-lsf-cluster.sh
+
+* 1.2.51
+  - Lifted 1.1.51 to Roddy 2.4 (development-only release)
+  - FASTQ quality classification (Xavier)
+  - BAM termination sequence check
+  - Bugfixes in WGBS (off-by-one, meth-call splitting CG/CH)
+  - Further bugfixes
+
+* 1.1.51
+  - Improved and error checking
+  - Pre-submission executability checks
+  - Tuning (sambamba flagstat -t 1)
+  - Use local scratch on nodes
+  - Resource size 't' for testing purposes
+  - Progress on WGBS workflow
+  - Fixed off-by-one error in moabs output
 
 * Version upgrade to 1.1.39  
  
 - Initial WGBS support. Duplication marking with Picard or Sambamba.
 
-* AlignmentAndQCWorkflows-1.1.2
-
-- Renamed plugin to AlignmentAndQCWorkflows.
-
-* Version update to 1.0.186
-
-- sambamba support for duplication marking
-- resource size 't' for testing purposes
-- support for samtools 1.0+ and sambamba 0.5.9 (supplementary reads)
-
-* Version update to 1.0.182
-
-- The resource requests for jobs were increased to be on the safe side when switching to the new cluster (in particular concerning OOM killer).
-- Adapted QCWF scripts to match PBS_QUEUE on convey* rather than "convey", to ensure operation on the new cluster, where queues are named convey_fast, convey_medium and convey_long.
-
-* Version update to 1.0.180
-
-- WES: Added qualitycontrol_targetExtract.json
+* 1.1.2
+  - Rename from QualityControlWorkflows to AlignmentAndQCWorkflows
+  - First development version of WGBS workflow
+  - Adaptation to Roddy API changes (FileSystemAccessProvider)
 
 
-* Version update to 1.0.178
+## QualityControlWorkflows
 
-* Version update to 1.0.177
+* 1.0.186
 
-- Calculate MD5 sums for both, Picard and biobambam-based
-  workflows, using md5sum in a separate branch of pipes.
-- Error-checks after mv commands in alignAndPairSlim.sh
-  and mergeAndMarkOrRemoveDuplicatesSlim.sh.
+  - Updated dependency on COWorkflows version 1.1.23
+  - Sambamba support for duplication marking
+  - Fixed the merging of new lanes into existing merged BAM
+  - Generalized the flagstats parser (samtools 1+ format with "supplementary reads")
+  - Refactorings
+  - workflowLib.sh for workflow-specific Bash code
+  - Increased resource requirements  
+  - Resource size 't' (for testing purposes)
+  - Flagstats support for samtools 1.0+ and sambamba 0.5.9 (supplementary reads)
 
-* Version update to 1.0.173
+* 1.2.182 (branch-specific changes)
+  - Roddy 3 support (official LSF-capable release)
+  - BAM termination sequence check
 
-- Added qualitycontrol.json
+* 1.0.182-1
+  - Increased resource requirements
+  - `bam` configuration value to provide an externally located BAM file as initial merged BAM into which to merge additional lane-BAMs
+  - Fixed missing metric file required for QC summary file creation issue
+  - Bugfixes
 
-* Version update to 1.0.168
+* 1.0.182
+  - Increased resource requirements
+  - Refactoring
+  - Adapted QCWF scripts to match PBS_QUEUE on convey* rather than "convey" (to match "convey*" queue names)
 
-- The biobambam branch of the slim mark duplicates script
-  (mergeAndMarkOrRemoveDuplicatesSlim.sh) now produces
-  merged BAM md5sum file.
+* 1.0.180
+  - Imported compiled coverageQc binary
+  - Added tiny/testing (t) resource set for WGS alignment workflow
+  - Added qcJson.pl call to targetExtractCoverageSlim job
+  - Per-Read Group post merge QC added
+  - Git repo created from original SVN checkout
+  - WES: Added qualitycontrol_targetExtract.json
 
-* Version update to 1.0.166
+* 1.0.178
 
-- Removed requests for the lsdf from all scripts.
+* 1.0.177
+  - Calculate MD5 sums for both, Picard and Biobambam-based workflows, using md5sum in a separate branch of pipes.
+  - Error-checks after `mv` commands in alignAndPairSlim.sh and mergeAndMarkOrRemoveDuplicatesSlim.sh.
 
-* Version update to 1.0.164
+* 1.0.173
+  - Added qualitycontrol.json
 
-- Added fastq_list configuration value that allows to override inputDirectories
-  and directly provide FASTQs on the commandline via --cvalues.
+* 1.0.168
+  - The biobambam branch of the slim mark duplicates script (mergeAndMarkOrRemoveDuplicatesSlim.sh) now produces merged BAM md5sum file.
 
-* Version update to 1.0.161
+* 1.0.166
+  - Removed requests for the lsdf from all scripts.
 
-* Version update to 1.0.158
+* 1.0.164
+  - Added fastq_list configuration value that allows to override inputDirectories and directly provide FASTQs on the commandline via --cvalues.
 
-* Version update to 1.0.135
+* 1.0.161
 
-* Version update to 1.0.132
+* 1.0.158
 
-* Version update to 1.0.131
+* 1.0.135
 
-* Version update to 1.0.114
+* 1.0.132
 
-* Version update to 1.0.109
+* 1.0.131
 
-* Version update to 1.0.105
+* 1.0.114
 
-* Version update to 1.0.104
+* 1.0.109
 
-* Version update to 1.0.103
+* 1.0.105
+
+* 1.0.104
+
+* 1.0.103
