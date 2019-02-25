@@ -65,8 +65,15 @@
                 description="Chromosome sizes including only A, T, C, G, i.e. excluding N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
         <cvalue name="INDEX_PREFIX" value="${assembliesHG191000GenomesDirectory}/indexes/bwa/bwa06_1KGRef/hs37d5.fa"
                 description="Path to the genome FASTA file. The same directory should contain the BWA index. The prefix (-p) used for `bwa index` should be the same as the FASTA file, i.e. including the FASTA suffix."/>
-        <cvalue name='CLIP_INDEX' value='' type="path"
-                description="Absolute path to the sequences to be trimmed before alignment." />
+
+        <cvalue name='useAdaptorTrimming' value="false" type="boolean"
+                description="true: Trim Adaptor sequences before alignment. Default: false = Don't trim"/>
+        <cvalue name="ADAPTOR_TRIMMING_OPTIONS_0" value="PE -threads 4 -phred33" type="string"
+                description="Trimmomatic execution parameters, such as PE, SE, -phred33, -phred64. Don't use -trimlog as it will automatically be added."/>
+        <cvalue name="CLIP_INDEX" value="" type="path"
+                description="Used in ADAPTOR_TRIMMING_OPTIONS_1 as file containing adapter sequences to trim by trimmomatic."/>
+        <cvalue name='ADAPTOR_TRIMMING_OPTIONS_1' value='"ILLUMINACLIP:${CLIP_INDEX}:2:30:10:8:true SLIDINGWINDOW:4:15"' type="string"
+                description="Trimmomatic trimming configuration. The sequence of trimming steps."/>
 
         <!-- Fingerprinting allows to identify sample swaps or samples belonging to other patients. -->
         <cvalue name='runFingerprinting' value='false' type='boolean'
