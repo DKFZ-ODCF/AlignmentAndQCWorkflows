@@ -219,6 +219,7 @@
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
+                <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_TRIMLOG" check="false"/>
             </output>
         </tool>
         <tool name='accelerated_alignAndPairSlim' value='bwaMemSortSlim.sh' basepath='qcPipeline'>
@@ -252,6 +253,7 @@
                 <output type="file" variable="qcSummaryFile" typeof="de.dkfz.b080.co.files.QCSummaryFile" scriptparameter="FILENAME_QCSUMMARY"/>
                 <output type="file" variable="fingerprintsFile" fnpatternselectiontag="fingerprints" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_FINGERPRINTS" check="false"/>
                 <output type="file" variable="qcJsonFile" fnpatternselectiontag="qcJson" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_QCJSON"/>
+                <output type="file" typeof="de.dkfz.b080.co.files.TextFile" scriptparameter="FILENAME_TRIMLOG" check="false"/>
             </output>
         </tool>
 
@@ -492,22 +494,38 @@
              A filename can be created using the used tool's name
              -->
 
-        <filename class='AlignedSequenceFile' fileStage="INDEXEDLANE" pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence.sai'/>
-        <filename class='FastqcFile' onMethod="LaneFile.calcFastqc" pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${lane}_${laneindex}_sequence_fastqc.zip"/>
-        <filename class='TextFile'   onMethod="LaneFile.calcFastqc" pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${lane}_${laneindex}_sequence_fastq_qcpass_status.txt"/>
-        <filename class='BamMetricsAlignmentSummaryFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${metricsOutputDirectory}/${cvalue,name="COLLECT_METRICS_PREFIX"}.alignment_summary_metrics'/>
-        <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicates' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
-        <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
-        <filename class='BamFile' onMethod='extractTargetsCalculateCoverage' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="TARGET_BAM_EXTENSION",default="targetExtract.rmdup.bam"}'/>
-        <filename class='BamFile' onMethod='LaneFileGroup.alignAndPairSlim' pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${run}_${lane}_${cvalue,name="pairedBamSuffix"}'/>
-        <filename class='BamIndexFile' derivedFrom='BamFile' pattern='${sourcefile}.bai'/>
-        <filename class='BamMetricsFile' derivedFrom='BamFile' pattern='${sourcefile}.dupmark_metrics.txt'/>
-        <filename class='FlagstatsFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_flagstats.txt'/>
-        <filename class='ChromosomeDiffPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png'/>
-        <filename class='ChromosomeDiffTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.txt'/>
-        <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png_qcValues.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='AlignedSequenceFile' fileStage="INDEXEDLANE"
+                  pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${dataSet}_${sample}_${run}_${laneindex}_sequence.sai'/>
+        <filename class='FastqcFile' onMethod="LaneFile.calcFastqc"
+                  pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${lane}_${laneindex}_sequence_fastqc.zip"/>
+        <filename class='TextFile'   onMethod="LaneFile.calcFastqc"
+                  pattern="${outputAnalysisBaseDirectory}/${fastx_qcOutputDirectory}/${dataSet}_${sample}_${run}_${lane}_${laneindex}_sequence_fastq_qcpass_status.txt"/>
+        <filename class='BamMetricsAlignmentSummaryFile' derivedFrom="BamFile"
+                  pattern='${outputAnalysisBaseDirectory}/${metricsOutputDirectory}/${cvalue,name="COLLECT_METRICS_PREFIX"}.alignment_summary_metrics'/>
+        <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicates'
+                  pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
+        <filename class='BamFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim'
+                  pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="defaultMergedBamSuffix"}'/>
+        <filename class='BamFile' onMethod='extractTargetsCalculateCoverage'
+                  pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${pid}_${cvalue,name="TARGET_BAM_EXTENSION",default="targetExtract.rmdup.bam"}'/>
+        <filename class='BamFile' onMethod='LaneFileGroup.alignAndPairSlim'
+                  pattern='${outputAnalysisBaseDirectory}/${alignmentOutputDirectory}/${sample}_${run}_${lane}_${cvalue,name="pairedBamSuffix"}'/>
+        <filename class='BamIndexFile' derivedFrom='BamFile'
+                  pattern='${sourcefile}.bai'/>
+        <filename class='BamMetricsFile' derivedFrom='BamFile'
+                  pattern='${sourcefile}.dupmark_metrics.txt'/>
+        <filename class='FlagstatsFile' derivedFrom='BamFile'
+                  pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_flagstats.txt'/>
+        <filename class='ChromosomeDiffPlotFile' derivedFrom='BamFile'
+                  pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png'/>
+        <filename class='ChromosomeDiffTextFile' derivedFrom='BamFile'
+                  pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.txt'/>
+        <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile'
+                  pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png_qcValues.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="readBinsCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="genomeCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
 
         <filename class='TextFile' onScriptParameter='accelerated_alignAndPairSlim:FILENAME_GROUPED_GENOME_COVERAGE'
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
@@ -520,35 +538,62 @@
         <filename class='TextFile' onScriptParameter='mergeAndRemoveDuplicatesSlimBioBambam:FILENAME_GROUPED_GENOME_COVERAGE'
                   pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome_Grouped.txt'/>
 
-        <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
-        <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
-        <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
-        <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFile.calcReadBinsCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFile.calcCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFile.rawBamCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_RawBamFile.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFile.targetCoverage' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}.DepthOfCoverage_Target.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="targetsWithCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_TargetsWithCov.txt'/>
-        <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target.txt'/>
 
-        <filename class="TextFile" derivedFrom="BamFile" selectiontag="extendedFlagstats" pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
+        <filename class='TextFile' onScriptParameter='FILENAME_TRIMLOG'
+                  pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.trimlog'/>
 
-        <filename class='OnTargetCoverageTextFile' derivedFrom="BamFile" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}_TargetsWithCov.txt'/>
-        <filename class='OnTargetCoveragePlotFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC' pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_targetCovDistribution.png'/>
-        <filename class='InsertSizesPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png'/>
-        <filename class='InsertSizesTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsizes.txt'/>
-        <filename class='InsertSizesValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png_qcValues.txt'/>
+        <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="readBinsCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="genomeCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="readBinsCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='AlignedSequenceFileGroup.pairAndSortSlim' selectiontag="genomeCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.calcReadBinsCoverage'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.calcCoverage'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.rawBamCoverage'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_RawBamFile.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.targetCoverage'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}.DepthOfCoverage_Target.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="targetsWithCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_TargetsWithCov.txt'/>
+        <filename class='CoverageTextFile' onMethod='BamFile.extractTargetsCalculateCoverage' selectiontag="genomeCoverage"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_targetExtract.rmdup.bam.DepthOfCoverage_Target.txt'/>
 
-        <filename class='InsertSizesPlotFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png'/>
-        <filename class='InsertSizesTextFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsizes.txt'/>
-        <filename class='InsertSizesValueFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png_qcValues.txt'/>
+        <filename class="TextFile" derivedFrom="BamFile" selectiontag="extendedFlagstats"
+                  pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_extendedFlagstats.txt'/>
 
-        <filename class='QCSummaryFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_${sourcefileProperty,type}_wroteQcSummary.txt'/>
+        <filename class='OnTargetCoverageTextFile' derivedFrom="BamFile"
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomic}_TargetsWithCov.txt'/>
+        <filename class='OnTargetCoveragePlotFile' fileStage='de.dkfz.roddy.knowledge.files.FileStage.GENERIC'
+                  pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_targetCovDistribution.png'/>
+        <filename class='InsertSizesPlotFile' derivedFrom='BamFile'
+                  pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png'/>
+        <filename class='InsertSizesTextFile' derivedFrom='BamFile'
+                  pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsizes.txt'/>
+        <filename class='InsertSizesValueFile' derivedFrom='BamFile'
+                  pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_insertsize_plot.png_qcValues.txt'/>
 
-        <filename class='QCSummaryFile' derivedFrom='BamFile' selectiontag="targetExtract" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_wroteQcSummary.txt'/>
+        <filename class='InsertSizesPlotFile' derivedFrom='BamFile' selectiontag="targetExtract"
+                  pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png'/>
+        <filename class='InsertSizesTextFile' derivedFrom='BamFile' selectiontag="targetExtract"
+                  pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsizes.txt'/>
+        <filename class='InsertSizesValueFile' derivedFrom='BamFile' selectiontag="targetExtract"
+                  pattern='${outputAnalysisBaseDirectory}/${insertSizesOutputDirectory}/${sourcefileAtomic}_insertsize_plot.png_qcValues.txt'/>
 
-        <filename class="TextFile" onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="fingerprints" pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
-        <filename class="TextFile" onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="fingerprints" pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
+        <filename class='QCSummaryFile' derivedFrom='BamFile'
+                  pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_${sourcefileProperty,type}_wroteQcSummary.txt'/>
+
+        <filename class='QCSummaryFile' derivedFrom='BamFile' selectiontag="targetExtract"
+                  pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomicPrefix,delimiter="_"}_wroteQcSummary.txt'/>
+
+        <filename class="TextFile" onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="fingerprints"
+                  pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
+        <filename class="TextFile" onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="fingerprints"
+                  pattern='${outputAnalysisBaseDirectory}/${fingerprintsOutputDirectory}/${sourcefileAtomic}.fp'/>
         <filename class="TextFile" derivedFrom="BamFile" selectiontag="qcJson" pattern='${outputAnalysisBaseDirectory}/${sourcefileAtomic}_qualitycontrol.json'/>
 
         <filename class='GenomeCoveragePlotFile' derivedFrom='CoverageTextFile[2]'

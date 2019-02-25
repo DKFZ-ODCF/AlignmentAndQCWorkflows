@@ -463,7 +463,12 @@ trimmomatic() {
     local u1=/dev/null
     local u2=/dev/null
 
-    "$JAVA_BINARY" -jar "$TOOL_ADAPTOR_TRIMMING" $ADAPTOR_TRIMMING_OPTIONS_0 "$input1" "$input2" "$output1" "$u1" "$output2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
+    local trimlog=""
+    "$JAVA_BINARY" -jar "$TOOL_ADAPTOR_TRIMMING" \
+        $ADAPTOR_TRIMMING_OPTIONS_0 \
+        -trimlog "$FILENAME_TRIMLOG" \
+        "$input1" "$input2" "$output1" "$u1" "$output2" "$u2" \
+        $ADAPTOR_TRIMMING_OPTIONS_1
 }
 
 
