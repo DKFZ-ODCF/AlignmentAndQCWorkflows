@@ -213,6 +213,8 @@ throwIfMatching() {
     fi
 }
 
+# Note: Checks are not collected. To get as precise information as possible the tests are sorted from more specific (in terms of diagnostic value)
+#       to less specific.
 checkBwaOutput() {
     local bamFile="${1:?No BAM file given}"
     local bwaOutput="${2:?No BWA STDERR output file given}"
@@ -223,14 +225,6 @@ checkBwaOutput() {
     throwIfFileInaccessible "$bwaOutput"
     throwIfFileInaccessible "$errorCodeFile"
 
-    if [[ $(cat "$errorCodeFile") != "0" ]]; then
-        throw 32 "There was a non-zero exit code in bwa pipe (w/ pipefail): $(cat '$errorCodeFile'); exiting..."
-    fi
-
-    if [[ "2048" -gt `stat -c %s $bamFile` ]]; then
-        throw 33 "Output file is too small!"
-    fi
-
     # Check for segfault messages
     throwIfMatching "$bwaOutput" " fault" 31
 
@@ -239,11 +233,11 @@ checkBwaOutput() {
     # these are not errors that would lead to fail, in contrast to "ERROR: Bus error"
     throwIfMatching <(cat "$bwaOutput" | grep -v "error_count" | grep -v "dummy be execution") "error" 36
 
-    # Check for BWA abortion.
-    throwIfMatching "$bwaOutput" "Abort. Sorry." 37
-
     # An assumption of the workflow is violated.
     throwIfMatching "$bwaOutput" "file has fewer sequences." 41
+
+    # Check for BWA abortion.
+    throwIfMatching "$bwaOutput" "Abort. Sorry." 37
 
     # samtools sort may complain about truncated temp files and for each line outputs
     # the error message. This happens when the same files are written to at the same time,
@@ -253,6 +247,14 @@ checkBwaOutput() {
         throwIfMatching "$sortLog" "is truncated. Continue anyway." 38
     else
         echo "there is no samtools sort log file" >> /dev/stderr
+    fi
+
+    if [[ $(cat "$errorCodeFile") != "0" ]]; then
+        throw 32 "There was a non-zero exit code in bwa pipe (w/ pipefail): $(cat '$errorCodeFile'); exiting..."
+    fi
+
+    if [[ "2048" -gt `stat -c %s $bamFile` ]]; then
+        throw 33 "Output file is too small!"
     fi
 
     checkBamIsComplete "$bamFile"
