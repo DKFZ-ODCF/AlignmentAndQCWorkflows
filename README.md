@@ -191,7 +191,9 @@ The protocol produces a second read (R2) fragment-end of on average 8 bp contain
 <cvalue name="ADAPTOR_TRIMMING_OPTIONS_1" value="${ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs}"/>
 ```
 
-Note that here `IS_TAGMENTATION` is set to false, so no additionally ignore 9 bp during bisulphite calling. 
+Note that here `IS_TAGMENTATION` is set to false, so no additionally ignore 9 bp during bisulphite calling.
+
+Finally note, that we currently use trimmomatic, which -- by itself -- cannot just trim 10 bp from the distal fragment end independent of quality scores. This means that for short fragments only the adapter is trimmed, but not, as suggested by the protocol producer, the additional 10 bp. 
 
 ### WGBS-Tagmentation
 
@@ -209,11 +211,13 @@ Note that tagmentation data is based on independently amplified libraries, which
 
 The Post-Bisulfite Adapter Tagging (PBAT; [Miura _et al._, 2012](https://doi.org/10.1093/nar/gks454)) protocol produces undirectional read pairs. 
 
-By setting `reorderUnidirectionalWGBSReadPairs` the a read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may then swap the two reads. Reads that cannot be unambiguously classified are currently dropped. Note that after the swapping, the read-numbers of swapped reads are reversed: What was R1 in the input FASTQ will be R2 in the output BAM, and vice versa. The original script for swapping, including a documentation of the underlying ideas, can be found [here](https://github.com/cimbusch/TWGBS.git).
+By setting `reorderUndirectionalWGBSReadPairs` the a read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may then swap the two reads. Reads that cannot be unambiguously classified are currently dropped. Note that after the swapping, the read-numbers of swapped reads are reversed: What was R1 in the input FASTQ will be R2 in the output BAM, and vice versa. The original script for swapping, including a documentation of the underlying ideas, can be found [here](https://github.com/cimbusch/TWGBS.git).
+
+Furthermore, for PBAT data the "tagmentation" variant of the bisulphite calling should be used, in which the first 9 bp of the reads are ignored, probably because of random priming. For more information you can read [this article](https://sequencing.qcfail.com/articles/mispriming-in-pbat-libraries-causes-methylation-bias-and-poor-mapping-efficiencies/).
 
 ```xml
-<cvalue name="IS_TAGMENTATION" value="false"/>
-<cvalue name="reorderUnidirectionalWGBSReadPairs" value="true"/>
+<cvalue name="IS_TAGMENTATION" value="true"/>
+<cvalue name="reorderUndirectionalWGBSReadPairs" value="true"/>
 
 ```
 
