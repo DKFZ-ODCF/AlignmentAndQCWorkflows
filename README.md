@@ -213,7 +213,7 @@ The Post-Bisulfite Adapter Tagging (PBAT; [Miura _et al._, 2012](https://doi.org
 
 By setting `reorderUndirectionalWGBSReadPairs` the a read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may then swap the two reads. Reads that cannot be unambiguously classified are currently dropped. Note that after the swapping, the read-numbers of swapped reads are reversed: What was R1 in the input FASTQ will be R2 in the output BAM, and vice versa. The original script for swapping, including a documentation of the underlying ideas, can be found [here](https://github.com/cimbusch/TWGBS.git).
 
-Furthermore, for PBAT data the "tagmentation" variant of the bisulphite calling should be used, in which the first 9 bp of the reads are ignored, probably because of random priming. For more information you can read [this article](https://sequencing.qcfail.com/articles/mispriming-in-pbat-libraries-causes-methylation-bias-and-poor-mapping-efficiencies/).
+Furthermore, for PBAT data the "tagmentation" variant of the bisulphite calling should be used, in which the first 9 bp of the reads are ignored. Apparently, there is a conversion bias in the first read bases, probably because of random priming. For more information you can read [this article](https://sequencing.qcfail.com/articles/mispriming-in-pbat-libraries-causes-methylation-bias-and-poor-mapping-efficiencies/).
 
 ```xml
 <cvalue name="IS_TAGMENTATION" value="true"/>
