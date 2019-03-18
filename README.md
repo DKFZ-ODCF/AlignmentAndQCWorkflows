@@ -187,8 +187,11 @@ The WGBS workflow is invoked if the "bisulfiteCoreAnalysis" configuration is ref
 The protocol produces a second read (R2) fragment-end of on average 8 bp containing non-genomic sequences with low complexity. As these sequences are not of genomic origin they should be trimmed off. Because of read through with fragments shorter than the read length, the advise by Swift Biosciences is to trim off this non-genomic 10 bp from *both* fragment ends (compare [here](https://www.westburg.eu/uploads/fckconnector/6f34a0c2-8c61-4ef2-b79d-fe45db09ba51/2888031684)). Like for the WGS workflow, the trimming off is done by trimmomatic before the actual alignment and can be customized as described by adapting the option `ADAPTOR_TRIMMING_OPTIONS_1`. The variable `ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs` has the correct trimming parameters for the Swift ACCEL-NGS protocol predefined.  
 
 ```xml
-<cvalue name="IS_TAGMENTATION" value="false"/>
-<cvalue name="ADAPTOR_TRIMMING_OPTIONS_1" value="${ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs}"/>
+<cvalue name="IS_TAGMENTATION" value="false" type="boolean"
+        description="true: Ignore 9 bp at read start for methylation statistics"/>
+<cvalue name='ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs' value='"ILLUMINACLIP:${CLIP_INDEX}:2:30:10:8:true SLIDINGWINDOW:4:15 MINLEN:36 HEADCROP:10"' type="string"
+        description="Swift Biosciences Accel-NGS Methyl-Seq DNA Library Kit"/>
+<cvalue name="ADAPTOR_TRIMMING_OPTIONS_1" value="${ADAPTOR_TRIMMING_OPTIONS_1_SwiftAccelNgs}" type="string"/>
 ```
 
 Note that here `IS_TAGMENTATION` is set to false, so no additionally ignore 9 bp during bisulphite calling.
@@ -200,7 +203,8 @@ Finally note, that we currently use trimmomatic, which -- by itself -- cannot ju
 WGBS-tagmentation ([Wang _et al._, 2013](https://doi.org/10.1038/nprot.2013.118)) produces about 9 bp of genomic sequences on both fragment ends that show a conversion bias. Because these sequences are genomic, they contain information for the alignment and should not get trimmed off completely. However, because they are biased they need to be ignored during the bisulphite calling. This is the function of the patch of [methylCtools](https://github.com/hovestadt/methylCtools), to ignore the biased 9 bp. Therefore, for tagmentation you need to set 
 
 ```xml
-<cvalue name="IS_TAGMENTATION" value="true"/>
+<cvalue name="IS_TAGMENTATION" value="true"
+        description="true: Ignore 9 bp at read start for methylation statistics"/>
 ``` 
 
 in your configuration.
@@ -213,11 +217,13 @@ The Post-Bisulfite Adapter Tagging (PBAT; [Miura _et al._, 2012](https://doi.org
 
 By setting `reorderUndirectionalWGBSReadPairs` the a read-reordering script will be run that decides based on the relative frequencies of TC and AG dinucleotides in both reads, what is the most likely correct orientations of the reads, and may then swap the two reads. Reads that cannot be unambiguously classified are currently dropped. Note that after the swapping, the read-numbers of swapped reads are reversed: What was R1 in the input FASTQ will be R2 in the output BAM, and vice versa. The original script for swapping, including a documentation of the underlying ideas, can be found [here](https://github.com/cimbusch/TWGBS.git).
 
-Furthermore, for PBAT data the "tagmentation" variant of the bisulphite calling should be used, in which the first 9 bp of the reads are ignored. Apparently, there is a conversion bias in the first read bases, probably because of random priming. For more information you can read [this article](https://sequencing.qcfail.com/articles/mispriming-in-pbat-libraries-causes-methylation-bias-and-poor-mapping-efficiencies/).
+Furthermore, for PBAT data the "tagmentation" variant of the bisulphite calling should be used, in which the first 9 bp of the reads are ignored. Apparently, there is a conversion bias in the first read bases, probably because of random priming. For more information you can read [this article](https://sequencing.qcfail.com/articles/mispriming-in-pbat-libraries-causes-methylation-bias-and-poor-mapping-efficiencies/). Note that the bias may extend further than 9 bp, but our current script versions can only ignore 9 bases. Feel free to make a pull request, or wait until we are fixing this ourselves. 
 
 ```xml
-<cvalue name="IS_TAGMENTATION" value="true"/>
-<cvalue name="reorderUndirectionalWGBSReadPairs" value="true"/>
+<cvalue name="IS_TAGMENTATION" value="true"
+        description="true: Ignore 9 bp at read start for methylation statistics"/>
+<cvalue name="reorderUndirectionalWGBSReadPairs" value="true"
+        description="true: swap R1/R2 based on nucleotide statistics to approximate directional protocol"/>
 
 ```
 
