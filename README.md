@@ -158,3 +158,7 @@ Various versions are or have been in production mode at the DKFZ/ODCF. These oft
   * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
   
 > Note that [ReleaseBranch_1.2.182](../../tree/ReleaseBranch_1.0.182) is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
+
+# Change Logs
+
+Please see the [changelogs file](Changelog.md) for details.
