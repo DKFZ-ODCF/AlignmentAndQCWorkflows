@@ -1,20 +1,28 @@
 # Versioning Policy
 
-Note that for the lift from Roddy 2 to Roddy 3 all workflow branches were increased in the minor number. Thus
+## Release Branches
 
-  - 1.1.51 -> 1.2.51
-  - 1.1.73 -> 1.2.73
-  - 1.0.182 -> 1.2.182
-
-> Therefore note that [ReleaseBranch_1.2.182](../../tree/ReleaseBranch_1.0.182) is __not the newest branch with minor number 2, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed.
-
-Starting with version 1.2.76 we switched to [Semantic Versioning 2.0](https://semver.org/) with a focus on user-oriented changes. This means the version numbers are increased according to semantic changes on the interface to the user, that is variables and output. The compatibility management with Roddy and upstream plugin versions is automatically managed. 
-
-In exception to this strategy backports etc. for maintenance branches are created by suffixing a number separated by '-' to the semantic version. Various versions are or have been in production mode at the DKFZ/ODCF. These often have dedicated release branches named "ReleaseBranch_$major.$minor\[.$patch\]" in which only the following kinds of changes have been made:
+Various versions of the workflow are or have been in production mode at the DKFZ/ODCF as part of the data managment system [OTP](https://otp.dkfz.de/otp/). The production versions often have dedicated release branches named "ReleaseBranch_$major.$minor\[.$patch\]" in which a only restricted changes have been made in order to ensure compatibility of the results:
 
   * No changes that alter previous output.
   * New important features are sometimes backported -- as long as they do not change the previous results.
   * Bugfixes that allow running the workflow on some data on which it previously crashed, but that do not alter the existing output, are included.
+
+## Roddy 2 to 3 Shift
+
+For the shift from Roddy 2 to Roddy 3 workflow version were increased in the minor number. Specifically this happened to the following versions:
+
+  - 1.1.51 -> 1.2.51
+  - 1.1.73 -> 1.2.73
+  - 1.0.182 -> 1.2.182
+  
+> Therefore note that [ReleaseBranch_1.2.182](../../tree/ReleaseBranch_1.0.182) is __not the newest branch, but the oldest__! It was derived from a very old version of the workflow ([QualityControlWorkflows_1.0.182](../../tree/ReleaseBranch_1.0.182)) at a time where the versioning system was not fixed to [semver 2.0](https://semver.org/).
+
+## Semantic Versioning 2.0
+
+Starting with version 1.2.76 we switched to [Semantic Versioning 2.0](https://semver.org/) with a focus on user-oriented changes. This means the version numbers are increased according to semantic **changes on the interface to the user**, that is variables and output. The compatibility management with Roddy and upstream plugin versions is automatically managed. 
+
+In exception to this strategy backports etc. for maintenance branches are created by suffixing a number separated by '-' to the semantic version.
 
 # Change Logs
 
