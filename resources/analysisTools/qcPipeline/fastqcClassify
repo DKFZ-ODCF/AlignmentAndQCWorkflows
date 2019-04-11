@@ -4,6 +4,7 @@
 #
 # Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
 #
+# Author: Xavier Pastor Hostench
 
 # Variables
 # sum: float; cumulated value of the firs quantile
