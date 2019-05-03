@@ -191,7 +191,7 @@ close FL;
 
 if ($aberrant < 1)
 {
-	print STDERR "no aberrant paired reads found, single end reads?\n";
+	print STDERR "no aberrant paired reads found, single end reads? PE aberrant statistics are not available: $peaberrstat\n";
 	print PE "NA\n";
 }
 else
@@ -207,6 +207,7 @@ close PE;
 # print out matrix
 if ($aberrant < 1)
 {
+	print STDERR "no aberrant paired reads found, single end reads? PE aberrant matrix is empty: $matrixout\n";
 	print MA "NA\n";
 }
 else
