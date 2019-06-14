@@ -142,6 +142,18 @@ isDebugSet() {
     normalizeBoolean "${debug:-false}"
 }
 
+# Grep returns 1 if no match is found. Ensure that empty files are handled gracefully without exit due to `set -e`.
+grepIgnoreEmpty() {
+    (set +e    # The parentheses keep the `set -e` in the local subshell.
+    grep "$@"
+    if [[ $? -gt 1 ]]; then
+        return $?
+    else
+        return 0
+    fi)
+}
+
+
 
 #####################################################################
 ## Handling processes and tempfiles (original code from BamToFastqPlugin)

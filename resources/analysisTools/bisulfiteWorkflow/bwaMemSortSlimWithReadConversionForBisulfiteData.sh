@@ -11,7 +11,7 @@ set -ue
 source "$TOOL_WORKFLOW_LIB"
 
 setUp_BashSucksVersion
-trap cleanUp_BashSucksVersion EXIT
+trap "echo 'Exit trap called -- cleaning up' >> /dev/stderr; cleanUp_BashSucksVersion" EXIT
 
 ID="${RUN}_${LANE}"
 SM="sample_${SAMPLE}_${PID}"
@@ -175,18 +175,18 @@ else
 
 		# Sort bam file
 		(set -o pipefail; \
-		${SAMTOOLS_BINARY} view -h ${NP_BCONV_OUT} | \
-		tee ${NP_COMBINEDANALYSIS_IN} | \
-		${SAMTOOLS_BINARY} view -uSbh -F 2304 - | \
-		$MBUF_LARGE | \
-		${SAMTOOLS_BINARY} sort -@ 8 \
-			-m ${SAMPESORT_MEMSIZE} \
-			-o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
-		tee ${NP_COVERAGEQC_IN} \
-			${NP_READBINS_IN} \
-			${NP_FLAGSTATS} \
-			${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
-		    echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > "$FILENAME_BWA_EC") & procID_MEMSORT=$!
+		    ${SAMTOOLS_BINARY} view -h ${NP_BCONV_OUT} | \
+		    tee ${NP_COMBINEDANALYSIS_IN} | \
+		    ${SAMTOOLS_BINARY} view -uSbh -F 2304 - | \
+		    $MBUF_LARGE | \
+		    ${SAMTOOLS_BINARY} sort -@ 8 \
+    			-m ${SAMPESORT_MEMSIZE} \
+    			-o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
+    		tee ${NP_COVERAGEQC_IN} \
+    			${NP_READBINS_IN} \
+    			${NP_FLAGSTATS} \
+    			${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
+    		    echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > "$FILENAME_BWA_EC") & procID_MEMSORT=$!
 
 		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
@@ -196,10 +196,10 @@ else
 		wait $procID_BWA || throw 20 "Error in BWA alignment"
 		wait $procID_BCONV || throw 21 "Error in BCONV"
 		wait $procID_MEMSORT || throw 24 "Error in samtools sort"
-		wait $procID_IDX; [[ ! $? -eq 0 ]] && echo "Error from samtools index" && exit 10
+		wait $procID_IDX || throw 10 "Error from samtools index"
 	else
 		throw 11 "biobambam sort not implemented yet";
-	fi;
+	fi
 fi
 
 if [[ ${bamFileExists} == true ]]; then

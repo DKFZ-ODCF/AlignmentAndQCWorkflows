@@ -31,14 +31,14 @@ my $minmapq = $opts{n};
 
 if (defined $opts{h} || ! defined $samfile || ! defined $isizebinout  || ! defined $isizeoutfile || ! defined $matrixout || ! defined $chromfile || ! defined $flagsout) {
 	die "USAGE: $0 [options]
-	-a FILE	file to write the matrix with different chromosomes out to (_DiffChroms.txt)
-	-b FILE	file to write the insert size bins out to (_insertsizes.txt)
+	-a FILE	file to write the matrix with different chromosomes out to (_DiffChroms.txt); multi-column TSV matrix with header
+	-b FILE	file to write the insert size bins out to (_insertsizes.txt); two-column TSV w/o header, at least one line '0\\t0\\n'.
 	-c FILE file with the chromosomes that are wanted (must fit w.r.t. pre- and suffix!)
-	-f FILE	file to write the extended flagstats out to (_flagstats_extended.txt)
+	-f FILE	file to write the extended flagstats out to (_flagstats_extended.txt); complex format
 	-i FILE	SAM file (set to - for pipe from STDIN)
-	-m FILE	file to write the insert size median and standard deviation/median*100 out to (_plot.png_qcValues.txt)
+	-m FILE	file to write the insert size median and standard deviation/median*100 out to (_plot.png_qcValues.txt); three rows, each possibly NA
 	-n INT minimal mapping quality for improper pair (default 1)
-	-o FILE file to write the percentage of improper pairs out to (_DiffChroms.png_qcValues.txt)
+	-o FILE file to write the percentage of improper pairs out to (_DiffChroms.png_qcValues.txt); single value, possibly NA.
 	-p INT maximal insert size for a proper pair (default 1000)
 	-h help\n";
 }
@@ -185,7 +185,7 @@ if ($ctr == 0) {
 
 my $percentage = "NA";
 if ($aberrant < 1) {
-	print STDERR "no aberrant paired reads found, single end reads?\n";
+	print STDERR "No aberrant paired reads found, single end reads?\n";
 } else {
 	$average = "NA";
 	if ($ctr > 0) {
@@ -201,27 +201,23 @@ print $percImproperPairedFh $percentage . "\n";
 close $percImproperPairedFh;
 
 # print out matrix
-if ($aberrant < 1) {
-	print $matrixFh "NA\n";
-} else {
-	my $chromstring = join ("\t", @chromarray);
-	# $chrnum is the number of chromosomes wanted = length of the @chromarray
-	print $matrixFh "\t$chromstring\n";
-	my $chrom = "";
-	my $chrmate = "";
-	for (my $c1 = 0; $c1 < $chrnum; $c1++) {
-		$chrom = $chromarray[$c1];	# the actual chromosome name of the read
-		print $matrixFh "$chrom";
-		for (my $c2 = 0; $c2 < $chrnum; $c2++) {
-			$chrmate = $chromarray[$c2];	# ... of the mate
-			if (exists $chrompairs{$chrom} && exists $chrompairs{$chrom}{$chrmate}) {
-				print $matrixFh "\t", $chrompairs{$chrom}{$chrmate};
-			} else {
-				print $matrixFh "\t0";
-			}
+my $chromstring = join ("\t", @chromarray);
+# $chrnum is the number of chromosomes wanted = length of the @chromarray
+print $matrixFh "\t$chromstring\n";
+my $chrom = "";
+my $chrmate = "";
+for (my $c1 = 0; $c1 < $chrnum; $c1++) {
+	$chrom = $chromarray[$c1];	# the actual chromosome name of the read
+	print $matrixFh "$chrom";
+	for (my $c2 = 0; $c2 < $chrnum; $c2++) {
+		$chrmate = $chromarray[$c2];	# ... of the mate
+		if (exists $chrompairs{$chrom} && exists $chrompairs{$chrom}{$chrmate}) {
+			print $matrixFh "\t", $chrompairs{$chrom}{$chrmate};
+		} else {
+			print $matrixFh "\t0";
 		}
-		print $matrixFh "\n";
 	}
+	print $matrixFh "\n";
 }
 close $matrixFh;
 
@@ -233,7 +229,7 @@ close $matrixFh;
 # Also get the standard deviation by the sqrt of the deviations from the average by going through the list efficiently
 
 if ($ctr < 1) {
-	print $isizesbinFh "NA\n";
+	print $isizesbinFh "0\t0\n";
 	print $isizesFh "NA\nNA\nNA\n";
 } else {
 	my $isize_mindiff = $ctr/50000;	#10000;	# for 30x genome, but less reads means less difference!
