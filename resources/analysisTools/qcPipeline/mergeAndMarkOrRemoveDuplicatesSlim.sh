@@ -59,6 +59,7 @@ if [[ -f ${FILENAME} && -s ${FILENAME} ]]; then
     fi
 fi
 
+
 # if the merged file already exists, only merge new lanes to it
 if [[ "$useOnlyExistingTargetBam" == false && -v EXISTING_BAM ]]; then
     singlebams=`${SAMTOOLS_BINARY} view -H ${EXISTING_BAM} | grep "^@RG"`

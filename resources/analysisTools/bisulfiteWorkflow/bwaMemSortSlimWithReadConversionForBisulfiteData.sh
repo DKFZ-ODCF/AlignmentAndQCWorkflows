@@ -46,6 +46,7 @@ tempFlagstatsFile="$FILENAME_FLAGSTATS.tmp"
 # see http://sourceforge.net/p/samtools/mailman/samtools-help/thread/BAA90EF6FE3B4D45A7B2F6E0EC5A8366DA3AB5@USTLMLLYC102.rf.lilly.com/
 NP_SORT_ERRLOG="$RODDY_SCRATCH/NP_SORT_ERRLOG"
 FILENAME_SORT_LOG="$DIR_TEMP/${bamname}_errlog_sort"
+FILENAME_BWA_EC="$DIR_TEMP/${bamname}_ec"
 
 NP_BAMSORT="$RODDY_SCRATCH/NAMED_PIPE_BAMSORT"
 mkfifo "$NP_BAMSORT"
@@ -149,7 +150,8 @@ fi
 if [[ ${bamFileExists} == true ]]; then
 	echo "the BAM file already exists, re-creating other output files."
 	# make all the pipes
-	(cat ${FILENAME_SORTED_BAM} | ${MBUF_LARGE} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_LARGE} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
+	(cat ${FILENAME_SORTED_BAM} | ${MBUF_LARGE} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} \
+	    | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_LARGE} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 else
 	if [[ ${useBioBamBamSort} == false ]]; then
 		# we use samtools for making the index
@@ -184,7 +186,7 @@ else
 			${NP_READBINS_IN} \
 			${NP_FLAGSTATS} \
 			${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
-		    echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+		    echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > "$FILENAME_BWA_EC") & procID_MEMSORT=$!
 
 		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
