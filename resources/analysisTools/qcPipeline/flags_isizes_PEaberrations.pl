@@ -75,7 +75,7 @@ while (!eof($chromFh)) {
 	if ($line =~ /^#/) {
 		next;
 	}
-	chomp;
+	chomp $line;
 	@help = split ("\t", $line);
 	$chroms{$help[0]} = 1;
 	$chromarray[$chrnum] = $help[0];
@@ -183,20 +183,21 @@ if ($ctr == 0) {
 # in case we have single end reads, there will be no counted ones for isizes ($ctr < 1)
 # and PE aberrations ($aberrant < 1) => fill the files with placeholder "NA"
 
+my $percentage = "NA";
 if ($aberrant < 1) {
 	print STDERR "no aberrant paired reads found, single end reads?\n";
-	print $percImproperPairedFh "NA\n";
 } else {
-	if ($ctr == 0) {
-		$average = "NA";
-	} else {
+	$average = "NA";
+	if ($ctr > 0) {
 		$average = $sum / $ctr;
 	}
 	print STDERR "insert sizes: $pp_strange proper pairs with insert size > $maxisize; $ctr values in range. minimum: $min; maximum: $max; average: $average\n";
 	print STDERR "from $all reads, $aberrant are paired end aberrations\n";
-	my $percentage = sprintf ("%2.2f\n", ($aberrant/$both*100));
-	print $percImproperPairedFh $percentage;
+	if ($both > 0) {
+		$percentage = sprintf("%2.2f", ($aberrant / $both * 100));
+	}
 }
+print $percImproperPairedFh $percentage . "\n";
 close $percImproperPairedFh;
 
 # print out matrix
@@ -233,7 +234,7 @@ close $matrixFh;
 
 if ($ctr < 1) {
 	print $isizesbinFh "NA\n";
-	print $isizesbinFh "NA\nNA\nNA\n";
+	print $isizesFh "NA\nNA\nNA\n";
 } else {
 	my $isize_mindiff = $ctr/50000;	#10000;	# for 30x genome, but less reads means less difference!
 	print STDERR "for insert size slope detection, set min difference to $isize_mindiff\n";
@@ -280,7 +281,7 @@ if ($ctr < 1) {
 			$docollect = 0;
 		}
 		# squared deviations from the average
-		$devsqsum += $howmany * (($i - $average)**2);
+		$devsqsum += $howmany * (($i - $average) ** 2);
 	}
 
 	my $stddev = "NA";
