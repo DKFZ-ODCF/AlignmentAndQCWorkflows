@@ -13,7 +13,7 @@ source "$TOOL_WORKFLOW_LIB"
 printInfo
 
 setUp_BashSucksVersion
-trap cleanUp_BashSucksVersion EXIT
+trap "echo 'Exit trap called -- cleaning up' >> /dev/stderr; cleanUp_BashSucksVersion" EXIT
 
 ID="${RUN}_$LANE"
 SM="sample_${SAMPLE}_$PID"
@@ -51,7 +51,7 @@ TMP_FILE="$tempSortedBamFile"
 FILENAME_BWA_LOG="$DIR_TEMP/${bamname}_errlog_bwamem"
 NP_SORT_ERRLOG="$RODDY_SCRATCH/NP_SORT_ERRLOG"
 FILENAME_SORT_LOG="$DIR_TEMP/${bamname}_errlog_sort"
-FILENAME_BWA_ERRORCODE="$DIR_TEMP/${bamname}_ec_bbam"
+FILENAME_BWA_EC="$DIR_TEMP/${bamname}_ec_bbam"
 NP_BAMSORT="$RODDY_SCRATCH/NAMED_PIPE_BAMSORT"
 mkfifo "$NP_BAMSORT"
 
@@ -87,9 +87,6 @@ else
     qualityScore=$(getFastqAsciiStream "$RAW_SEQ_2" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
 fi
 set -e
-
-# Make biobambam sort default
-useBioBamBamSort="${useBioBamBamSort:-true}"
 
 # Default: Dummy process IDs to simplify downstream logic.
 # TODO Remove after completely switching to PID registry system.
@@ -185,8 +182,8 @@ if [[ "$bamFileExists" == "true" ]]; then
 
 	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
 else
-    # We use samtools for making the index
-    # Filter secondary and supplementary alignments (flag 2304) after alignment
+    # We use samtools for making the index.
+    # Filter secondary and supplementary alignments (flag 2304) after alignment.
     mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
 
     # Index bam file
@@ -197,12 +194,12 @@ else
         -t ${BWA_MEM_THREADS} \
         -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
         $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG \
-        > ${NP_BWA_OUT} & procID_BWA=$!
+    > ${NP_BWA_OUT} & procID_BWA=$!
 
     # Convert aligned reads back to original state
     ${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
-        ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - \
-        > ${NP_BCONV_OUT} & procID_BCONV=$!
+    ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - \
+    > ${NP_BCONV_OUT} & procID_BCONV=$!
 
     # Sort bam file
     (set -o pipefail; \
@@ -217,7 +214,7 @@ else
             ${NP_READBINS_IN} \
             ${NP_FLAGSTATS} \
             ${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
-        echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > "$FILENAME_BWA_ERRORCODE") \
+        echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > "$FILENAME_BWA_EC") \
         & procID_MEMSORT=$!
 
     # Filter samtools error log
