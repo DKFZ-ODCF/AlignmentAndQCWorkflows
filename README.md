@@ -16,6 +16,11 @@ The original script with a documentation of the underlying ideas can be found [h
 
 ## Change Logs
 
+* 1.3.73-3 (branch-specific change)
+  - improved error checking
+  - fixed some bugs related to error checking
+  - some smaller refactorings
+
 * 1.2.73-2 (branch-specific change)
   - Updated undirectional WGBS read-reordering script from [here](https://github.com/cimbusch/TWGBS.git)
   - Actually include the WGBS read-reordering script
