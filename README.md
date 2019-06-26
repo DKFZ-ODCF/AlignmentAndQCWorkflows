@@ -33,7 +33,7 @@ The original script with a documentation of the underlying ideas can be found [h
 * 1.2.73
   - Lifted 1.1.73 to Roddy 2.4 (development-only release)
   - Fingerprinting support also for WGBS
-  - sambamba 0.5.9 for sorting and viewing BAMS
+  - sambamba 0.5.9 for sorting and viewing BAMs
   - BAM termination sequence check
 
 * 1.1.73
