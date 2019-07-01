@@ -23,8 +23,8 @@ NP_COMBINEDANALYSIS_IN="$RODDY_SCRATCH/np_combinedanalysis_in"
 NP_FLAGSTATS="$RODDY_SCRATCH/np_flagstats_in"
 NP_SAMTOOLS_INDEX_IN="$RODDY_SCRATCH/np_samtools_index_in"
 
-MBUF_SMALL="$MBUFFER_BINARY -m '$MBUFFER_SIZE_SMALL' -q -l /dev/null"
-MBUF_LARGE="$MBUFFER_BINARY -m '$MBUFFER_SIZE_LARGE' -q -l /dev/null"
+MBUF_SMALL="$MBUFFER_BINARY -m $MBUFFER_SIZE_SMALL -q -l /dev/null"
+MBUF_LARGE="$MBUFFER_BINARY -m $MBUFFER_SIZE_LARGE -q -l /dev/null"
 
 mkfifo "$NP_READBINS_IN" "$NP_COVERAGEQC_IN" "$NP_COMBINEDANALYSIS_IN" "$NP_FLAGSTATS"
 
@@ -191,7 +191,7 @@ else
 		wait $procID_MEMSORT;
 		[[ `cat "$FILENAME_BWA_EC" | cut -f 1 -d ' '` -ne "0" ]] && echo "bwa mem - samtools pipe returned a non-zero exit code and the job will die now." && exit 100
 
-		wait $procID_IDX || echo "Error from samtools index" && exit 10
+		wait $procID_IDX || throw 10 "Error from samtools index"
 
 	else	# biobambam makes the index
 		(cat ${NP_BAMSORT} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} > ${tempSortedBamFile}) & procIDview=$!
@@ -208,8 +208,8 @@ else
 		    > "$FILENAME_BWA_EC" \
 		) & procIDBamsort=$!
 
-		wait $procIDBamsort || echo "Error from bamsort binary" && exit 11
-		wait $procIDview || echo "Error from cat from bamsort output for pipes" && exit 12
+		wait $procIDBamsort || throw 11 "Error from bamsort binary"
+		wait $procIDview || throw 12 "Error from cat from bamsort output for pipes"
 	fi
 fi
 
@@ -237,10 +237,10 @@ wait $procTrim || throw 38 "Error from trimming"
 wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
 wait $procUnpack2 || throw 40 "Error from reading FASTQ 2"
 
-wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 14
-wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomeCoverage read bins" && exit 15
-wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 16
-wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 17
+wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
+wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
+wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
+wait $procIDCBA || throw 17 "Error from combined QC perl script"
 
 runFingerprinting "${FILENAME_SORTED_BAM}" "$FILENAME_FINGERPRINTS"
 
@@ -270,11 +270,20 @@ $PERL_BINARY ${TOOL_QC_JSON} \
 
 # Plots are only made for paired end and not on convey
 if [[ "${useSingleEndProcessing-false}" == "false" ]] && [[ "$ON_CONVEY" == "false" ]]; then
-    ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} $FILENAME_ISIZES_PLOT.tmp "PE insertsize of ${bamname}" \
-        || throw 22 "Error from insert sizes plotter"
+    $RSCRIPT_BINARY \
+        "$TOOL_INSERT_SIZE_PLOT_SCRIPT" \
+        "$FILENAME_ISIZES_MATRIX.tmp" \
+        "$FILENAME_ISIZES_STATISTICS.tmp" \
+        "$FILENAME_ISIZES_PLOT.tmp" \
+        "PE insertsize of $bamname" \
+        || throw 22 "Error from insert sizes plotter"$(basename "$TOOL_INSERT_SIZE_PLOT_SCRIPT")
 
-    ${RSCRIPT_BINARY} ${TOOL_PLOT_DIFFCHROM} -i "$FILENAME_DIFFCHROM_MATRIX" -s "$FILENAME_DIFFCHROM_STATISTICS" -o "$FILENAME_DIFFCHROM_PLOT.tmp" \
-        || throw 23 "Error from chrom_diff.r"
+    $RSCRIPT_BINARY \
+        "$TOOL_PLOT_DIFFCHROM" \
+        -i "$FILENAME_DIFFCHROM_MATRIX.tmp" \
+        -s "$FILENAME_DIFFCHROM_STATISTICS.tmp" \
+        -o "$FILENAME_DIFFCHROM_PLOT.tmp" \
+        || throw 23 "Error from "$(basename "$TOOL_PLOT_DIFFCHROM")
 fi
 
 

@@ -7,12 +7,12 @@ if (scalar(@ARGV) < 2) {
 	die "1. read bins file (use - for reading from STDIN) - 2. file with chromosomes to keep in first column  - 3. optional: ignore chr prefix and .fa suffix\n";
 }
 
-my $binsfile= shift;
+my $binsFile= shift;
 my $chromfile = shift;
 my $ignore = shift;
 
 open (my $chromFh, $chromfile) or die "could not open chromlength file $chromfile: $!\n";
-open (my $binsFh, $binsfile) or die "could not open read bins file $binsfile: $!\n";
+open (my $binsFh, $binsFile) or die "could not open read bins file $binsFile: $!\n";
 
 my @fields = ();
 my %chroms = ();
@@ -25,7 +25,7 @@ while (! eof($chromFh)) {
 	}
 	chomp $line;
 	@fields = split ("\t", $line);
-	# get rid of possible chr and .fa if wanted
+	# Get rid of possible chr and .fa if wanted
 	if ($ignore) {
 		($chr = $fields[0]) =~ s/^chr//;
 		$chr =~ s/^\.fa$//;
@@ -36,39 +36,37 @@ while (! eof($chromFh)) {
 }
 close $chromFh;
 
-print STDERR "chromosomes to keep: ";
-foreach $chr (sort keys %chroms) {
-	print STDERR "$chr ";
-}
-print STDERR "\n";
+print STDERR (scalar keys %chroms) . " chromosomes to keep (from '$chromfile'): " . join(" ", sort keys %chroms) . "\n";
 
 my $all = 0;
 my $kept = 0;
-# read bins: chrom is in first column
+my %foundChromosomesBins = ();
+# Read bins: chromosome is in first column
 while (! eof($binsFh)) {
 	my $line = readline($binsFh)
-		|| "Couldn't read bins file '$binsfile': $!";
-	$all++;
+		|| "Couldn't read bins file '$binsFile': $!";
+	++$all;
 	@fields = split ("\t", $line);
+	my $chr = $fields[0];
 	if ($ignore) {
-		($chr = $fields[0]) =~ s/^chr//;
+		$chr =~ s/^chr//;
 		$chr =~ s/^\.fa$//;
-		if (exists $chroms{$chr})
-		{
-			print $line;
-			$kept++;
-		}
-	} else {
-		if (exists $chroms{$fields[0]})
-		{
-			print $line;
-			$kept++;
-		}
+	}
+	++$foundChromosomesBins{$chr};
+	if (exists $chroms{$chr}) {
+		print $line;
+		++$kept;
 	}
 }
 close $binsFh;
-print STDERR "from $all lines, kept $kept with selected chromosomes\n";
-if ($kept < 1) {
-	die "Error in filtering read bins (filter_readbins.pl): no lines were extracted from input. Probably the prefixes of the chromosome file and the BAM file are not compatible\n";
+
+
+if ($all == 0) {
+	die "Empty read-bins file '$binsFile'!\n";
+} elsif ($kept < 1) {
+	die "Error in filtering read bins (filter_readbins.pl): No lines were kept from read bins input. Probably the prefixes of the chromosome file and the BAM file are not compatible. Read bins file '$binsFile' contained: " . join(" ", sort keys %foundChromosomesBins) . "\n";
+} else {
+	print STDERR "From $all lines, kept $kept with selected chromosomes in '$binsFile'.\n";
 }
-exit;
+
+

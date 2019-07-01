@@ -79,10 +79,10 @@ while (!eof($chromFh)) {
 	@help = split ("\t", $line);
 	$chroms{$help[0]} = 1;
 	$chromarray[$chrnum] = $help[0];
-	$chrnum++;
+	++$chrnum;
 }
 close $chromFh;
-print STDERR "$chrnum chromosomes to keep: @chromarray\n";
+print STDERR "$chrnum chromosomes to keep (from '$chromfile'): " . join(" ", sort @chromarray) . "\n";
 
 # extended flagstats
 # all reads
