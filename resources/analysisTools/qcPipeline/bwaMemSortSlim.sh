@@ -11,7 +11,7 @@ ID="${RUN}_$LANE"
 SM="sample_${SAMPLE}_$PID"
 
 # RODDY_SCRATCH is used here. It is $PBS_SCRATCH_DIR/$PBS_JOBID for Torque/PBS, and /tmp/roddyScratch/jobid for SGE.
-RODDY_BIG_SCRATCH=$(getBigScratchDirectory "$FILENAME_SORTED_BAM.TEMP")
+RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME_SORTED_BAM}_TEMP")
 mkdir -p "$RODDY_BIG_SCRATCH"
 
 # pipes via local scratch dir
@@ -49,7 +49,6 @@ mkfifo "$NP_BAMSORT"
 
 # Create the following variable for error checking issues
 TMP_FILE="$tempSortedBamFile"
-# error tracking
 FILENAME_BWA_LOG="$DIR_TEMP/${bamname}_errlog_bwamem"
 
 bamFileExists=false

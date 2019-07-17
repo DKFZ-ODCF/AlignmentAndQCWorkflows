@@ -19,7 +19,7 @@ ID="${RUN}_$LANE"
 SM="sample_${SAMPLE}_$PID"
 
 # RODDY_SCRATCH is used here. It is $PBS_SCRATCH_DIR/$PBS_JOBID for Torque/PBS, and /tmp/roddyScratch/jobid for SGE.
-RODDY_BIG_SCRATCH=$(getBigScratchDirectory "$FILENAME_SORTED_BAM.tmp")
+RODDY_BIG_SCRATCH=$(getBigScratchDirectory "${FILENAME_SORTED_BAM}_TEMP")
 mkdir -p "$RODDY_BIG_SCRATCH"
 
 # pipes via local scratch dir
@@ -184,41 +184,41 @@ if [[ "$bamFileExists" == "true" ]]; then
 else
     # We use samtools for making the index.
     # Filter secondary and supplementary alignments (flag 2304) after alignment.
-    mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
+    mkfifo "$NP_SORT_ERRLOG" "$NP_SAMTOOLS_INDEX_IN"
 
     # Index bam file
-    ${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
+    $SAMTOOLS_BINARY index "$NP_SAMTOOLS_INDEX_IN" "$tempBamIndexFile" & procID_IDX=$!
 
     # Align converted fastq files
-    ${BWA_BINARY} mem \
-        -t ${BWA_MEM_THREADS} \
+    $BWA_BINARY mem \
+        -t "$BWA_MEM_THREADS" \
         -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
-        $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG \
+        $BWA_MEM_OPTIONS "$INDEX_PREFIX" $INPUT_PIPES 2> "$FILENAME_BWA_LOG" \
     > ${NP_BWA_OUT} & procID_BWA=$!
 
     # Convert aligned reads back to original state
-    ${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
-    ${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - \
-    > ${NP_BCONV_OUT} & procID_BCONV=$!
+    $SAMTOOLS_BINARY view -uSbh -F 2304 "$NP_BWA_OUT" | \
+        $PYTHON_BINARY $TOOL_METHYL_C_TOOLS bconv - - \
+        > "$NP_BCONV_OUT" & procID_BCONV=$!
 
     # Sort bam file
     (set -o pipefail; \
-        ${SAMTOOLS_BINARY} view -h ${NP_BCONV_OUT} | \
-        tee ${NP_COMBINEDANALYSIS_IN} | \
-        ${SAMTOOLS_BINARY} view -uSbh -F 2304 - | \
+        $SAMTOOLS_BINARY view -h "$NP_BCONV_OUT" | \
+        tee "$NP_COMBINEDANALYSIS_IN" | \
+        $SAMTOOLS_BINARY view -uSbh -F 2304 - | \
         $MBUF_LARGE | \
-        ${SAMTOOLS_BINARY} sort -@ 8 \
-            -m ${SAMPESORT_MEMSIZE} \
-            -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
-        tee ${NP_COVERAGEQC_IN} \
-            ${NP_READBINS_IN} \
-            ${NP_FLAGSTATS} \
-            ${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
+        $SAMTOOLS_BINARY sort -@ 8 \
+            -m "$SAMPESORT_MEMSIZE" \
+            -o - "$tempFileForSort" 2> "$NP_SORT_ERRLOG" | \
+        tee "$NP_COVERAGEQC_IN" \
+            "$NP_READBINS_IN" \
+            "$NP_FLAGSTATS" \
+            "$NP_SAMTOOLS_INDEX_IN" > "$tempSortedBamFile"; \
         echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > "$FILENAME_BWA_EC") \
         & procID_MEMSORT=$!
 
     # Filter samtools error log
-    (cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
+    (cat "$NP_SORT_ERRLOG" | uniq > "$FILENAME_SORT_LOG") & procID_logwrite=$!
 
     # Check for errors
     wait $procID_logwrite	# Do we need a check for it?
