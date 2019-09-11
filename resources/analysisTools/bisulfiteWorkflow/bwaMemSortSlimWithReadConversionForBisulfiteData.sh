@@ -266,7 +266,7 @@ fi
     -r "$RUN" \
     -l "$LANE" \
     -w "${FILENAME_QCSUMMARY}_WARNINGS.txt" \
-    -f "$tempFlagstatsFile.tmp" \
+    -f "$tempFlagstatsFile" \
     -d "$FILENAME_DIFFCHROM_STATISTICS.tmp" \
     -i "$FILENAME_ISIZES_STATISTICS.tmp" \
     -c "$FILENAME_GENOME_COVERAGE.tmp" \
