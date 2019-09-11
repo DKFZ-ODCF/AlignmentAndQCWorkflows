@@ -1,56 +1,66 @@
 #!/usr/bin/env perl
+#
+# Copyright (c) 2018 German Cancer Research Center (DKFZ).
+#
+# Distributed under the MIT License (license terms are at https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows).
+#
 
 use strict;
 use warnings;
 
-if (scalar(@ARGV) < 2) {
-	die "1. read bins file (use - for reading from STDIN) - 2. file with chromosomes to keep in first column  - 3. optional: ignore chr prefix and .fa suffix\n";
+if (@ARGV < 2)
+{
+	die "1.read bins file (use - for reading from STDIN) - 2.file with chromosomes to keep in first column  - 3.optional: ignore chr prefix and .fa suffix\n";
 }
 
 my $binsfile= shift;
 my $chromfile = shift;
 my $ignore = shift;
 
-open (my $chromFh, $chromfile) or die "could not open chromlength file $chromfile: $!\n";
-open (my $binsFh, $binsfile) or die "could not open read bins file $binsfile: $!\n";
+open (CF, $chromfile) or die "could not open chromlength file $chromfile: $!\n";
+open (BF, $binsfile) or die "could not open read bins file $binsfile: $!\n";
 
 my @fields = ();
 my %chroms = ();
 my $chr;
-while (! eof($chromFh)) {
-	my $line = readline($chromFh)
-		|| die "Couldn't read chromosomes file '$chromfile': $!";
-	if ($line =~ /^#/)	{
+while (<CF>)
+{
+	if ($_ =~ /^#/)
+	{
 		next;
 	}
-	chomp $line;
-	@fields = split ("\t", $line);
+	chomp;
+	@fields = split ("\t", $_);
 	# get rid of possible chr and .fa if wanted
-	if ($ignore) {
+	if ($ignore)
+	{
 		($chr = $fields[0]) =~ s/^chr//;
 		$chr =~ s/^\.fa$//;
 		$chroms{$chr} = 1;
-	} else {
+	}
+	else
+	{
 		$chroms{$fields[0]} = 1;
 	}
 }
-close $chromFh;
-
+close CF;
 print STDERR "chromosomes to keep: ";
-foreach $chr (sort keys %chroms) {
+foreach $chr (sort keys %chroms)
+{
 	print STDERR "$chr ";
 }
 print STDERR "\n";
 
+my $line = "";
 my $all = 0;
 my $kept = 0;
 # read bins: chrom is in first column
-while (! eof($binsFh)) {
-	my $line = readline($binsFh)
-		|| "Couldn't read bins file '$binsfile': $!";
+while ($line=<BF>)
+{
 	$all++;
 	@fields = split ("\t", $line);
-	if ($ignore) {
+	if ($ignore)
+	{
 		($chr = $fields[0]) =~ s/^chr//;
 		$chr =~ s/^\.fa$//;
 		if (exists $chroms{$chr})
@@ -58,7 +68,9 @@ while (! eof($binsFh)) {
 			print $line;
 			$kept++;
 		}
-	} else {
+	}
+	else
+	{
 		if (exists $chroms{$fields[0]})
 		{
 			print $line;
@@ -66,9 +78,10 @@ while (! eof($binsFh)) {
 		}
 	}
 }
-close $binsFh;
+close BF;
 print STDERR "from $all lines, kept $kept with selected chromosomes\n";
-if ($kept < 1) {
+if ($kept < 1)
+{
 	die "Error in filtering read bins (filter_readbins.pl): no lines were extracted from input. Probably the prefixes of the chromosome file and the BAM file are not compatible\n";
 }
 exit;
