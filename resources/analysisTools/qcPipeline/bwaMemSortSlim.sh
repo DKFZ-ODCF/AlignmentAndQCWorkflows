@@ -249,23 +249,27 @@ if [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]]; then
     rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
 fi
 
-$PERL_BINARY $TOOL_WRITE_QC_SUMMARY -p $PID -s $SAMPLE -r $RUN -l $LANE \
+$PERL_BINARY "$TOOL_WRITE_QC_SUMMARY" \
+    -p $PID \
+    -s $SAMPLE \
+    -r $RUN \
+    -l $LANE \
     -w "${FILENAME_QCSUMMARY}_WARNINGS.txt" \
     -f "$tempFlagstatsFile" \
     -d "$FILENAME_DIFFCHROM_STATISTICS.tmp" \
     -i "$FILENAME_ISIZES_STATISTICS.tmp" \
     -c "$FILENAME_GENOME_COVERAGE.tmp" \
     > "$FILENAME_QCSUMMARY.tmp" \
-    || throw 14 "Error from writeQCsummary.pl"
+    || throw 14 "Error from '$FILENAME_QCSUMMARY'"
 
 # Produce qualitycontrol.json for OTP.
-$PERL_BINARY ${TOOL_QC_JSON} \
+$PERL_BINARY "$TOOL_QC_JSON" \
     "$FILENAME_GENOME_COVERAGE.tmp" \
     "$FILENAME_ISIZES_STATISTICS.tmp" \
     "$tempFlagstatsFile" \
     "$FILENAME_DIFFCHROM_STATISTICS.tmp" \
     > "$FILENAME_QCJSON.tmp" \
-    || throw 25 "Error when compiling qualitycontrol.json for '$FILENAME_QCJSON', stopping here"
+    || throw 25 "Error when compiling '$FILENAME_QCJSON'"
 
 # Plots are only made for paired end and not on convey
 if [[ "${useSingleEndProcessing-false}" == "false" ]] && [[ "$ON_CONVEY" == "false" ]]; then

@@ -271,17 +271,18 @@ fi
     -i "$FILENAME_ISIZES_STATISTICS.tmp" \
     -c "$FILENAME_GENOME_COVERAGE.tmp" \
     > "$FILENAME_QCSUMMARY.tmp" \
-    || throw 14 "Error from writeQCsummary.pl"
+    || throw 14 "Error when compiling '$FILENAME_QCSUMMARY'"
 
 # Produce qualitycontrol.json for OTP.
 "$PERL_BINARY" "$TOOL_QC_JSON" \
     "$FILENAME_GENOME_COVERAGE.tmp" \
-    "$FILENAME_GROUPED_GENOME_COVERAGE.tmp" \
     "$FILENAME_ISIZES_STATISTICS.tmp" \
     "$tempFlagstatsFile" \
     "$FILENAME_DIFFCHROM_STATISTICS.tmp" \
     > "$FILENAME_QCJSON.tmp" \
-    || throw 25 "Error when compiling '${FILENAME_QCJSON}', stopping here"
+    || throw 25 "Error when compiling '$FILENAME_QCJSON'"
+
+
 
 # Plots are only made for paired end and not on convey
 if [[ "${useSingleEndProcessing:-false}" == "false" ]]; then
@@ -312,7 +313,7 @@ mv "$tempFlagstatsFile" "$FILENAME_FLAGSTATS" || throw 33 "Could not move file"
 mv "$FILENAME_QCSUMMARY.tmp" "$FILENAME_QCSUMMARY" || throw 27 "Could not move file"
 mv "$FILENAME_QCJSON.tmp" "$FILENAME_QCJSON" || throw 27 "Could not move file"
 
-if [[ "${useSingleEndProcessing:-false}" == "false" ]] && [[ "$ON_CONVEY" == "false" ]]; then
+if [[ "${useSingleEndProcessing:-false}" == "false" ]]; then
     mv "$FILENAME_ISIZES_PLOT.tmp" "$FILENAME_ISIZES_PLOT" || throw 27 "Could not move file"
     mv "$FILENAME_DIFFCHROM_PLOT.tmp" "$FILENAME_DIFFCHROM_PLOT" || throw 27 "Could not move file"
 fi
