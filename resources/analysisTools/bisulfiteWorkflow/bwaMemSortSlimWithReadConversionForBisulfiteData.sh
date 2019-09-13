@@ -231,7 +231,13 @@ fi
 
 if [[ "$bamFileExists" == "true" ]]; then
 	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
-else	# Make sure to rename BAM file when it has been produced correctly
+else
+    # Make sure to rename BAM file when it has been produced correctly
+    # A failure in the early/FASTQ-processing steps should result in an error and no moved temporary BAM.
+    waitForRegisteredPids_BashSucksVersion
+    wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
+    wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
+
     errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
     source "$TOOL_BWA_ERROR_CHECKING_SCRIPT"
 	checkBamIsComplete "$tempSortedBamFile"
@@ -241,10 +247,6 @@ else	# Make sure to rename BAM file when it has been produced correctly
 	 	mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
 	fi
 fi
-
-waitForRegisteredPids_BashSucksVersion
-wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
-wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
 
 wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
 wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
@@ -260,7 +262,7 @@ runFingerprinting "$FILENAME_SORTED_BAM" "$FILENAME_FINGERPRINTS"
 if [[ -f "${FILENAME_QCSUMMARY}_WARNINGS.txt" ]]; then
     rm "${FILENAME_QCSUMMARY}_WARNINGS.txt"
 fi
-"$PERL_BINARY" "$TOOL_WRITE_QC_SUMMARY" \
+$PERL_BINARY "$TOOL_WRITE_QC_SUMMARY" \
     -p "$PID" \
     -s "$SAMPLE" \
     -r "$RUN" \
@@ -274,7 +276,7 @@ fi
     || throw 14 "Error when compiling '$FILENAME_QCSUMMARY'"
 
 # Produce qualitycontrol.json for OTP.
-"$PERL_BINARY" "$TOOL_QC_JSON" \
+$PERL_BINARY "$TOOL_QC_JSON" \
     "$FILENAME_GENOME_COVERAGE.tmp" \
     "$FILENAME_ISIZES_STATISTICS.tmp" \
     "$tempFlagstatsFile" \

@@ -215,7 +215,13 @@ fi
 if [[ "$bamFileExists" == "true" ]]
 then
 	wait $procIDOutPipe; [[ $? -gt 0 ]] && echo "Error from sambamba view pipe" && exit 13
-else	# make sure to rename BAM file when it has been produced correctly
+else
+    # Make sure to rename BAM file when it has been produced correctly
+    # A failure in the early/FASTQ-processing steps should result in an error and no moved temporary BAM.
+    wait $procTrim || throw 38 "Error from trimming"
+    wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
+    wait $procUnpack2 || throw 40 "Error from reading FASTQ 2"
+
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
 	rm $FNPIPE1
 	rm $FNPIPE2
@@ -223,18 +229,15 @@ else	# make sure to rename BAM file when it has been produced correctly
 	source ${TOOL_BWA_ERROR_CHECKING_SCRIPT}
 	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
-	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
+
+	# The index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp.
 	if [[ -f ${tempBamIndexFile} ]]; then
         mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
 	fi
+
 	# clean up adapter trimming pipes if they exist
 	[[ -p $i1 ]] && rm $i1 $i2 $o1 $o2 2> /dev/null
-	
 fi
-
-wait $procTrim || throw 38 "Error from trimming"
-wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
-wait $procUnpack2 || throw 40 "Error from reading FASTQ 2"
 
 wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
 wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"

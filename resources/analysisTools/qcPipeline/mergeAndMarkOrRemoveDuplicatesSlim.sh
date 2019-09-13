@@ -275,77 +275,109 @@ ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsF
 #TABIX_BINARY=tabix
 
 #--processors=1: this part often fails with broken pipe, ?? where this comes from. The mbuffer did not help, maybe --processors=4 does?
-(${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | mbuf 100m | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
+(${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} \
+    | mbuf 100m \
+    | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} \
+    > ${FILENAME_READBINS_COVERAGE}.tmp) \
+    & procIDReadbinsCoverage=$!
 
 # Some waits for parallel processes. This also depends on the used merge binary.
-# Picard
+# Generally, before a file existence or content check, all processes on the stream towards the file need to be finished.
 if markWithPicard || [[ "$mergeOnly" == true ]]; then
-    if [[ ${useOnlyExistingTargetBam} == false ]]; then
-    	wait $procIDMarkdup
-    	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Picard returned an exit code and the job will die now." && exit 100
+    if [[ "$useOnlyExistingTargetBam" == false ]]; then
+    	wait "$procIDMarkdup"
+    	if [[ $(cat "$returnCodeMarkDuplicatesFile") -ne 0 ]]; then
+    	    throw 100 "Picard returned an exit code and the job will die now."
+    	fi
+    	waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
+        waitAndMaybeExit "$procIDMarkOutPipe" "Error from mark out pipe" 5
+
     	checkBamIsComplete "$tempBamFile"
-        mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
+        mv "$tempBamFile" "$FILENAME" || throw 38 "Could not move file"
+
     	if [[ "$mergeOnly" == false ]]; then
 	    	mv "$tempFilenameMetrics" "$FILENAME_METRICS" || throw 39 "Could not move file"
 	    else
     		# Create Dummy FILENAME_MATRICS if mergeOnly was true
-    		touch ${FILENAME_METRICS}
+    		touch "$FILENAME_METRICS"
     	fi
-        waitAndMaybeExit $procIDMd5 "Error from MD5" 15
-        mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
+
+        waitAndMaybeExit "$procIDMd5" "Error from MD5" 15
+        mv "$tempMd5File" "$FILENAME.md5" || throw 36 "Could not move file"
     fi
-	# index is always made again, needs to be updated to not be older than BAM
-	# this file does not exist!!!!!!!
-	wait $procIDSamtoolsIndex ; [[ $? -gt 0 ]] && echo "Error from samtools index pipe" && exit 6
-	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
+
+	# The index is always re-made and needs to be updated to not be older than BAM.
+	waitAndMaybeExit "$procIDSamtoolsIndex" "Error from samtools index pipe" 6
+	mv "$tempIndexFile" "$FILENAME.bai" \
+	    && touch "$FILENAME.bai" \
+        || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
 
 elif markWithSambamba; then
-    if [[ ${useOnlyExistingTargetBam} == false ]]; then
-    	wait $procIDMarkdup
-    	[[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Sambamba returned an exit code and the job will die now." && exit 100
-        waitAndMaybeExit $procBamCompress "Error during BAM compression"
-        waitAndMaybeExit $procIDFakeMetrics "Error from sambamba fake metrics" 5
+    if [[ "$useOnlyExistingTargetBam" == false ]]; then
+    	wait "$procIDMarkdup"
+    	if [[ $(cat "$returnCodeMarkDuplicatesFile") -ne 0 ]]; then
+    	    throw 100 "Sambamba returned an exit code and the job will die now."
+    	fi
+    	waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
+        waitAndMaybeExit "$procBamCompress" "Error during BAM compression" 4
+        waitAndMaybeExit "$procIDFakeMetrics" "Error from sambamba fake metrics" 5
+        waitAndMaybeExit "$procIDMarkOutPipe" "Error from mark out pipe" 5
+
         checkBamIsComplete "$tempBamFile"
-        mv ${tempBamFile} ${FILENAME} || throw 38 "Could not move file"
+        mv "$tempBamFile" "$FILENAME" || throw 38 "Could not move file"
+
         mv "$tempFilenameMetrics" "$FILENAME_METRICS" || throw 39 "Could not move file"
-      	waitAndMaybeExit $procIDMd5 "Error from MD5" 15
-        mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
+
+      	waitAndMaybeExit "$procIDMd5" "Error from MD5" 15
+        mv "$tempMd5File" "$FILENAME.md5" \
+            || throw 36 "Could not move file"
     fi
-	waitAndMaybeExit $procIDSamtoolsIndex "Error from samtools index pipe" 6
-	mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai
+
+	waitAndMaybeExit "$procIDSamtoolsIndex" "Error from samtools index pipe" 6
+	mv "$tempIndexFile" "$FILENAME.bai" \
+	    && touch "$FILENAME.bai" \
+	    || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
 
 elif markWithBiobambam; then
-    if [[ ${useOnlyExistingTargetBam} == false ]]; then
-        wait $procIDMarkdup
-	    [[ ! `cat ${returnCodeMarkDuplicatesFile}` -eq "0" ]] && echo "Biobambam returned an exit code and the job will die now." && exit 100
-	    # always rename BAM, even if other jobs might have failed
+    if [[ "$useOnlyExistingTargetBam" == false ]]; then
+        wait "$procIDMarkdup"
+        if [[ $(cat "$returnCodeMarkDuplicatesFile") -ne 0 ]]; then
+            throw 100 "Biobambam returned an exit code and the job will die now."
+        fi
+	    waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
+        waitAndMaybeExit "$procIDMarkOutPipe" "Error from biobambam BAM pipe" 8
+
 	    checkBamIsComplete "$tempBamFile"
-	    mv ${tempBamFile} ${FILENAME} || throw 40 "Could not move file"
-	    mv $tempIndexFile ${FILENAME}.bai && touch ${FILENAME}.bai || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
-        mv ${FILENAME_METRICS}.tmp ${FILENAME_METRICS} || throw 42 "Could not move file"
-        wait $procIDMarkOutPipe; [[ $? -gt 0 ]] && echo "Error from biobambam BAM pipe" && exit 8
-        waitAndMaybeExit $procIDMd5 "Error from MD5" 15
-        mv ${tempMd5File} ${FILENAME}.md5 || throw 36 "Could not move file"
+	    mv "$tempBamFile" "$FILENAME" || throw 40 "Could not move file"
+
+        # Biobambam generates the index. No explicit wait for an indexing processes required.
+	    mv "$tempIndexFile" "$FILENAME.bai" \
+	        && touch "$FILENAME.bai" \
+	        || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
+
+        mv "$FILENAME_METRICS.tmp" "$FILENAME_METRICS" || throw 42 "Could not move file"
+
+        waitAndMaybeExit "$procIDMd5" "Error from MD5" 15
+        mv "$tempMd5File" "$FILENAME.md5" \
+            || throw 36 "Could not move file"
     fi
 fi
 
-waitAndMaybeExit $procIDSamtoolsView "Error from samtools view pipe" 7
-waitAndMaybeExit $procIDMarkOutPipe "Error from mark out pipe" 5
-wait $procIDReadbinsCoverage; [[ $? -gt 0 ]] && echo "Error from genomeCoverage read bins" && exit 10
-wait $procIDGenomeCoverage; [[ $? -gt 0 ]] && echo "Error from coverageQCD" && exit 11
-wait $procIDFlagstat; [[ $? -gt 0 ]] && echo "Error from sambamba flagstats" && exit 12
-wait $procIDCBA; [[ $? -gt 0 ]] && echo "Error from combined QC perl script" && exit 13
+waitAndMaybeExit "$procIDReadbinsCoverage" "Error from genomeCoverage read bins" 10
+waitAndMaybeExit "$procIDGenomeCoverage" "Error from coverageQCD" 11
+waitAndMaybeExit "$procIDFlagstat" "Error from sambamba flagstats" 12
+waitAndMaybeExit "$procIDCBA" "Error from combined QC perl script" 13
 
-mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
-mv ${FILENAME_ISIZES_MATRIX}.tmp ${FILENAME_ISIZES_MATRIX} || throw 29 "Could not move file"
-mv ${FILENAME_EXTENDED_FLAGSTATS}.tmp ${FILENAME_EXTENDED_FLAGSTATS} || throw 30 "Could not move file"
-mv ${FILENAME_ISIZES_STATISTICS}.tmp ${FILENAME_ISIZES_STATISTICS} || throw 31 "Could not move file"
-mv ${FILENAME_DIFFCHROM_STATISTICS}.tmp ${FILENAME_DIFFCHROM_STATISTICS} || throw 32 "Could not move file"
-mv ${tempFlagstatsFile} ${FILENAME_FLAGSTATS} || throw 33 "Could not move file"
-mv ${FILENAME_READBINS_COVERAGE}.tmp ${FILENAME_READBINS_COVERAGE} || throw 34 "Could not move file"
-mv ${FILENAME_GENOME_COVERAGE}.tmp ${FILENAME_GENOME_COVERAGE} || throw 35 "Could not move file"
+mv "$FILENAME_DIFFCHROM_MATRIX.tmp" "$FILENAME_DIFFCHROM_MATRIX" || throw 28 "Could not move file"
+mv "$FILENAME_ISIZES_MATRIX.tmp" "$FILENAME_ISIZES_MATRIX" || throw 29 "Could not move file"
+mv "$FILENAME_EXTENDED_FLAGSTATS.tmp" "$FILENAME_EXTENDED_FLAGSTATS" || throw 30 "Could not move file"
+mv "$FILENAME_ISIZES_STATISTICS.tmp" "$FILENAME_ISIZES_STATISTICS" || throw 31 "Could not move file"
+mv "$FILENAME_DIFFCHROM_STATISTICS.tmp" "$FILENAME_DIFFCHROM_STATISTICS" || throw 32 "Could not move file"
+mv "$tempFlagstatsFile" "$FILENAME_FLAGSTATS" || throw 33 "Could not move file"
+mv "$FILENAME_READBINS_COVERAGE.tmp" "$FILENAME_READBINS_COVERAGE" || throw 34 "Could not move file"
+mv "$FILENAME_GENOME_COVERAGE.tmp" "$FILENAME_GENOME_COVERAGE" || throw 35 "Could not move file"
 
-runFingerprinting "${FILENAME}" "${FILENAME_FINGERPRINTS}"
+runFingerprinting "$FILENAME" "$FILENAME_FINGERPRINTS"
 removeRoddyBigScratch
 
 # QC summary
