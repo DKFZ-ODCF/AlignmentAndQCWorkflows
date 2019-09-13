@@ -60,7 +60,7 @@ getBigScratchDirectory () {
 
 
 analysisType () {
-    if [[  "${runExomeAnalysis-false}" = "true" ]]; then
+    if [[  "${runExomeAnalysis:-false}" = "true" ]]; then
         echo "exome"
     else
         echo "genome"
@@ -69,20 +69,20 @@ analysisType () {
 
 
 md5File () {
-   local inputFile="${1-/dev/stdin}"
-   local outputFile="${2-/dev/stdout}"
+   local inputFile="${1:-/dev/stdin}"
+   local outputFile="${2:-/dev/stdout}"
    assertNonEmpty "$inputFile"  "inputFile not defined" || return $?
    assertNonEmpty "$outputFile" "outputFile not defined" || return $?
    cat "$inputFile" \
-        | ${CHECKSUM_BINARY} \
+        | $CHECKSUM_BINARY \
         | cut -d ' ' -f 1 \
         > "$outputFile"
 }
 
 
 samtoolsIndex () {
-   local inputFile="${1-/dev/stdin}"
-   local outputFile="${2-/dev/stdout}"
+   local inputFile="${1:-/dev/stdin}"
+   local outputFile="${2:-/dev/stdout}"
    assertNonEmpty "$inputFile"  "inputFile not defined" || return $?
    assertNonEmpty "$outputFile" "outputFile not defined" || return $?
    "$SAMTOOLS_BINARY" index "$inputFile" "$outputFile"
@@ -90,18 +90,18 @@ samtoolsIndex () {
 
 
 fakeDupMarkMetrics () {
-   local inputFile="${1-/dev/stdin}"
-   local outputFile="${2-/dev/stdout}"
+   local inputFile="${1:-/dev/stdin}"
+   local outputFile="${2:-/dev/stdout}"
    assertNonEmpty "$inputFile"  "inputFile not defined" || return $?
    assertNonEmpty "$outputFile" "outputFile not defined" || return $?
-   "$PERL_BINARY" "$TOOL_FAKE_DUPMARK_METRICS" "$inputFile" "${SAMPLE}_${pid}" \
+   "$PERL_BINARY" "$TOOL_FAKE_DUPMARK_METRICS" "$inputFile" "${SAMPLE}_$pid" \
         > "$outputFile"
 }
 
 
 toIEqualsList () {
     declare -a inputFiles=($@)
-    for inFile in ${inputFiles[@]}; do
+    for inFile in "${inputFiles[@]}"; do
 	    echo -n "I=$inFile "
     done
     echo
@@ -111,8 +111,8 @@ runFingerprinting () {
     local bamFile="${1:?No input BAM file given}"
     local fingerPrintsFile="${2:?No output fingerprints file given}"
     if [[ "${runFingerprinting:-false}" == true && ${useAcceleratedHardware:-false} != true ]]; then
-        "${PYTHON_BINARY}" "${TOOL_FINGERPRINT}" "${fingerprintingSitesFile}" "${bamFile}" > "${fingerPrintsFile}.tmp" || throw 43 "Fingerprinting failed"
-        mv "${fingerPrintsFile}.tmp" "${fingerPrintsFile}" || throw 39 "Could not move file"
+        $PYTHON_BINARY "$TOOL_FINGERPRINT" "$fingerprintingSitesFile" "$bamFile" > "$fingerPrintsFile.tmp" || throw 43 "Fingerprinting failed"
+        mv "$fingerPrintsFile.tmp" "$fingerPrintsFile" || throw 39 "Could not move file"
     fi
 }
 
@@ -120,22 +120,22 @@ runFingerprinting () {
 # that only a single file or directory (including contained files) will be removed.
 saferRemoveSingleDirRecursively () {
     local file="${1:?No file given}"
-    if [[ "${file}" == "" || "${file}" == "." || "${file}" == "/" || "${file}" == "*" ]]; then
-        throw 1 "Trying to recursively remove with forbidden file name: '${file}'"
+    if [[ "$file" == "" || "$file" == "." || "$file" == "/" || "$file" == "*" ]]; then
+        throw 1 "Trying to recursively remove with forbidden file name: '$file'"
     fi
-    declare -a owner=( $(stat -c "%U" "${file}") )
+    declare -a owner=( $(stat -c "%U" "$file") )
     if [[ "${#owner[@]}" -gt 1 ]]; then
-        throw 1 "Trying to remove multiple files with file pattern: '${file}'"
+        throw 1 "Trying to remove multiple files with file pattern: '$file'"
     fi
-    if [[ "${owner}" != $(whoami) ]]; then
-        throw 1 "${file} is owned by ${owner}, so it won't be deleted by $(whoami)"
+    if [[ "$owner" != $(whoami) ]]; then
+        throw 1 "$file is owned by $owner, so it won't be deleted by $(whoami)"
     fi
-    rm -rf "${file}"
+    rm -rf "$file"
 }
 
 removeRoddyBigScratch () {
-    if [[ "${RODDY_BIG_SCRATCH}" && "${RODDY_BIG_SCRATCH}" != "${RODDY_SCRATCH}" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
-        saferRemoveSingleDirRecursively "${RODDY_BIG_SCRATCH}" # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
+    if [[ "$RODDY_BIG_SCRATCH" && "$RODDY_BIG_SCRATCH" != "$RODDY_SCRATCH" ]]; then  # $RODDY_SCRATCH is also deleted by the wrapper.
+        saferRemoveSingleDirRecursively "$RODDY_BIG_SCRATCH" # Clean-up big-file scratch directory. Only called if no error in wait or mv before.
     fi
 }
 
@@ -143,7 +143,7 @@ checkBamIsComplete () {
     local bamFile="${1:?No BAM file given}"
     local result      # AFAIR the assigment and declaration together did not work; presumably because of a Bash bug!
     result=$("$TOOL_BAM_IS_COMPLETE" "$bamFile")
-    if [[ $? ]]; then
+    if [[ $? -eq 0 && "$result" == "OK" ]]; then
         echo "BAM is terminated! $bamFile" >> /dev/stderr
     else
         throw 40 "BAM is not terminated! $bamFile"
@@ -164,7 +164,7 @@ mkPairedPipeName() {
     if [[ $readNo -ne 1 && $readNo -ne 2 ]]; then
         throw 151 "Read number must be 1 or 2. Got '$readNo'"
     fi
-    echo "r${readNo}_${pipeName}"
+    echo "r${readNo}_$pipeName"
 }
 
 # Make and register a pair of named pipes from the pipe-name.
