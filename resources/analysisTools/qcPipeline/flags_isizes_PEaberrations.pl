@@ -82,7 +82,7 @@ while (!eof($chromFh)) {
 	++$chrnum;
 }
 close $chromFh;
-print STDERR "$chrnum chromosomes to keep (from '$chromfile'): " . join(" ", sort @chromarray) . "\n";
+print STDERR "flags_isizes_PEaberration.pl: $chrnum chromosomes to keep (from '$chromfile'): " . join(" ", sort @chromarray) . "\n";
 
 # extended flagstats
 # all reads

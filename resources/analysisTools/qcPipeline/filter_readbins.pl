@@ -36,7 +36,7 @@ while (! eof($chromFh)) {
 }
 close $chromFh;
 
-print STDERR (scalar keys %chroms) . " chromosomes to keep (from '$chromfile'): " . join(" ", sort keys %chroms) . "\n";
+print STDERR "filter_readbins.pl: " . (scalar keys %chroms) . " chromosomes to keep (from '$chromfile'): " . join(" ", sort keys %chroms) . "\n";
 
 my $all = 0;
 my $kept = 0;
