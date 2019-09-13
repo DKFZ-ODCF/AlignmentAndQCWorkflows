@@ -44,7 +44,7 @@ my %foundChromosomesBins = ();
 # Read bins: chromosome is in first column
 while (! eof($binsFh)) {
 	my $line = readline($binsFh)
-		|| "Couldn't read bins file '$binsFile': $!";
+		|| die "Couldn't read bins file '$binsFile': $!";
 	++$all;
 	@fields = split ("\t", $line);
 	my $chr = $fields[0];
