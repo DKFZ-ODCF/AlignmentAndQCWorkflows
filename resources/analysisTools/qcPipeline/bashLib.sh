@@ -34,7 +34,8 @@ shellIsInteractive () {
 ## funname () ( set +exv; ...; ) may be better to get rid of too much output (mind the (...) subshell) but the exit won't work anymore.
 ## Maybe set -E + trap "bla" ERR would work? http://fvue.nl/wiki/Bash:_Error_handling#Exit_on_error
 printStackTrace () {
-    frameNumber=0
+    set +xv
+    local frameNumber=0
     while caller $frameNumber ;do
       ((frameNumber++))
     done
@@ -66,15 +67,15 @@ exitIfNonInteractive () {
 ## throw [code [msg]]
 ## Write message (Unspecified error) to STDERR and exit with code (default 1)
 throw () {
-  local lastCommandsExitCode=$?
-  local exitCode="${1-$UNSPECIFIED_ERROR_CODE}"
-  local msg="${2-$UNSPECIFIED_ERROR_MSG}"
-  if [[ $lastCommandsExitCode -ne 0 ]]; then
-    msg="$msg (last exit code: $lastCommandsExitCode)"
-  fi
-  errout "$exitCode" "$msg"
-  printStackTrace
-  exitIfNonInteractive "$exitCode" || return $?
+    local lastCommandsExitCode=$?
+    local exitCode="${1-$UNSPECIFIED_ERROR_CODE}"
+    local msg="${2-$UNSPECIFIED_ERROR_MSG}"
+    if [[ $lastCommandsExitCode -ne 0 ]]; then
+        msg="$msg (last exit code: $lastCommandsExitCode)"
+    fi
+    errout "$exitCode" "$msg"
+    printStackTrace
+    exitIfNonInteractive "$exitCode" || return $?
 }
 
 
