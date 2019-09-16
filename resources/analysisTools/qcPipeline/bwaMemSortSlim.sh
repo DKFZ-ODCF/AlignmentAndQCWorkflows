@@ -65,9 +65,9 @@ LENGTH_SEQ_2=`$UNZIPTOOL $UNZIPTOOL_OPTIONS "$RAW_SEQ_2" 2>/dev/null | head | wc
 [[ "$LENGTH_SEQ_1" == 0 || "$LENGTH_SEQ_2" == 0 ]] && useSingleEndProcessing=true
 
 # make biobambam sort default
-useBioBamBamSort="${useBioBamBamSort-true}"
+useBioBamBamSort="${useBioBamBamSort:-true}"
 # Do not use adaptor trimming by default.
-useAdaptorTrimming="${useAdaptorTrimming-false}"
+useAdaptorTrimming="${useAdaptorTrimming:-false}"
 
 
 # Default: Dummy process IDs to simplify downstream logic.
@@ -122,16 +122,17 @@ then
 	[[ ${LENGTH_SEQ_2} == 0 ]] && cat $FNPIPE2 >/dev/null
 fi
 
-# Try to read from pipes BEFORE they are filled.
-# in all cases:
 # SAM output is piped to perl script that calculates various QC measures
 (${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} ) & procIDCBA=$!
 
-# genome coverage (depth of coverage and other QC measures in one file)
+# Genome coverage (depth of coverage and other QC measures in one file)
 (${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) & procIDGenomeCoverage=$!
 
-# read bins
-(set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_SMALL | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} /dev/stdin ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
+# Read bins
+${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} \
+    | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} \
+    > ${FILENAME_READBINS_COVERAGE}.tmp \
+    & procIDReadbinsCoverage=$!
 
 # use sambamba for flagstats
 ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS" > "$tempFlagstatsFile" & procIDFlagstat=$!
@@ -212,6 +213,9 @@ else
 	fi
 fi
 
+# To prevent conditions with very small files and slow hosts or filesystems.
+sleep 30
+
 if [[ "$bamFileExists" == "true" ]]
 then
 	wait $procIDOutPipe; [[ $? -gt 0 ]] && echo "Error from sambamba view pipe" && exit 13
@@ -244,10 +248,10 @@ wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
 wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
 wait $procIDCBA || throw 17 "Error from combined QC perl script"
 
+# Post-pipe processing steps compiling QC information.
 runFingerprinting "${FILENAME_SORTED_BAM}" "$FILENAME_FINGERPRINTS"
 
-# QC summary
-# remove old warnings file if it exists (due to errors in run such as wrong chromsizes file)
+# Remove old warnings file if it exists (due to errors in run such as wrong chromsizes file)
 if [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]]; then
     rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
 fi
@@ -311,5 +315,3 @@ if [[ "${useSingleEndProcessing-false}" == "false" ]] && [[ "$ON_CONVEY" == "fal
 fi
 
 removeRoddyBigScratch
-
-exit 0

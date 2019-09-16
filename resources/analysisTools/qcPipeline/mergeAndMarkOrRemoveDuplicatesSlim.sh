@@ -35,7 +35,7 @@ bamname=`basename ${FILENAME}`
 
 declare -a INPUT_FILES="$INPUT_FILES"
 
-useOnlyExistingTargetBam=${useOnlyExistingTargetBam-false}
+useOnlyExistingTargetBam="${useOnlyExistingTargetBam:-false}"
 
 if [[ -v bam && ! -z "$bam" ]]; then
     # Handle existing BAM provided by 'bam' parameter or present as target FILENAME.
@@ -88,31 +88,57 @@ fi
 mkfifo ${NP_PIC_OUT} ${NP_SAM_IN} ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_MD5_IN} ${NP_METRICS_IN} ${NP_BAM_COMPRESS_IN}
 
 # default: use biobambam
-useBioBamBamMarkDuplicates=${useBioBamBamMarkDuplicates-true}
+useBioBamBamMarkDuplicates="${useBioBamBamMarkDuplicates:-true}"
 
-mergeOnly=${MERGE_BAM_ONLY-false}
+mergeOnly="${MERGE_BAM_ONLY:-false}"
 
+
+
+#
+# In all cases (Picard, biobambam, sambamba, etc.; see below): SAM output is piped to calculate various QC measures
+#
+(${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} ) & procIDCBA=$!
+
+# Use sambamba for flagstats
+${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsFile" & procIDFlagstat=$!
+
+# Genome coverage (depth of coverage and other QC measures in one file)
+(${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) & procIDGenomeCoverage=$!
+
+# Readbins coverage (1 or 10 kb bins)
+# TODO: compress with bgzip, index with tabix, make R script use zipped data
+#BGZIP_BINARY=bgzip
+#TABIX_BINARY=tabix
+
+# --processors=1: this part often fails with broken pipe. Don't know why. The mbuffer did not help, maybe --processors=4 does?
+# Don't put an mbuffer between TOOL_GENOME_COVERAGE_D_IMPL and TOOL_FILTER_READ_BINS: This disturbs the coordination and results in an
+# empty input error in the Perl script.
+(${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile="$NP_READBINS_IN" --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize="$WINDOW_SIZE" \
+    | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} \
+    > ${FILENAME_READBINS_COVERAGE}.tmp) \
+    & procIDReadbinsCoverage=$!
+
+# The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
 if markWithPicard || [[ "$mergeOnly" == true ]]; then
     # Complicate error catching because:
     # In some cases picard exits before cat starts to work on the named pipes. If so, the cat processes block and wait for input data forever.
     # TODO Think hard if it helps to just move picard two steps back and to start the cat processes earlier.
 
     # index piped BAM (always done)
-    (${SAMTOOLS_BINARY} index ${NP_INDEX_IN} $tempIndexFile) & procIDSamtoolsIndex=$!
+    $SAMTOOLS_BINARY index "$NP_INDEX_IN" "$tempIndexFile" \
+        & procIDSamtoolsIndex=$!
 
-    # make picard write SAM output that is later compressed more efficiently with samtools
-    if [[ ${useOnlyExistingTargetBam} == false ]]; then
-        # The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
-        PICARD_BINARY=${PICARD_BINARY-picard-1.125.sh}
+    if [[ "$useOnlyExistingTargetBam" == false ]]; then
+        PICARD_BINARY="${PICARD_BINARY:-picard-1.125.sh}"
 
         # The filehandles are used for some picard optimization.
-        FILEHANDLES=$((`ulimit -n` - 16))
+        FILEHANDLES=$(($(ulimit -n) - 16))
 
 	    if [[ "$mergeOnly" == false ]]; then
     	    PICARD_MODE="MarkDuplicates"
-	        DUPLICATION_METRICS_FILE="METRICS_FILE=${tempFilenameMetrics}"
-	        MERGEANDREMOVEDUPLICATES_ARGUMENTSLIST="${mergeAndRemoveDuplicates_argumentList}"
-	        MAX_FILE_HANDLES_FOR_READ_ENDS_MAP="MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${FILEHANDLES}"
+	        DUPLICATION_METRICS_FILE="METRICS_FILE=$tempFilenameMetrics"
+	        MERGEANDREMOVEDUPLICATES_ARGUMENTSLIST="$mergeAndRemoveDuplicates_argumentList"
+	        MAX_FILE_HANDLES_FOR_READ_ENDS_MAP="MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=$FILEHANDLES"
 	    else
        	    PICARD_MODE="MergeSamFiles"
     	    DUPLICATION_METRICS_FILE=""
@@ -120,6 +146,27 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
 	        MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=""
 	    fi
 
+        # provide named pipes of SAM type
+        cat "$NP_PIC_OUT" \
+            | mbuf 2g \
+                -f -o "$NP_SAM_IN" \
+                -f -o "$NP_COMBINEDANALYSIS_IN" \
+            & procIDMarkOutPipe=$!
+
+        # convert SAM to BAM
+        $SAMTOOLS_BINARY view -S -@ 8 -b "$NP_SAM_IN" \
+            | mbuf 2g \
+                -f -o "$NP_INDEX_IN" \
+                -f -o "$NP_FLAGSTATS_IN" \
+                -f -o "$NP_COVERAGEQC_IN" \
+                -f -o "$NP_READBINS_IN" \
+                -f -o "$NP_MD5_IN" \
+                -f -o "$tempBamFile" \
+            & procIDSamtoolsView=$!
+
+        md5File "$NP_MD5_IN" "$tempMd5File" & procIDMd5=$!
+
+        # Make picard write SAM output that is later compressed more efficiently with samtools
         (JAVA_OPTIONS="$PICARD_MARKDUP_JVM_OPTS" \
             $PICARD_BINARY ${PICARD_MODE} \
             $(toIEqualsList ${INPUT_FILES[@]}) \
@@ -135,24 +182,19 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
             MAX_RECORDS_IN_RAM=12500000; \
             echo $? > ${returnCodeMarkDuplicatesFile}) & procIDMarkdup=$!
 
-        # provide named pipes of SAM type
-        (cat ${NP_PIC_OUT} | mbuf 2g | tee ${NP_SAM_IN} ${NP_COMBINEDANALYSIS_IN} > /dev/null) & procIDMarkOutPipe=$!
-
-        md5File "$NP_MD5_IN" "$tempMd5File" & procIDMd5=$!
-
-        # convert SAM to BAM
-        (${SAMTOOLS_BINARY} view -S -@ 8 -b ${NP_SAM_IN} \
-            | mbuf 2g \
-            | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_MD5_IN} \
-            > ${tempBamFile}) & procIDSamtoolsView=$!
-
     else
         # Only use the existing target BAM
-        (cat "$FILENAME" \
+        cat "$FILENAME" \
             | mbuf 2g \
-            | tee ${NP_INDEX_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} \
-            | ${SAMTOOLS_BINARY} view - \
-            > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!
+                -f -o "$NP_INDEX_IN" \
+                -f -o "$NP_FLAGSTATS_IN" \
+                -f -o "$NP_COVERAGEQC_IN" \
+                -f -o "$NP_READBINS_IN" \
+                -f -o /dev/stdout \
+            | $SAMTOOLS_BINARY view - \
+            > "$NP_COMBINEDANALYSIS_IN" \
+            & procIDSamtoolsView=$!
+
         # To prevent abundancy of ifs, reuse the process id another time.
         procIDMarkOutPipe=$procIDSamtoolsView
         procIDMd5=$procIDSamtoolsView
@@ -175,9 +217,9 @@ elif markWithSambamba; then
     	${SAMTOOLS_BINARY} view -S -b -@ 6 "$NP_BAM_COMPRESS_IN" \
     	    | mbuf 100m \
     	        -f -o "$NP_INDEX_IN" \
-    	        -f -o "$tempBamFile" \
     	        -f -o "$NP_MD5_IN" \
-    	        & procBamCompress=$!
+    	        -f -o "$tempBamFile" \
+    	    & procBamCompress=$!
 
         # Sambamba outputs uncompressed BAM, so convert to SAM make a SAM pipe for the Perl tools.
 	    ${SAMTOOLS_BINARY} view -h "$NP_SAM_IN" \
@@ -185,7 +227,7 @@ elif markWithSambamba; then
       	        -f -o "$NP_METRICS_IN" \
     	        -f -o "$NP_COMBINEDANALYSIS_IN" \
     	        -f -o "$NP_BAM_COMPRESS_IN" \
-    	        & procIDSamtoolsView=$!
+    	    & procIDSamtoolsView=$!
 
     	# Create BAM pipes for samtools index, flagstat and the two D tools, write BAM.
 	    cat "$NP_PIC_OUT" \
@@ -194,20 +236,26 @@ elif markWithSambamba; then
     	        -f -o "$NP_FLAGSTATS_IN" \
     	        -f -o "$NP_COVERAGEQC_IN" \
     	        -f -o "$NP_READBINS_IN" \
-    	        & procIDMarkOutPipe=$!
+    	    & procIDMarkOutPipe=$!
 
         # Do the duplication marking/merging.
     	sambamba_markdup_default="-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"
-    	SAMBAMBA_MARKDUP_OPTS=${SAMBAMBA_MARKDUP_OPTS-$sambamba_markdup_default}
-    	(${SAMBAMBA_MARKDUP_BINARY} markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$RODDY_BIG_SCRATCH" ${INPUT_FILES[@]} "$NP_PIC_OUT"; \
+    	SAMBAMBA_MARKDUP_OPTS="${SAMBAMBA_MARKDUP_OPTS:-$sambamba_markdup_default}"
+    	($SAMBAMBA_MARKDUP_BINARY markdup $SAMBAMBA_MARKDUP_OPTS --tmpdir="$RODDY_BIG_SCRATCH" "${INPUT_FILES[@]}" "$NP_PIC_OUT"; \
 	        echo $? > "$returnCodeMarkDuplicatesFile") & procIDMarkdup=$!
 	else
 	    # The BAM file exists.
-        (cat "$FILENAME" \
+        cat "$FILENAME" \
             | mbuf 2g \
-            | tee "$NP_INDEX_IN" "$NP_FLAGSTATS_IN" "$NP_COVERAGEQC_IN" "$NP_READBINS_IN" \
-            | "$SAMTOOLS_BINARY" view - \
-            > "$NP_COMBINEDANALYSIS_IN") & procIDSamtoolsView=$!
+                -f -o "$NP_INDEX_IN" \
+                -f -o "$NP_FLAGSTATS_IN" \
+                -f -o "$NP_COVERAGEQC_IN" \
+                -f -o "$NP_READBINS_IN" \
+                -f -o /dev/stdout \
+            | $SAMTOOLS_BINARY view - \
+            > "$NP_COMBINEDANALYSIS_IN" \
+            & procIDSamtoolsView=$!
+
         # To prevent abundancy of ifs, reuse the process id another time.
         procIDMarkOutPipe=$procIDSamtoolsView
         procIDMd5=$procIDSamtoolsView
@@ -221,35 +269,51 @@ elif markWithBiobambam; then
     # and they will never be deleted because the directory is different for another job ID - because do not use the scratch
     # so use $tempDirectory instead
     if [[ ${useOnlyExistingTargetBam} == false ]]; then
-        (${BAMMARKDUPLICATES_BINARY} \
-            M=${tempFilenameMetrics} \
-            tmpfile=${RODDY_BIG_SCRATCH}/biobambammerge.tmp \
+        ($BAMMARKDUPLICATES_BINARY \
+            M="$tempFilenameMetrics" \
+            tmpfile="$RODDY_BIG_SCRATCH/biobambammerge.tmp" \
             markthreads=8 \
             level=9 \
             index=1 \
-            indexfilename=$tempIndexFile \
-            $(toIEqualsList ${INPUT_FILES[@]}) \
-            O=${NP_PIC_OUT}; echo $? > ${returnCodeMarkDuplicatesFile}) & procIDMarkdup=$!
+            indexfilename="$tempIndexFile" \
+            $(toIEqualsList "${INPUT_FILES[@]}") \
+            O="$NP_PIC_OUT"; \
+            echo $? > "$returnCodeMarkDuplicatesFile" \
+         ) & procIDMarkdup=$!
 
         md5File "$NP_MD5_IN" "$tempMd5File" & procIDMd5=$!
 
-        # create BAM pipes for flagstat and the two D tools, write to BAM
+        # Create BAM pipes for flagstat and the two D tools, write to BAM
         # REUSE! NP_SAM_IN for bam to sam conversion
-        # was: MBUF_4G, why?
-        cat ${NP_PIC_OUT} | mbuf 2g | tee ${NP_SAM_IN} ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_MD5_IN} \
-            > ${tempBamFile} & procIDMarkOutPipe=$!
+        cat "$NP_PIC_OUT" \
+            | mbuf 2g \
+                -f -o "$NP_SAM_IN" \
+                -f -o "$NP_FLAGSTATS_IN" \
+                -f -o "$NP_COVERAGEQC_IN" \
+                -f -o "$NP_READBINS_IN" \
+                -f -o "$NP_MD5_IN" \
+                -f -o "$tempBamFile" \
+             & procIDMarkOutPipe=$!
 
         # make a SAM pipe for the Perl tool
-        ${SAMTOOLS_BINARY} view ${NP_SAM_IN} | mbuf 2g > ${NP_COMBINEDANALYSIS_IN} & procIDSamtoolsView=$!
+        $SAMTOOLS_BINARY view "$NP_SAM_IN" \
+            | mbuf 2g \
+            > "$NP_COMBINEDANALYSIS_IN" \
+            & procIDSamtoolsView=$!
     else
         # The BAM file exists.
         ## The only difference here to the picard and sambamba is that here no NP_INDEX_IN is used, because biobambam creates
         ## the index on the fly.
         (cat "$FILENAME" \
             | mbuf 2g \
-            | tee ${NP_FLAGSTATS_IN} ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} \
-            | ${SAMTOOLS_BINARY} view - \
-            > ${NP_COMBINEDANALYSIS_IN}) & procIDSamtoolsView=$!
+                -f -o "$NP_FLAGSTATS_IN" \
+                -f -o "$NP_COVERAGEQC_IN" \
+                -f -o "$NP_READBINS_IN" \
+                -f -o /dev/stdout \
+            | $SAMTOOLS_BINARY view - \
+            > "$NP_COMBINEDANALYSIS_IN"
+        ) & procIDSamtoolsView=$!
+
         # To prevent abundancy of ifs, reuse the process id another time.
         procIDMarkOutPipe=$procIDSamtoolsView
         procIDMd5=$procIDSamtoolsView
@@ -259,27 +323,8 @@ else
     throw 101 "Unknown value for markDuplicatesVariant? '$markDuplicatesVariant'. Use biobambam, picard or sambamba or leave undefined to use useBiobambamMarkDuplicates value ($useBioBamBamMarkDuplicates)."
 fi
 
-# in all cases:
-# SAM output is piped to perl script that calculates various QC measures
-(${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} ) & procIDCBA=$!
-
-# use sambamba for flagstats
-${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsFile" & procIDFlagstat=$!
-
-# genome coverage (depth of coverage and other QC measures in one file)
-(${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) & procIDGenomeCoverage=$!
-
-# readbins coverage (1 or 10 kb bins)
-# TODO: compress with bgzip, index with tabix, make R script use zipped data
-#BGZIP_BINARY=bgzip
-#TABIX_BINARY=tabix
-
-#--processors=1: this part often fails with broken pipe, ?? where this comes from. The mbuffer did not help, maybe --processors=4 does?
-(${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} \
-    | mbuf 100m \
-    | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} \
-    > ${FILENAME_READBINS_COVERAGE}.tmp) \
-    & procIDReadbinsCoverage=$!
+# To prevent conditions with very small files and slow hosts or filesystems.
+sleep 30
 
 # Some waits for parallel processes. This also depends on the used merge binary.
 # Generally, before a file existence or content check, all processes on the stream towards the file need to be finished.
@@ -289,9 +334,9 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
     	if [[ $(cat "$returnCodeMarkDuplicatesFile") -ne 0 ]]; then
     	    throw 100 "Picard returned an exit code and the job will die now."
     	fi
-    	waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
-        waitAndMaybeExit "$procIDMarkOutPipe" "Error from mark out pipe" 5
 
+        waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
+        waitAndMaybeExit "$procIDMarkOutPipe" "Error from mark out pipe" 5
     	checkBamIsComplete "$tempBamFile"
         mv "$tempBamFile" "$FILENAME" || throw 38 "Could not move file"
 
@@ -301,9 +346,6 @@ if markWithPicard || [[ "$mergeOnly" == true ]]; then
     		# Create Dummy FILENAME_MATRICS if mergeOnly was true
     		touch "$FILENAME_METRICS"
     	fi
-
-        waitAndMaybeExit "$procIDMd5" "Error from MD5" 15
-        mv "$tempMd5File" "$FILENAME.md5" || throw 36 "Could not move file"
     fi
 
 	# The index is always re-made and needs to be updated to not be older than BAM.
@@ -318,19 +360,14 @@ elif markWithSambamba; then
     	if [[ $(cat "$returnCodeMarkDuplicatesFile") -ne 0 ]]; then
     	    throw 100 "Sambamba returned an exit code and the job will die now."
     	fi
-    	waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
-        waitAndMaybeExit "$procBamCompress" "Error during BAM compression" 4
+        waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
+        waitAndMaybeExit "$procIDMarkOutPipe" "Error from mark out pipe" 5        waitAndMaybeExit "$procBamCompress" "Error during BAM compression" 4
         waitAndMaybeExit "$procIDFakeMetrics" "Error from sambamba fake metrics" 5
-        waitAndMaybeExit "$procIDMarkOutPipe" "Error from mark out pipe" 5
 
         checkBamIsComplete "$tempBamFile"
         mv "$tempBamFile" "$FILENAME" || throw 38 "Could not move file"
 
         mv "$tempFilenameMetrics" "$FILENAME_METRICS" || throw 39 "Could not move file"
-
-      	waitAndMaybeExit "$procIDMd5" "Error from MD5" 15
-        mv "$tempMd5File" "$FILENAME.md5" \
-            || throw 36 "Could not move file"
     fi
 
 	waitAndMaybeExit "$procIDSamtoolsIndex" "Error from samtools index pipe" 6
@@ -344,9 +381,9 @@ elif markWithBiobambam; then
         if [[ $(cat "$returnCodeMarkDuplicatesFile") -ne 0 ]]; then
             throw 100 "Biobambam returned an exit code and the job will die now."
         fi
-	    waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
-        waitAndMaybeExit "$procIDMarkOutPipe" "Error from biobambam BAM pipe" 8
 
+        waitAndMaybeExit "$procIDSamtoolsView" "Error from samtools view pipe" 7
+        waitAndMaybeExit "$procIDMarkOutPipe" "Error from mark out pipe" 5
 	    checkBamIsComplete "$tempBamFile"
 	    mv "$tempBamFile" "$FILENAME" || throw 40 "Could not move file"
 
@@ -356,11 +393,13 @@ elif markWithBiobambam; then
 	        || throw 41 "Could not move file"   # Update timestamp because by piping the index might be older than the BAM
 
         mv "$FILENAME_METRICS.tmp" "$FILENAME_METRICS" || throw 42 "Could not move file"
-
-        waitAndMaybeExit "$procIDMd5" "Error from MD5" 15
-        mv "$tempMd5File" "$FILENAME.md5" \
-            || throw 36 "Could not move file"
     fi
+fi
+
+if [[ "$useOnlyExistingTargetBam" == false ]]; then
+    waitAndMaybeExit "$procIDMd5" "Error from MD5" 15
+    mv "$tempMd5File" "$FILENAME.md5" \
+        || throw 36 "Could not move file"
 fi
 
 waitAndMaybeExit "$procIDReadbinsCoverage" "Error from genomeCoverage read bins" 10
@@ -377,13 +416,11 @@ mv "$tempFlagstatsFile" "$FILENAME_FLAGSTATS" || throw 33 "Could not move file"
 mv "$FILENAME_READBINS_COVERAGE.tmp" "$FILENAME_READBINS_COVERAGE" || throw 34 "Could not move file"
 mv "$FILENAME_GENOME_COVERAGE.tmp" "$FILENAME_GENOME_COVERAGE" || throw 35 "Could not move file"
 
-runFingerprinting "$FILENAME" "$FILENAME_FINGERPRINTS"
-removeRoddyBigScratch
-
 # QC summary
-# if the warnings file had been created before, remove it:
-# it may be from one lane WGS with < 30x (which raises a warning)
+runFingerprinting "$FILENAME" "$FILENAME_FINGERPRINTS"
 
+# If the warnings file had been created before, remove it:
+# It may be from one lane WGS with < 30x (which raises a warning)
 [[ -f ${FILENAME_QCSUMMARY}_WARNINGS.txt ]] && rm ${FILENAME_QCSUMMARY}_WARNINGS.txt
 
 if [[ "$useOnlyExistingTargetBam" == true || (-v mergeOnly && "$mergeOnly" == true) ]]; then
@@ -412,3 +449,4 @@ grep -w "NA" $FILENAME_DIFFCHROM_STATISTICS && useSingleEndProcessing=true
 ${RSCRIPT_BINARY} ${TOOL_INSERT_SIZE_PLOT_SCRIPT} ${FILENAME_ISIZES_MATRIX} ${FILENAME_ISIZES_STATISTICS} ${FILENAME_ISIZES_PLOT}_temp "PE insertsize of ${bamname} (rmdup)" && mv  ${FILENAME_ISIZES_PLOT}_temp ${FILENAME_ISIZES_PLOT} || throw 22 "Error from insert sizes plotter"
 ${RSCRIPT_BINARY} ${TOOL_PLOT_DIFFCHROM} -i "$FILENAME_DIFFCHROM_MATRIX" -s "$FILENAME_DIFFCHROM_STATISTICS" -o "${FILENAME_DIFFCHROM_PLOT}_temp" && mv  ${FILENAME_DIFFCHROM_PLOT}_temp ${FILENAME_DIFFCHROM_PLOT} || throw 23 "Error from chrom_diff.r"
 
+removeRoddyBigScratch

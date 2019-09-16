@@ -82,9 +82,9 @@ fi
 # Determine the quality score
 set +e   # The following few lines fail with exit 141 due to unknown reasons if `set -e` is set.
 if [[ $LENGTH_SEQ_1 -ne 0 ]]; then
-    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_1" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
+    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_1" | $PERL_BINARY "$TOOL_SEQUENCER_DETECTION")
 else
-    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_2" | "$PERL_BINARY" "$TOOL_SEQUENCER_DETECTION")
+    qualityScore=$(getFastqAsciiStream "$RAW_SEQ_2" | $PERL_BINARY "$TOOL_SEQUENCER_DETECTION")
 fi
 set -e
 
@@ -159,7 +159,6 @@ $TOOL_GENOME_COVERAGE_D_IMPL \
     --processors=4 \
     --mode=countReads \
     --windowSize="$WINDOW_SIZE" \
-    | $MBUF_SMALL \
     | $PERL_BINARY $TOOL_FILTER_READ_BINS - "$CHROM_SIZES_FILE" \
     > "$FILENAME_READBINS_COVERAGE.tmp" \
     & procIDReadbinsCoverage=$!
@@ -229,33 +228,36 @@ else
 
 fi
 
+# To prevent conditions with very small files and slow hosts or filesystems.
+sleep 30
+
 if [[ "$bamFileExists" == "true" ]]; then
 	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
 else
-    # Make sure to rename BAM file when it has been produced correctly
-    # A failure in the early/FASTQ-processing steps should result in an error and no moved temporary BAM.
-    waitForRegisteredPids_BashSucksVersion
-    wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
-    wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
+    # Make sure to rename BAM file when it has been produced correctly.
 
     errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
     source "$TOOL_BWA_ERROR_CHECKING_SCRIPT"
 	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
-	# index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp
+
+	# Index is only created by samtools or biobambam when producing the BAM, it may be older than the BAM, so update time stamp.
 	if [[ -f ${tempBamIndexFile} ]]; then
 	 	mv ${tempBamIndexFile} ${INDEX_FILE} && touch ${INDEX_FILE} || throw 37 "Could not move file"
 	fi
 fi
+
+wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
+wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
+waitForRegisteredPids_BashSucksVersion
 
 wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
 wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
 wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
 wait $procIDCBA || throw 17 "Error from combined QC perl script"
 
-runFingerprinting "$FILENAME_SORTED_BAM" "$FILENAME_FINGERPRINTS"
-
 # Post-pipe processing steps compiling QC information.
+runFingerprinting "$FILENAME_SORTED_BAM" "$FILENAME_FINGERPRINTS"
 
 # Remove old warnings file if it exists (due to errors in run such as wrong chromsizes file).
 # This is to ensure that old warning are not confused as new warnings!
