@@ -100,10 +100,18 @@ mergeOnly="${MERGE_BAM_ONLY:-false}"
 (${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} ) & procIDCBA=$!
 
 # Use sambamba for flagstats
-${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsFile" & procIDFlagstat=$!
+$SAMBAMBA_FLAGSTATS_BINARY flagstat -t 1 "$NP_FLAGSTATS_IN" \
+    > "$tempFlagstatsFile" \
+    & procIDFlagstat=$!
 
 # Genome coverage (depth of coverage and other QC measures in one file)
-(${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) & procIDGenomeCoverage=$!
+$TOOL_COVERAGE_QC_D_IMPL \
+    --alignmentFile="$NP_COVERAGEQC_IN" \
+    --outputFile="$FILENAME_GENOME_COVERAGE.tmp" \
+    --processors=1 \
+    --basequalCutoff="$BASE_QUALITY_CUTOFF" \
+    --ungappedSizes="$CHROM_SIZES_FILE" \
+    & procIDGenomeCoverage=$!
 
 # Readbins coverage (1 or 10 kb bins)
 # TODO: compress with bgzip, index with tabix, make R script use zipped data
@@ -113,9 +121,14 @@ ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS_IN" > "$tempFlagstatsF
 # --processors=1: this part often fails with broken pipe. Don't know why. The mbuffer did not help, maybe --processors=4 does?
 # Don't put an mbuffer between TOOL_GENOME_COVERAGE_D_IMPL and TOOL_FILTER_READ_BINS: This disturbs the coordination and results in an
 # empty input error in the Perl script.
-(${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile="$NP_READBINS_IN" --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize="$WINDOW_SIZE" \
-    | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} \
-    > ${FILENAME_READBINS_COVERAGE}.tmp) \
+$TOOL_GENOME_COVERAGE_D_IMPL \
+    --alignmentFile="$NP_READBINS_IN" \
+    --outputFile=/dev/stdout \
+    --processors=4 \
+    --mode=countReads \
+    --windowSize="$WINDOW_SIZE" \
+    | $PERL_BINARY "$TOOL_FILTER_READ_BINS" - "$CHROM_SIZES_FILE" \
+    > "$FILENAME_READBINS_COVERAGE.tmp" \
     & procIDReadbinsCoverage=$!
 
 # The second alternative after the || preserves the semantics of useBioBamBamMarkDuplicates if markDuplicatesVariant == "".
@@ -204,7 +217,8 @@ elif markWithSambamba; then
     ## Modified copy from /home/hutter/workspace_ngs/ngs2/trunk/pipelines/RoddyWorkflows/Plugins/QualityControlWorkflows/resources/analysisTools/qcPipeline/mergeAndMarkOrRemoveDuplicatesSlim.sh
 
     # index piped BAM (done with new merged BAM and reuse of old BAM)
-    ${SAMTOOLS_BINARY} index ${NP_INDEX_IN} $tempIndexFile & procIDSamtoolsIndex=$!
+    $SAMTOOLS_BINARY index "$NP_INDEX_IN" "$tempIndexFile" \
+        & procIDSamtoolsIndex=$!
 
     if [[ "$useOnlyExistingTargetBam" == false ]]; then
     	md5File "$NP_MD5_IN" "$tempMd5File" & procIDMd5=$!
@@ -214,7 +228,7 @@ elif markWithSambamba; then
         # The tee-like mbuffer decouples the IO in the output stream. -f forces writing into existing FIFO file.
 
     	# Compress with uncompressed BAM stream with multiple cores.
-    	${SAMTOOLS_BINARY} view -S -b -@ 6 "$NP_BAM_COMPRESS_IN" \
+    	$SAMTOOLS_BINARY view -S -b -@ 6 "$NP_BAM_COMPRESS_IN" \
     	    | mbuf 100m \
     	        -f -o "$NP_INDEX_IN" \
     	        -f -o "$NP_MD5_IN" \
@@ -222,7 +236,7 @@ elif markWithSambamba; then
     	    & procBamCompress=$!
 
         # Sambamba outputs uncompressed BAM, so convert to SAM make a SAM pipe for the Perl tools.
-	    ${SAMTOOLS_BINARY} view -h "$NP_SAM_IN" \
+	    $SAMTOOLS_BINARY view -h "$NP_SAM_IN" \
     	    | mbuf 100m \
       	        -f -o "$NP_METRICS_IN" \
     	        -f -o "$NP_COMBINEDANALYSIS_IN" \
