@@ -553,9 +553,9 @@
         <filename class='BamIndexFile' derivedFrom='BamFile' pattern='${sourcefile}.bai'/>
         <filename class='BamMetricsFile' derivedFrom='BamFile' pattern='${sourcefile}.dupmark_metrics.txt'/>
         <filename class='FlagstatsFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${flagstatsOutputDirectory}/${sourcefileAtomic}_flagstats.txt'/>
-        <filename class='ChromosomeDiffPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png'/>
+        <filename class='ChromosomeDiffPlotFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.pdf'/>
         <filename class='ChromosomeDiffTextFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.txt'/>
-        <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.png_qcValues.txt'/>
+        <filename class='ChromosomeDiffValueFile' derivedFrom='BamFile' pattern='${outputAnalysisBaseDirectory}/${structuralVariationOutputDirectory}/${sourcefileAtomic}_DiffChroms.pdf_qcValues.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sample}_${pid}_readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
         <filename class='CoverageTextFile' onMethod='BamFileGroup.mergeAndRemoveDuplicatesSlim' selectiontag="genomeCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.DepthOfCoverage_Genome.txt'/>
         <filename class='CoverageTextFile' onMethod='LaneFileGroup.alignAndPairSlim' selectiontag="readBinsCoverage" pattern='${outputAnalysisBaseDirectory}/${coverageOutputDirectory}/${sourcefileAtomicPrefix,delimiter="_"}.readCoverage_${cvalue,name="WINDOW_SIZE",default="1"}kb_windows.txt'/>
