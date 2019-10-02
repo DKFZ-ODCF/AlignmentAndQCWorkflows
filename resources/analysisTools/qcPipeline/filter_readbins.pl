@@ -73,7 +73,7 @@ while (! eof($binsFh)) {
 $binsFh->close;
 
 $timestamp = localtime();
-print STDERR "($timestamp) filter_readbins.pl finished reading bins file";
+print STDERR "($timestamp) filter_readbins.pl finished reading bins file\n";
 print STDERR "Content of last line was ---'$line'---\n";
 print STDERR "Chromosomes in read-bins file: " . join(" ", sort keys %readBinsChr) . "\n";
 print STDERR "From $all lines, kept $kept with selected chromosomes\n";
