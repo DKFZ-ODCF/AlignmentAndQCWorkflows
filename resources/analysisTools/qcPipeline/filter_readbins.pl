@@ -56,8 +56,9 @@ my $kept = 0;
 my $timestamp = localtime();
 print STDERR "($timestamp) filter_readbins.pl is waiting for input...\n";
 
+my $line = "";
 while (! eof($binsFh)) {
-    my $line = readline($binsFh)
+    $line = readline($binsFh)
             || croak "Couldn't read bins file '$binsfile': $!";
     $all++;
     my @fields = split("\t", $line);

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <content url="file://$MODULE_DIR$/../AlignmentAndQCWorkflows">
+      <sourceFolder url="file://$MODULE_DIR$/../AlignmentAndQCWorkflows/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../AlignmentAndQCWorkflows/resources/analysisTools" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../AlignmentAndQCWorkflows/resources/configurationFiles" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../AlignmentAndQCWorkflows/resources/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../AlignmentAndQCWorkflows/docs" type="java-resource" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
