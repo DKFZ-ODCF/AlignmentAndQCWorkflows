@@ -2,81 +2,82 @@
 
 use strict;
 use warnings;
+use Carp;
 
-if (@ARGV < 2)
-{
-	die "1.read bins file (use - for reading from STDIN) - 2.file with chromosomes to keep in first column  - 3.optional: ignore chr prefix and .fa suffix\n";
+our $USAGE = <<ENDE;
+    1. read bins file (use - for reading from STDIN)
+    2. file with chromosomes to keep in first column
+    3. optional: ignore 'chr' prefixes and '.fa' suffixes in both read bins file and chromosomes files;
+ENDE
+
+
+sub maybeRemovePrefixSuffix($$) {
+    my ($chr, $doRemove) = @_;
+    if ($doRemove) {
+        $chr =~ s/^chr//;
+        $chr =~ s/^\.fa$//;
+    }
+    return $chr;
 }
 
-my $binsfile= shift;
-my $chromfile = shift;
-my $ignore = shift;
+if (scalar(@ARGV) < 2) {
+    print STDERR $USAGE;
+    exit 1;
+}
 
-open (CF, $chromfile) or die "could not open chromlength file $chromfile: $!\n";
-open (BF, $binsfile) or die "could not open read bins file $binsfile: $!\n";
+my ($binsfile,
+    $chromfile,
+    $ignore) = @ARGV;
 
-my @fields = ();
+my $chromFh = IO::File->new($chromfile)
+    || croak "Could not open chromosome length file '$chromfile': $!";
+my $binsFh = IO::File->new($binsfile)
+    || croak "Could not open read bins file '$binsfile': $!";
+
 my %chroms = ();
-my $chr;
-while (<CF>)
-{
-	if ($_ =~ /^#/)
-	{
-		next;
-	}
-	chomp;
-	@fields = split ("\t", $_);
-	# get rid of possible chr and .fa if wanted
-	if ($ignore)
-	{
-		($chr = $fields[0]) =~ s/^chr//;
-		$chr =~ s/^\.fa$//;
-		$chroms{$chr} = 1;
-	}
-	else
-	{
-		$chroms{$fields[0]} = 1;
-	}
+while (! eof($chromFh)) {
+    my $line = readline($chromFh)
+        || croak "Couldn't read chromosomes file '$chromfile': $!";
+    if ($line !~ /^#/) {
+        chomp $line;
+        my @fields = split("\t", $line);
+        my $chr = maybeRemovePrefixSuffix($fields[0], $ignore);
+        $chroms{$chr} = 1;
+    }
 }
-close CF;
-print STDERR "chromosomes to keep: ";
-foreach $chr (sort keys %chroms)
-{
-	print STDERR "$chr ";
-}
-print STDERR "\n";
+$chromFh->close;
 
-my $line = "";
+print STDERR "Chromosomes to keep: " . join(" ", sort keys %chroms) . "\n";
+
+my %readBinsChr = ();
 my $all = 0;
 my $kept = 0;
-# read bins: chrom is in first column
-while ($line=<BF>)
-{
-	$all++;
-	@fields = split ("\t", $line);
-	if ($ignore)
-	{
-		($chr = $fields[0]) =~ s/^chr//;
-		$chr =~ s/^\.fa$//;
-		if (exists $chroms{$chr})
-		{
-			print $line;
-			$kept++;
-		}
-	}
-	else
-	{
-		if (exists $chroms{$fields[0]})
-		{
-			print $line;
-			$kept++;
-		}
-	}
+
+my $timestamp = localtime();
+print STDERR "($timestamp) filter_readbins.pl is waiting for input...\n";
+
+while (! eof($binsFh)) {
+    my $line = readline($binsFh)
+            || croak "Couldn't read bins file '$binsfile': $!";
+    $all++;
+    my @fields = split("\t", $line);
+    # read bins: chromosome is in the first column
+    my $chr = maybeRemovePrefixSuffix($fields[0], $ignore);
+    $readBinsChr{$chr} = 1;
+    if (exists $chroms{$chr}) {
+        print $line;
+        $kept++;
+    }
 }
-close BF;
-print STDERR "from $all lines, kept $kept with selected chromosomes\n";
-if ($kept < 1)
-{
-	die "Error in filtering read bins (filter_readbins.pl): no lines were extracted from input. Probably the prefixes of the chromosome file and the BAM file are not compatible\n";
+$binsFh->close;
+
+$timestamp = localtime();
+print STDERR "($timestamp) filter_readbins.pl finished reading bins file";
+print STDERR "Content of last line was ---'$line'---\n";
+print STDERR "Chromosomes in read-bins file: " . join(" ", sort keys %readBinsChr) . "\n";
+print STDERR "From $all lines, kept $kept with selected chromosomes\n";
+
+if ($kept < 1) {
+    croak "Error in filtering read bins (filter_readbins.pl): no lines were extracted from input. Probably the prefixes of the chromosome file and the BAM file are not compatible";
 }
-exit;
+
