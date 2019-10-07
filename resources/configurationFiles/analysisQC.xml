@@ -21,6 +21,8 @@
                 description="Only used for 'view' and 'sort'."/>
         <cvalue name="SAMBAMBA_FLAGSTATS_VERSION" value="0.4.6" type="string"
                 description="Version 0.4.6 of sambamba produces the old samtools 0.1.19 compatible counts."/>
+        <cvalue name="MBUFFER_VERSION" value="20160613" type="string"
+                description="Newer mbuffer versions (e.g. 2019) additionally require to set the -s parameter to avoid sudden mbuffer termination for small buffer-sizes (e.g. 100M). This is not implemented in this workflow version."/>
         <cvalue name="SAMBAMBA_MARKDUP_VERSION" value="0.5.9" type="string"
                 description="Only used for duplication marking."/>
         <cvalue name="PICARD_VERSION" value="1.125" type="string"/>
