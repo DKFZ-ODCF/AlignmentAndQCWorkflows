@@ -94,6 +94,9 @@ export PICARD_BINARY=picard.sh
 moduleLoad vcftools
 export VCFTOOLS_SORT_BINARY=vcf-sort
 
+moduleLoad mbuffer
+export MBUFFER_BINARY=mbuffer
+
 # There are different sambamba versions used for different tasks. The reason has something to do with performance and differences in the versions.
 # We define functions here that take the same parameters as the original sambamba, but apply them to the appropriate version by first loading
 # the correct version and after the call unloading the version. The _BINARY variables are set to the functions.
@@ -150,5 +153,4 @@ else
 fi
 
 # Unversioned binaries.
-export MBUFFER_BINARY=mbuffer
 export CHECKSUM_BINARY=md5sum
