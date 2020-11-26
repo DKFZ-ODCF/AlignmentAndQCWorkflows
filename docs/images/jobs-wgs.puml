@@ -26,7 +26,7 @@ endnote
 
 component "annotateCoverageWindows" as annotate
 note top of [annotate]
-  estimate sample gender
+  estimate sample's sex
 endnote
 
 component "mergeAndFilterCovWindows" as filter
