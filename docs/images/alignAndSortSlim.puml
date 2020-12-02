@@ -1,0 +1,217 @@
+@startuml
+allowmixing
+
+scale max 800 width
+
+file "CHROM_SIZES_FILE" as chromosomeSizesFile
+note left: hs37d5.fa.chrLenOnlyACGT_realChromosomes.tab
+
+artifact "reference genome" as referenceGenome
+note right: BWA index resides besides the FASTA
+
+
+file "RAW_SEQ_1" as fastq1
+file "RAW_SEQ_2" as fastq2
+
+frame "main line" as mainLine {
+
+    object decompressor1
+    fastq1 --> decompressor1
+    object decompressor2
+    fastq2 --> decompressor2
+
+    object "trimmomatic.jar" as trimmomatic
+    note right: TOOL_ADAPTOR_TRIMMING
+    decompressor1 --> trimmomatic
+    decompressor2 --> trimmomatic
+
+    object "PhredOrIllumina.pl" as guessQualityScore
+    note left: TOOL_SEQUENCER_DETECTION
+    decompressor1 --> guessQualityScore
+    artifact "qualityScore" as qualityScore
+    guessQualityScore --> qualityScore
+
+    object "BWA MEM" as bwa
+    note right: BWA_BINARY
+    trimmomatic --> bwa : trimmed R1 FASTQ
+    trimmomatic --> bwa : trimmed R2 FASTQ
+
+    referenceGenome ..> bwa
+
+    artifact "TAM" as tamStream
+    artifact "BAM" as bamStream
+    artifact "sorted BAM" as sortedBamStream
+
+    bwa --> tamStream
+
+    object "samtools view -b" as tam2Bam
+    tamStream -left-> tam2Bam
+    tam2Bam -left-> bamStream
+
+    file "FILENAME_SORTED_BAM.bai" as bai
+
+    object "bamsort" as bamsort
+    bamStream --> bamsort : useBioBamBamSort == TRUE
+    bamsort --> sortedBamStream
+    bamsort --> bai
+
+    object "samtools sort" as samtoolsSort
+    bamStream --> samtoolsSort : useBioBamBamSort == FALSE
+    samtoolsSort --> sortedBamStream
+
+    samtoolsSort -[hidden]right- bamsort
+
+    object "samtools index" as samtoolsIndex
+    sortedBamStream --> samtoolsIndex : useBioBamBamSort == FALSE
+    samtoolsIndex -> bai
+
+    file "FILENAME_SORTED_BAM" as sortedBamFile
+    sortedBamStream --> sortedBamFile
+
+}
+
+chromosomeSizesFile -[hidden]down- mainLine
+
+frame "Quality Control" as qualityControl {
+
+    frame "TAM input" {
+
+        artifact "TAM" as tamInputStream
+        tamStream ----> tamInputStream
+
+        file " *_DiffChroms.png" as diffchromPlot
+        note left: FILE_
+
+        file " *_DiffChroms.txt" as diffchromFile
+        note left: FILE_DIFFCHROM_MATRIX
+
+        file " *_DiffChroms.png_qcValues.txt" as diffchromStatisticsFile
+        note left: FILENAME_DIFFCHROM_STATISTICS
+
+        file " *_flagstats_extended.txt" as extendedFlagstatsFile
+        note left: FILENAME_EXTENDED_FLAGSTATS
+
+        file " *_insertsizes.txt" as insertSizesFile
+        note left: FILENAME_ISIZES_MATRIX
+
+        file " *_insertsize_plot.png_qcValues.txt" as insertSizesStatisticsFile
+        note left: FILENAME_ISIZES_STATISTICS
+
+
+        object "flag_isizes_PEaberrations.pl" as flagPE
+        note left: TOOL_COMBINED_BAM_ANALYSIS
+        flagPE : maximum proper pair insert size = 1000
+        flagPE : minimum mapping quality : 1
+
+        chromosomeSizesFile ..> flagPE
+
+        tamInputStream --> flagPE
+        flagPE --> diffchromPlot
+        flagPE --> diffchromFile
+        flagPE --> diffchromStatisticsFile
+        flagPE --> insertSizesFile
+        flagPE --> insertSizesStatisticsFile
+        flagPE --> extendedFlagstatsFile
+
+        diffchromPlot -[hidden]down- diffchromFile
+        diffchromFile -[hidden]down- diffchromStatisticsFile
+        diffchromStatisticsFile -[hidden]down- extendedFlagstatsFile
+        extendedFlagstatsFile -[hidden]down- insertSizesFile
+        insertSizesFile -[hidden]down- insertSizesStatisticsFile
+
+        file " *.flagstats" as flagstatFile
+        note left: FILENAME_FLAGSTATS
+        object "sambamba flagstat" as flagstats
+        tamInputStream --> flagstats
+        flagstats --> flagstatFile
+
+    }
+
+    frame "BAM input" {
+
+        artifact "sorted BAM" as sortedBamInputStream
+        sortedBamStream ----> sortedBamInputStream
+
+        file " *.DepthOfCoverage_Genome.txt" as genomeCoverageFile
+        object coverageQc
+        note left: TOOL_COVERAGE_QC_D_IMPL
+        coverageQc : BASE_QUALITY_CUTOFF = 0
+        chromosomeSizesFile ..> coverageQc
+
+        sortedBamInputStream --> coverageQc
+        coverageQc --> genomeCoverageFile
+
+
+        file " *.DepthOfCoverage_Genome_Grouped.txt" as groupedGenomeCoveragesFile
+        object "groupedGenomeCoverages.pl" as groupedGenomeCoverages
+        note left: FILENAME_GROUPED_GENOME_COVERAGE
+        genomeCoverageFile ---> groupedGenomeCoverages
+        groupedGenomeCoverages --> groupedGenomeCoveragesFile
+
+
+
+        file " *_readCoverage_${WINDOW_SIZE}kb_windows.txt" as readbinCoverageFile
+        object genomeCoverage
+        note left: TOOL_GENOME_COVERAGE_D_IMPL
+        genomeCoverage : WINDOW_SIZE = 1
+        chromosomeSizesFile ..> genomeCoverage
+        object "filter_readbins.pl" as filterReadbinsPl
+        chromosomeSizesFile ..> filterReadbinsPl
+
+        sortedBamInputStream --> genomeCoverage
+        genomeCoverage --> filterReadbinsPl
+        filterReadbinsPl --> readbinCoverageFile
+
+
+        readbinCoverageFile -[hidden]down- coverageQc
+
+    }
+
+    frame final {
+
+        object "writeQCsummary.pl" as writeQCsummary
+        writeQCsummary : PID
+        writeQCsummary : SAMPLE
+        writeQCsummary : RUN
+        writeQCsummary : LANE
+        note left: TOOL_WRITE_QC_SUMMARY
+
+        flagstatFile ---> writeQCsummary
+        diffchromFile ---> writeQCsummary
+        insertSizesStatisticsFile ---> writeQCsummary
+        genomeCoverageFile ---> writeQCsummary
+
+        file " *_wroteQcSummary.txt" as qcSummary
+        note right: FILENAME_QCSUMMARY
+
+        writeQCsummary -> qcSummary
+
+        file " *_wroteQcSummary.txt_WARNINGS.txt" as qcSummaryWarnings
+        writeQCsummary ---> qcSummaryWarnings
+
+
+
+        file " *_quality-control.json" as qcJsonFile
+
+        object "qcJson.pl" as qcJson
+        note left: TOOL_QC_JSON
+
+        genomeCoverageFile ---> qcJson
+        groupedGenomeCoveragesFile ---> qcJson
+        insertSizesStatisticsFile ----> qcJson
+        flagstatFile ---> qcJson
+
+        qcJson --> qcJsonFile
+
+        file fingerprintFile
+        object "bsnp.py" as fingerprint
+        sortedBamFile ----> fingerprint
+        fingerprint --> fingerprintFile
+
+    }
+
+}
+
+mainLine ---[hidden]down--- qualityControl
+
+@enduml
