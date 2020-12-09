@@ -1,0 +1,12 @@
+@startuml
+allowmixing
+frame "for grouping" as someFrame {
+  object "command execution" as someObject
+  someObject : importantParameter = defaultValue
+  file "file or intermediate result" as someFile
+  artifact "e.g. variables & files" as someArtifact
+
+  someObject --> someArtifact : internal data flow
+  someFile ..> someObject : data flow from\nexternal "reference" files
+}
+@enduml
