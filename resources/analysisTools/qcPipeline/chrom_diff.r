@@ -1,5 +1,4 @@
 library(getopt)
-library(uuid)
 
 opt = getopt(matrix(c(
   'inputMatrix', 'i', 1, "character",
@@ -23,10 +22,10 @@ for(i in 1:nrow(data)){
 # fix for https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/issues/63
 oldWD = getwd()
 setwd(dirname(opt$outputFile))
-tmpFileName=paste0(UUIDgenerate(),".tmp")
+tmpFileName=basename(tempfile(pattern = "DiffChroms_", fileext = ".tmp"))
 
 pdf(tmpFileName, height = 10, width = 10)
-  barplot(v, names.arg = rownames(data), col = rainbow(nrow(data)),ylab = "# reads", xlab = "Chromosome", main = plot_title)
+barplot(v, names.arg = rownames(data), col = rainbow(nrow(data)),ylab = "# reads", xlab = "Chromosome", main = plot_title)
 dev.off()
 
 file.rename(tmpFileName, opt$outputFile)
