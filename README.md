@@ -16,7 +16,14 @@ The original script with a documentation of the underlying ideas can be found [h
 
 ## Change Logs
 
-* 1.2.73-2 (branch-specific change)
+* 1.2.73-202 (branch-specific change)
+  - PATCH: call of grDevices.pdf() in chrom_diff.r lead to unexpected 
+    (truncated to at most 511 characters) file name of output pdf 
+  
+* 1.2.73-201 (branch-specific change)
+  - PATCH: explicit MBUFFER version can be specified for tbi-lsf environment
+  
+* 1.2.73-2, 1.2.73-200 (branch-specific change)
   - Updated unidirectional WGBS read-reordering script from [here](https://github.com/cimbusch/TWGBS.git)
   - Actually include the WGBS read-reordering script
   - Improved error checking and reporting for BWA and surrounding pipe

@@ -19,8 +19,14 @@ for(i in 1:nrow(data)){
   v[i] <- sum(data[i,])
 }
 
-pdf(opt$outputFile, height = 10, width = 10)
+# fix for https://github.com/DKFZ-ODCF/AlignmentAndQCWorkflows/issues/63
+oldWD = getwd()
+setwd(dirname(opt$outputFile))
+tmpFileName=basename(tempfile(pattern = "DiffChroms_", fileext = ".tmp"))
 
+pdf(tmpFileName, height = 10, width = 10)
 barplot(v, names.arg = rownames(data), col = rainbow(nrow(data)),ylab = "# reads", xlab = "Chromosome", main = plot_title)
-
 dev.off()
+
+file.rename(tmpFileName, opt$outputFile)
+setwd(oldWD)
