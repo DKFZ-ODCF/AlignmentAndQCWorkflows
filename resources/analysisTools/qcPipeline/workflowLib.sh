@@ -268,8 +268,21 @@ trimmomatic() {
 }
 
 
+K8_BINARY="${K8_BINARY:-k8}"
+runBwaPostAltJs="${runBwaPostAltJs:-false}"
+ALT_FILE="${ALT_FILE:-$INDEX_PREFIX}.alt"
+optionalBwaPostAltJs() {
+  local bwaPostAltJsOptions="${1:-}"
+  local inputSam="${2:-/dev/stdin}"
+  local outputSam="${3:-/dev/stdout}"
+  if [[ "$runBwaPostAltJs" == "true" ]]
+  $K8_BINARY bwa-postalt.js $bwaPostAltJsOptions "$ALT_FILE"  "$inputSam" "$outputSam"
+}
+
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"
 if [[ "$WORKFLOWLIB___ERREXIT" == "errexit" ]]; then
     set -e
 fi
+
+}
