@@ -124,7 +124,7 @@ elif [[ "$useBioBamBamSort" == false ]]; then
     cat "$FNPIPE_INDEX_IN" | $SAMTOOLS_SORT_BINARY index - "$TMP_FILE_INDEX" & procID_IDX=$!
     (set -o pipefail; ${BWA_BINARY} mem -t "$THREADS" -R "@RG\tID:$ID\tSM:$SM\tLB:$LB\tPL:ILLUMINA" $BWA_MEM_OPTIONS "$INDEX_PREFIX" $INPUT_PIPES \
       | $MBUFFER_2 \
-      | optionalBwaPostAltJs \
+      | optionalBwaPostAltJs "$bwaPostAltJsParameters" \
       | $SAMTOOLS_BINARY view -uSbh - \
       | $MBUFFER_2 \
       | $SAMTOOLS_SORT_BINARY sort -@ "$THREADS" -m "$SAMPESORT_MEMSIZE" -o - "$TMP_FILE_SORT" \

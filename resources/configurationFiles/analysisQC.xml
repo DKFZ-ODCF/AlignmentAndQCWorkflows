@@ -53,6 +53,8 @@
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
         <cvalue name="runBwaPostAltJs" value="false" type="boolean"
                 description="Whether to run bwa-postalt.js script from bwa.kit. Required for ALT-contig handling. See also K8_VERSION and ALT_FILE."/>
+        <cvalue name="bwaPostAltJsParameters" value="" type="string"
+                description="Commandline parameters for the bwa-postalt.js script."/>
 
         <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
         <cvalue name='runFingerprinting' value='false' type='boolean'

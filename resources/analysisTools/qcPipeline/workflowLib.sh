@@ -272,11 +272,14 @@ K8_BINARY="${K8_BINARY:-k8}"
 runBwaPostAltJs="${runBwaPostAltJs:-false}"
 ALT_FILE="${ALT_FILE:-$INDEX_PREFIX}.alt"
 optionalBwaPostAltJs() {
-  local bwaPostAltJsOptions="${1:-}"
+  local bwaPostAltJsParameters="${1:-}"
   local inputSam="${2:-/dev/stdin}"
   local outputSam="${3:-/dev/stdout}"
-  if [[ "$runBwaPostAltJs" == "true" ]]
-  $K8_BINARY bwa-postalt.js $bwaPostAltJsOptions "$ALT_FILE"  "$inputSam" "$outputSam"
+  if [[ "$runBwaPostAltJs" == "true" ]]; then
+    $K8_BINARY bwa-postalt.js $bwaPostAltJsParameters "$ALT_FILE"  "$inputSam" "$outputSam"
+  else
+    cat "$inputSam" > "$outputSam"
+  fi
 }
 
 
