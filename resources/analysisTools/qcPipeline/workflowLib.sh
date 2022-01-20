@@ -287,5 +287,3 @@ eval "$WORKFLOWLIB___SHELL_OPTIONS"
 if [[ "$WORKFLOWLIB___ERREXIT" == "errexit" ]]; then
     set -e
 fi
-
-}
