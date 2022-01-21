@@ -120,19 +120,13 @@ if [[ "$ON_CONVEY" == "true" ]]; then
     [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem-sambamba pipe returned a non-zero exit code and the job will die now." && exit 100
     wait $procID_FSTATS
     [[ ! $? -eq 0 ]] && exit 100
-elif [[ "$useBioBamBamSort" == false ]]; then
-    cat "$FNPIPE_INDEX_IN" | $SAMTOOLS_SORT_BINARY index - "$TMP_FILE_INDEX" & procID_IDX=$!
-    (set -o pipefail; ${BWA_BINARY} mem -t "$THREADS" -R "@RG\tID:$ID\tSM:$SM\tLB:$LB\tPL:ILLUMINA" $BWA_MEM_OPTIONS "$INDEX_PREFIX" $INPUT_PIPES \
-      | $MBUFFER_2 \
-      | optionalBwaPostAltJs "$bwaPostAltJsParameters" \
-      | $SAMTOOLS_BINARY view -uSbh - \
-      | $MBUFFER_2 \
-      | $SAMTOOLS_SORT_BINARY sort -@ "$THREADS" -m "$SAMPESORT_MEMSIZE" -o - "$TMP_FILE_SORT" \
-      | tee "$TMP_FILE_SAMTOOLS" "$FNPIPE_INDEX_IN" \
-      | $SAMTOOLS_SORT_BINARY flagstat - > "$FLAGSTAT_TMP"; echo $? > "$DIR_TEMP/${bamname}_ec") \
-      & procID_MEMSORT=$!
+elif [[ ${useBioBamBamSort} == false ]]; then
+    cat ${FNPIPE_INDEX_IN} | ${SAMTOOLS_SORT_BINARY} index - ${TMP_FILE_INDEX} & procID_IDX=$!
+    (set -o pipefail; ${BWA_BINARY} mem -t ${THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} | $MBUFFER_2 | \
+        ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | \
+        ${SAMTOOLS_SORT_BINARY} sort -@ ${THREADS} -m ${SAMPESORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} ${FNPIPE_INDEX_IN} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
     wait $procID_MEMSORT
-    [[ ! $(cat "$DIR_TEMP/${bamname}_ec") -eq "0" ]] && echo "bwa mem-samtools pipe returned a non-zero exit code and the job will die now." && exit 100
+    [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem-samtools pipe returned a non-zero exit code and the job will die now." && exit 100
     wait procID_IDX
     [[ ! $? -eq 0 ]] && exit 100
 else

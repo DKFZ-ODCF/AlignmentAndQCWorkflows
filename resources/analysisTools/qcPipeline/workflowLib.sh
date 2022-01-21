@@ -267,21 +267,17 @@ trimmomatic() {
     "$JAVA_BINARY" -jar "$TOOL_ADAPTOR_TRIMMING" $ADAPTOR_TRIMMING_OPTIONS_0 "$input1" "$input2" "$output1" "$u1" "$output2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
 }
 
-
 K8_BINARY="${K8_BINARY:-k8}"
 runBwaPostAltJs="${runBwaPostAltJs:-false}"
 ALT_FILE="${ALT_FILE:-$INDEX_PREFIX}.alt"
 optionalBwaPostAltJs() {
   local bwaPostAltJsParameters="${1:-}"
-  local inputSam="${2:-/dev/stdin}"
-  local outputSam="${3:-/dev/stdout}"
   if [[ "$runBwaPostAltJs" == "true" ]]; then
-    $K8_BINARY bwa-postalt.js $bwaPostAltJsParameters "$ALT_FILE"  "$inputSam" "$outputSam"
+    $K8_BINARY bwa-postalt.js $bwaPostAltJsParameters "$ALT_FILE"
   else
-    cat "$inputSam" > "$outputSam"
+    cat -
   fi
 }
-
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"
 if [[ "$WORKFLOWLIB___ERREXIT" == "errexit" ]]; then
