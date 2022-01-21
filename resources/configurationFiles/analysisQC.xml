@@ -58,6 +58,8 @@
                 description="Whether to run bwa-postalt.js script from bwa.kit. Required for ALT-contig handling. See also K8_VERSION and ALT_FILE."/>
         <cvalue name="bwaPostAltJsParameters" value="" type="string"
                 description="Commandline parameters for the bwa-postalt.js script."/>
+        <cvalue name="bwaPostAltJsPath" value="" type="string"
+                description="Path to the bwa-postalt.js script from bwa.kit."/>
 
         <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
         <cvalue name='runFingerprinting' value='false' type='boolean'

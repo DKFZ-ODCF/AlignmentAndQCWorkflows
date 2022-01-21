@@ -144,40 +144,20 @@ else
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
 		# Here, we use always use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
-		(
-		  set -o pipefail;
-		  $BWA_ACCELERATED_BINARY mem \
-		    $BWA_MEM_CONVEY_ADDITIONAL_OPTIONS \
-		    -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
-		    $BWA_MEM_OPTIONS \
-		    "$INDEX_PREFIX" \
-		    "$INPUT_PIPES" \
-		  2> $FILENAME_BWA_LOG \
-		  | $MBUF_LARGE \
-		  | optionalBwaPostAltJs "$bwaPostAltJsParameters" \
-		  | tee $NP_COMBINEDANALYSIS_IN \
-		  | $SAMBAMBA_BINARY view -f bam -S -l 0 -t 8 /dev/stdin \
-		  | $MBUF_LARGE \
-		  | tee ${NP_FLAGSTATS} \
-		  | $SAMBAMBA_BINARY sort --tmpdir="$RODDY_SCRATCH" -l 9 -t "$CONVEY_SAMBAMBA_SAMSORT_THREADS" -m "$CONVEY_SAMBAMBA_SAMSORT_MEMSIZE" /dev/stdin -o /dev/stdout \
-		  2> "$FILENAME_SORT_LOG" \
-		  | tee "$NP_COVERAGEQC_IN" "$NP_READBINS_IN" \
-		  > "$tempSortedBamFile";
-		  echo $? > "$DIR_TEMP/${bamname}_ec"
-		) & procID_MEMSORT=$!
+		(set -o pipefail; ${BWA_ACCELERATED_BINARY} mem ${BWA_MEM_CONVEY_ADDITIONAL_OPTIONS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | tee $NP_COMBINEDANALYSIS_IN | \
+		${SAMBAMBA_BINARY} view -f bam -S -l 0 -t 8 /dev/stdin | $MBUF_LARGE | \
+		tee ${NP_FLAGSTATS} | \
+		${SAMBAMBA_BINARY} sort --tmpdir=${RODDY_SCRATCH} -l 9 -t ${CONVEY_SAMBAMBA_SAMSORT_THREADS} -m ${CONVEY_SAMBAMBA_SAMSORT_MEMSIZE} /dev/stdin -o /dev/stdout 2> $FILENAME_SORT_LOG | \
+		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} > $tempSortedBamFile; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
 
-		wait $procID_MEMSORT;
-		if [[ ! $(cat "$DIR_TEMP/${bamname}_ec") -eq "0" ]]; then
-		  echo "bwa mem - sambamba pipe returned a non-zero exit code and the job will die now."
-		  exit 100
-		fi
+		wait $procID_MEMSORT; [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem - sambamba pipe returned a non-zero exit code and the job will die now." && exit 100
 
 	elif [[ ${useBioBamBamSort} == false ]]
 	then	# we use samtools for making the index
 	    NP_SORT_ERRLOG="$RODDY_SCRATCH/NP_SORT_ERRLOG"
 		mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
 		${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
-		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | tee $NP_COMBINEDANALYSIS_IN | \
+		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | optionalBwaPostAltJs "$bwaPostAltJsParameters" | tee $NP_COMBINEDANALYSIS_IN | \
 		${SAMTOOLS_BINARY} view -uSbh - | $MBUF_LARGE | \
 		${SAMTOOLS_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
 		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} ${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
@@ -191,7 +171,7 @@ else
 		(cat ${NP_BAMSORT} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} > ${tempSortedBamFile}) & procIDview=$!
 		# Output sam to separate named pipe
 		# Rewrite to a bamfile
-		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | tee $NP_COMBINEDANALYSIS_IN | \
+		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | optionalBwaPostAltJs "$bwaPostAltJsParameters" | tee $NP_COMBINEDANALYSIS_IN | \
 		${SAMTOOLS_BINARY} view -uSbh - | $MBUF_LARGE | \
 		${BAMSORT_BINARY} O=${NP_BAMSORT} level=1 inputthreads=2 outputthreads=2 \
 		index=1 indexfilename=${tempBamIndexFile} calmdnm=1 calmdnmrecompindetonly=1 calmdnmreference=${INDEX_PREFIX} \

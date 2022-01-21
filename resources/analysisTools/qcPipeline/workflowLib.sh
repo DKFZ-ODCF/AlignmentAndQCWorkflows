@@ -269,11 +269,12 @@ trimmomatic() {
 
 K8_BINARY="${K8_BINARY:-k8}"
 runBwaPostAltJs="${runBwaPostAltJs:-false}"
+bwaPostAltJsPath="${bwaPostAltJsPath:-bwa-postalt.js}"
 ALT_FILE="${ALT_FILE:-$INDEX_PREFIX}.alt"
 optionalBwaPostAltJs() {
   local bwaPostAltJsParameters="${1:-}"
   if [[ "$runBwaPostAltJs" == "true" ]]; then
-    $K8_BINARY bwa-postalt.js $bwaPostAltJsParameters "$ALT_FILE"
+    $K8_BINARY "$bwaPostAltJsPath" $bwaPostAltJsParameters "$ALT_FILE"
   else
     cat -
   fi
