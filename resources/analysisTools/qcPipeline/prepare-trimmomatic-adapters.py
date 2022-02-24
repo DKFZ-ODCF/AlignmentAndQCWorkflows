@@ -20,7 +20,7 @@ from concurrent import futures
 import bz2
 import gzip
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawTextHelpFormatter
 from concurrent.futures import as_completed, Future
 from contextlib import contextmanager
 from copy import deepcopy
@@ -28,7 +28,7 @@ from enum import Enum
 from io import IOBase, TextIOBase
 from pathlib import Path
 from typing import List, Optional, Dict, Union
-
+from textwrap import dedent
 
 PREFIX = "Prefix_"
 
@@ -204,11 +204,19 @@ def test_adapter_pair_to_fasta():
 
 def parse_parameters(args: List[str]):
     parser = ArgumentParser(
-        description="Create a FASTA for Trimmomatic. Supports adapters for both ends, " +
-        "adapters for read 1 only (or read 2 only), and matched pair adapters to be used in " +
-        "Trimmotatic palindrome mode.",
-        epilog="In all cases, sequences must be provided in exactly " +
-               "they way they will be found at the end of reads.")
+        description=dedent("""
+        Create an adapter file for Trimmomatic. Supports output for paired-end adapters, 
+        read 1 only, or read 2 only. 
+
+        For paired-end adapters, both simple-mode and palindrome-mode adapter sequences can be
+        created. Note that the script does *not* prevent you from creating a Trimmomatic adapter 
+        file with both, simple-mode and palindrome-mode adapter sequences, if you request them.
+        Usually you only want the palindrome-mode sequences. 
+
+        IMPORTANT: Sequences must be provided in exactly the way they will be found at the end
+                   of reads.
+        """),
+                           formatter_class=RawTextHelpFormatter)
     parser.add_argument('-a', '--adapter', dest="adapters", action="append", default=[],
                         help="Simple mode adapters to be trimmed from *both* read's ends. " +
                         "Format: $name=$sequence")
@@ -231,7 +239,11 @@ def parse_parameters(args: List[str]):
                         "problems with adapters that contain variable index sequences.")
     parser.add_argument('-N', '--first-n', dest='first_n', type=int, default=100000,
                         help="Read the first N reads of the input FASTQs. Default 100000.")
-    return parser.parse_args(args[1:])
+    if len(args) == 1:
+        parser.print_help()
+        sys.exit(1)
+    else:
+        return parser.parse_args(args[1:])
 
 
 def parse_simple_adapter(adapter_opt: str, read: ConstructEnd) -> Adapter:
