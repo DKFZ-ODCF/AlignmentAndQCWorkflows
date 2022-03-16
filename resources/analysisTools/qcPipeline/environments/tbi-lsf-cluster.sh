@@ -94,9 +94,6 @@ export VCFTOOLS_SORT_BINARY=vcf-sort
 moduleLoad mbuffer
 export MBUFFER_BINARY=mbuffer
 
-# TODO Create K8_VERSION. Install k8 in cluster. Add k8 to conda env.
-export K8_BINARY="${K8_BINARY:-k8}"
-
 # There are different sambamba versions used for different tasks. The reason has something to do with performance and differences in the versions.
 # We define functions here that take the same parameters as the original sambamba, but apply them to the appropriate version by first loading
 # the correct version and after the call unloading the version. The _BINARY variables are set to the functions.
@@ -151,6 +148,9 @@ elif [[ "$WORKFLOW_ID" == "qcAnalysis" || "$WORKFLOW_ID" == "exomeAnalysis" ]]; 
 else
     throw 200 "Unknown workflow ID '$WORKFLOW_ID'"
 fi
+
+# NOTE: By default assume that bwa-postalt.js and k8 are located besides bwa (like in bwakit).
+#       See workflowLib.sh
 
 # Unversioned binaries.
 export CHECKSUM_BINARY=md5sum

@@ -137,6 +137,9 @@ ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS" > "$tempFlagstatsFile
 if [[ ${bamFileExists} == true ]]
 then
 	echo "the BAM file already exists, re-creating other output files."
+	if [[ "$runBwaPostAltJs" == "true" ]]; then
+		throw 50 "bwa-postalt.js script needs name-sorted input. Cannot run on existing (position sorted) BAM."
+	fi
 	# make all the pipes
 	(cat ${FILENAME_SORTED_BAM} | ${MBUF_LARGE} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_LARGE} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
 else

@@ -18,11 +18,11 @@ The original script with a documentation of the underlying ideas can be found [h
 
 * 1.2.73-203 (branch-specific change)
   - minor: Optional ALT-chromosome processing via bwa.kit's `bwa-postaln.js`.
+    * Set `runBwaPostAltJs=true` to activate the ALT chromosome processing. Default: `false`.
     * `ALT_FILE`: Defaults to be `$INDEX_PREFIX.aln`
     * `K8_VERSION`: Used by `tbi-lsf-cluster.sh` environment script.
-    * `K8_BINARY`: Needs to be set, e.g. in the environment setup script. Done for `tbi-lsf-cluster.sh` based on `K8_VERSION`.
-    * Set `runBwaPostAltJs=true` to activate the ALT chromosome processing. Default: `false`.
-    * Set `bwaPostAltJsPath` to point to the `bwa-postalt.js` script.
+    * `K8_BINARY`: Path to `k8` binary. Defaults to a `k8` executable located besides `bwa` (like in [bwakit](https://github.com/lh3/bwa/tree/master/bwakit))
+    * Set `bwaPostAltJsPath` to point to the `bwa-postalt.js` script. Defaults to a `bwa-postalt.js` located besides `bwa` (like in [bwakit](https://github.com/lh3/bwa/tree/master/bwakit))
     * You can set `bwaPostAltJsParameters`.
   - minor: Set `useCombinedAlignAndSampe=false` and `runSlimWorkflow=true` in the default config. The other option is unmaintained and obviously wasn't used for years.
   - minor: Set `workflowEnvironmentScript` to `workflowEnvironment_tbiLsf`. The previous value was reasonable only as long our PBS cluster existed. The `tbi-pbs-cluster.sh` script is also removed.
