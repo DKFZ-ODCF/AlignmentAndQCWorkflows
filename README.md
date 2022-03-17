@@ -24,7 +24,7 @@ The original script with a documentation of the underlying ideas can be found [h
     * `K8_BINARY`: Path to `k8` binary. Defaults to a `k8` executable located besides `bwa` (like in [bwakit](https://github.com/lh3/bwa/tree/master/bwakit))
     * Set `bwaPostAltJsPath` to point to the `bwa-postalt.js` script. Defaults to a `bwa-postalt.js` located besides `bwa` (like in [bwakit](https://github.com/lh3/bwa/tree/master/bwakit))
     * You can set `bwaPostAltJsParameters`.
-  - minor: Set `useCombinedAlignAndSampe=false` and `runSlimWorkflow=true` in the default config. The other option is unmaintained and obviously wasn't used for years.
+  - minor: Set `useCombinedAlignAndSampe=false` and `runSlimWorkflow=true` in the default config. The bwa sampe/aln workflow variant is unmaintained and wasn't used for years.
   - minor: Set `workflowEnvironmentScript` to `workflowEnvironment_tbiLsf`. The previous value was reasonable only as long our PBS cluster existed. The `tbi-pbs-cluster.sh` script is also removed.
   - patch: Set some resources limits for "fastqc" job.
 
