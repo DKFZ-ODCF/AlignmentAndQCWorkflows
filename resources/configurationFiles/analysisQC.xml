@@ -107,7 +107,7 @@
     <!--</testdataoptions>-->
 
     <processingTools>
-        <tool name="workflowEnvironment_tbiPbs" value="tbi-pbs-cluster.sh" basepath="qcPipeline/environments"/>
+        <tool name="workflowEnvironment_tbiLsf" value="tbi-lsf-cluster.sh" basepath="qcPipeline/environments"/>
         <tool name="bashLib" value="bashLib.sh" basepath="qcPipeline"/>
         <tool name="workflowLib" value="workflowLib.sh" basepath="qcPipeline"/>
         <tool name="cleanupScript" value="cleanupScript.sh" basepath="qcPipeline" >
