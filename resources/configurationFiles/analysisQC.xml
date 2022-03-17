@@ -30,7 +30,11 @@
         <cvalue name="BIOBAMBAM_VERSION" value="0.0.148" type="string"/>
         <cvalue name="JAVA_VERSION" value="1.8.0_131" type="string"/>
         <cvalue name="BWA_VERSION" value="0.7.8" type="string"
-                description="Use e.g. 0.7.8-r2.05 for a specific revision of bb-bwa."/>
+                description="Use e.g. 0.7.8-r2.05 for a specific revision of bb-bwa. Node that bwa-mem2 uses much more memory."/>
+        <cvalue name="BWA_MODULE" value="" type="string"
+                description="Empty string will result in automatic inference of the module name. If the first number (major version) is '2' then BWA_MODULE is automatically set to 'bwa-mem2', otherwise 'bwa'. See tbi-lsf-cluster.sh. You can also explicitly set the version."/>
+        <cvalue name="BWA_MEM_OPTIONS" value='" -T 0 "' type="string"
+                description="The original CO configuration is ' -T 0 '. Note that  the value must be quoted."/>
         <cvalue name="FASTQC_VERSION" value="0.11.3" type="string"/>
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiLsf" type="string"/>
