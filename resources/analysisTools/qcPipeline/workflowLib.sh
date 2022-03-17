@@ -268,7 +268,7 @@ trimmomatic() {
 }
 
 runBwaPostAltJs="${runBwaPostAltJs:-false}"
-ALT_FILE="${ALT_FILE:-$INDEX_PREFIX}.alt"
+ALT_FILE="${ALT_FILE:-$INDEX_PREFIX.alt}"
 # By default assume that bwa-postalt.js and k8 are located besides bwa (like in bwakit).
 bwaPostAltJsPath="${bwaPostAltJsPath:-"$(dirname "$(which bwa)")"/bwa-postalt.js}"
 K8_BINARY="${K8_BINARY:-"$(dirname "$(which bwa)")"/k8}"
