@@ -129,16 +129,32 @@ export -f sambamba_markdup
 export SAMBAMBA_MARKDUP_BINARY=sambamba_markdup
 
 
+# Try to infer the module name and binary filename from the version number.
+bwaMajorVersion="$(echo "$BWA_VERSION" | cut -f 1 -d '.')"
+if [[ "$bwaMajorVersion" == "0" ]]; then
+  export BWA_MODULE=bwa
+elif [[ "$bwaMajorVersion" == "2" ]]; then
+  export BWA_MODULE=bwa-mem2
+else
+  echo "Cannot infer BWA_MODULE and BWA_BINARY from BWA_VERSION: '$BWA_VERSION'" >> /dev/stderr
+  exit 1
+fi
+
 if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
+    if [[ "$bwaMajorVersion" != "1" ]]; then
+      echo "Only bwa-0.* has a bisulfite patch module" >> /dev/stderr
+      exit 1
+    fi
     ## For bisulfite alignment, we suffix the the value of BINARY_VERSION by '-bisulfite', because that's the name in LSF cluster.
     export BWA_VERSION="${BWA_VERSION:?BWA_VERSION is not set}-bisulfite"
-    moduleLoad bwa
-    export BWA_BINARY=bwa
+    # This works with BWA_MODULE because the bwa-mem2 binary has the same interface.
+    moduleLoad "$BWA_MODULE" BWA_VERSION
+    export BWA_BINARY="$BWA_MODULE"
 
 elif [[ "$WORKFLOW_ID" == "qcAnalysis" || "$WORKFLOW_ID" == "exomeAnalysis" ]]; then
     if [[ "${useAcceleratedHardware:-false}" == false ]]; then
-        moduleLoad bwa
-        export BWA_BINARY=bwa
+        moduleLoad "$BWA_MODULE" BWA_VERSION
+        export BWA_BINARY="$BWA_MODULE"
     elif [[ "${useAcceleratedHardware:-true}" == true ]]; then
         moduleLoad bwa-bb BWA_VERSION
         export BWA_ACCELERATED_BINARY=bwa-bb
