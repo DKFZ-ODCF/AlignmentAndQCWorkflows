@@ -97,6 +97,8 @@
         <cvalue name="MBUFFER_SIZE_LARGE" value="2g" type="string"/>
         <cvalue name="MBUFFER_SIZE_SMALL" value="100m" type="string"/>
 
+        <cvalue name='pairedBamSuffix' value='paired.bam.sorted.bam' type='string'/>
+
     </configurationvalues>
     <!--<testdataoptions>-->
         <!--&lt;!&ndash; id is the name of the test data option set-->
