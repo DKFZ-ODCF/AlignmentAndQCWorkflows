@@ -55,7 +55,7 @@
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
         <cvalue name="runBwaPostAltJs" value="false" type="boolean"
-                description="Whether to run bwa-postalt.js script from bwa.kit. Required for ALT-contig handling. See also K8_VERSION and ALT_FILE."/>
+                description="Whether to run bwa-postalt.js script from bwa.kit. Required for ALT-contig handling. See also K8_VERSION and ALT_FILE. You need to use a recent BWA version (>=0.7.11)"/>
         <cvalue name="bwaPostAltJsParameters" value="" type="string"
                 description="Commandline parameters for the bwa-postalt.js script."/>
         <cvalue name="bwaPostAltJsPath" value="" type="string"
