@@ -273,9 +273,10 @@ ALT_FILE="${ALT_FILE:-$INDEX_PREFIX.alt}"
 bwaPostAltJsPath="${bwaPostAltJsPath:-"$(dirname "$(which bwa)")"/bwa-postalt.js}"
 K8_BINARY="${K8_BINARY:-"$(dirname "$(which bwa)")"/k8}"
 optionalBwaPostAltJs() {
-  local bwaPostAltJsParameters="${1:-}"
+  local hlaPrefix="${1:?No HLA prefix set}"
+  local minPaRatio="${2:-}"
   if [[ "$runBwaPostAltJs" == "true" ]]; then
-    $K8_BINARY "$bwaPostAltJsPath" $bwaPostAltJsParameters "$ALT_FILE"
+    $K8_BINARY "$bwaPostAltJsPath" -p "$hlaPrefix" ${minPaRatio:+-r "$minPaRatio"} "$ALT_FILE"
   else
     cat -
   fi
