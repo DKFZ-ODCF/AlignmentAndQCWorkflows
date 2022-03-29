@@ -56,6 +56,8 @@
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
         <cvalue name="runBwaPostAltJs" value="false" type="boolean"
                 description="Whether to run bwa-postalt.js script from bwa.kit. Required for ALT-contig handling. See also K8_VERSION and ALT_FILE. You need to use a recent BWA version (>=0.7.11)"/>
+        <cvalue name="bwaPostAltJsHla" value="false" type="boolean"
+                description="Set to 'true' to let the `bwa-postalt.js` script create FASTQ files with reads mapping to HLA contigs. This imposes additional requirements on your reference assembly (e.g. HLA contigs are matched by ID in the FASTA)."/>
         <cvalue name="bwaPostAltJsMinPaRatio" value="" type="string"
                 description="The min PA ratio (float) used for the `-r` option of the bwa-postalt.js script. Default: empty = use script's default"/>
         <cvalue name="bwaPostAltJsPath" value="" type="string"

@@ -29,7 +29,6 @@ MBUF_LARGE="${MBUFFER_BINARY} -m ${MBUFFER_SIZE_LARGE} -q -l /dev/null"
 mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS}
 
 bamname="$(basename "$FILENAME_SORTED_BAM")"
-bamprefix="$(dirname "FILENAME_SORTED_BAM")/$(basename "$FILENAME_SORTED_BAM" .bam)"
 INDEX_FILE=${FILENAME_SORTED_BAM}.bai
 tempSortedBamFile=${FILENAME_SORTED_BAM}.tmp
 tempFileForSort=${RODDY_BIG_SCRATCH}/${bamname}_forsorting
@@ -135,6 +134,12 @@ fi
 # use sambamba for flagstats
 ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 "$NP_FLAGSTATS" > "$tempFlagstatsFile" & procIDFlagstat=$!
 
+# Set a path prefix for HLA FASTQ files. Only used if runBwaPostAltJs==true.
+hlaPrefix=""
+if [[ "$bwaPostAltJsHla" == "true" ]]; then
+  hlaPrefix="$(dirname "$FILENAME_SORTED_BAM")/$(basename "$FILENAME_SORTED_BAM" .bam)"
+fi
+
 if [[ ${bamFileExists} == true ]]
 then
 	echo "the BAM file already exists, re-creating other output files."
@@ -146,6 +151,7 @@ then
 else
 	if [[ "$ON_CONVEY" == true ]]
 	then	# we have to use sambamba and cannot make an index (because sambamba does not work with a pipe)
+		echo "Deprecated ON_CONVEY branch!" >> /dev/stderr
 		# Here, we use always use the local scratch (${RODDY_SCRATCH}) for sorting!
 		useBioBamBamSort=false;
 		(set -o pipefail; ${BWA_ACCELERATED_BINARY} mem ${BWA_MEM_CONVEY_ADDITIONAL_OPTIONS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | tee $NP_COMBINEDANALYSIS_IN | \
@@ -162,7 +168,7 @@ else
 		mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
 		${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
 		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | \
-		optionalBwaPostAltJs "$bamprefix" "$bwaPostAltJsMinPaRatio" | tee $NP_COMBINEDANALYSIS_IN | \
+		optionalBwaPostAltJs "$hlaPrefix" "$bwaPostAltJsMinPaRatio" | tee $NP_COMBINEDANALYSIS_IN | \
 		${SAMTOOLS_BINARY} view -uSbh - | $MBUF_LARGE | \
 		${SAMTOOLS_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
 		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} ${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
@@ -177,7 +183,7 @@ else
 		# Output sam to separate named pipe
 		# Rewrite to a bamfile
 		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | \
-		optionalBwaPostAltJs "$bamprefix" "$bwaPostAltJsMinPaRatio" | tee $NP_COMBINEDANALYSIS_IN | \
+		optionalBwaPostAltJs "$hlaPrefix" "$bwaPostAltJsMinPaRatio" | tee $NP_COMBINEDANALYSIS_IN | \
 		${SAMTOOLS_BINARY} view -uSbh - | $MBUF_LARGE | \
 		${BAMSORT_BINARY} O=${NP_BAMSORT} level=1 inputthreads=2 outputthreads=2 \
 		index=1 indexfilename=${tempBamIndexFile} calmdnm=1 calmdnmrecompindetonly=1 calmdnmreference=${INDEX_PREFIX} \
