@@ -149,5 +149,8 @@ else
     throw 200 "Unknown workflow ID '$WORKFLOW_ID'"
 fi
 
+# NOTE: By default assume that bwa-postalt.js and k8 are located besides bwa (like in bwakit).
+#       See workflowLib.sh
+
 # Unversioned binaries.
 export CHECKSUM_BINARY=md5sum

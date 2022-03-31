@@ -33,7 +33,7 @@
                 description="Use e.g. 0.7.8-r2.05 for a specific revision of bb-bwa."/>
         <cvalue name="FASTQC_VERSION" value="0.11.3" type="string"/>
 
-        <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiPbs" type="string"/>
+        <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiLsf" type="string"/>
 
         <!-- Directories -->
         <cvalue name='sampleDirectory' value='${inputBaseDirectory}/${pid}/${sample}/${SEQUENCER_PROTOCOL}' type='path'/>
@@ -45,12 +45,23 @@
         <cvalue name='refDataBaseDirectory' value="/icgc/ngs_share" type="path"/>
 
         <!-- Configuration options -->
-        <cvalue name="runSlimWorkflow" value="true" type="boolean"/>
+        <cvalue name="runSlimWorkflow" value="true" type="boolean"
+                description="Keep this to 'true'. Non-slim scripts are unmaintained."/>
+        <cvalue name="useCombinedAlignAndSampe" value="false" type="boolean"
+                description="Keep this to 'false'. Non-combined BWA scripts are unmaintained."/>
         <cvalue name='useRoddyScratchAsBigFileScratch' value='false' type='boolean'
                 description="If false, all temp-files are written to the place implemented in the scripts (usually close to the result file). Otherwise they go to the node-local temporary directory (e.g. $PBS_SCRATCH_DIR/$PBS_JOBID)."/>
 
         <cvalue name='runFastQC' value='true' type='boolean'/>
         <cvalue name='runCoveragePlots' value='true' type='boolean'/>
+        <cvalue name="runBwaPostAltJs" value="false" type="boolean"
+                description="Whether to run bwa-postalt.js script from bwa.kit. Required for ALT-contig handling. See also K8_VERSION and ALT_FILE. You need to use a recent BWA version (>=0.7.11)"/>
+        <cvalue name="bwaPostAltJsHla" value="false" type="boolean"
+                description="Set to 'true' to let the `bwa-postalt.js` script create FASTQ files with reads mapping to HLA contigs. This imposes additional requirements on your reference assembly (e.g. HLA contigs are matched by ID in the FASTA)."/>
+        <cvalue name="bwaPostAltJsMinPaRatio" value="" type="string"
+                description="The min PA ratio (float) used for the `-r` option of the bwa-postalt.js script. Default: empty = use script's default"/>
+        <cvalue name="bwaPostAltJsPath" value="" type="string"
+                description="Path to the bwa-postalt.js script from bwa.kit."/>
 
         <cvalue name='fingerprintsOutputDirectory' value="fingerprinting" type="string"/>
         <cvalue name='runFingerprinting' value='false' type='boolean'
@@ -82,9 +93,13 @@
                 description="Number of A, T, C, G, but not N, R, Y, etc. per chromosome. 2-column TSV format with chromosome ID and count."/>
         <cvalue name="INDEX_PREFIX" value=""
                 description="Path to the genome FASTA file. The same directory should contain the BWA index using the FASTA file, including the FASTA suffix (whatever that may be)."/>
+        <cvalue name="ALT_FILE" value="${INDEX_PREFIX}.alt" type="path"
+                description="Path to .alt file, e.g. like the one in bwa.kit"/>
 
         <cvalue name="MBUFFER_SIZE_LARGE" value="2g" type="string"/>
         <cvalue name="MBUFFER_SIZE_SMALL" value="100m" type="string"/>
+
+        <cvalue name='pairedBamSuffix' value='paired.bam.sorted.bam' type='string'/>
 
     </configurationvalues>
     <!--<testdataoptions>-->
@@ -97,7 +112,6 @@
 
     <processingTools>
         <tool name="workflowEnvironment_tbiLsf" value="tbi-lsf-cluster.sh" basepath="qcPipeline/environments"/>
-        <tool name="workflowEnvironment_tbiPbs" value="tbi-pbs-cluster.sh" basepath="qcPipeline/environments"/>
         <tool name="bashLib" value="bashLib.sh" basepath="qcPipeline"/>
         <tool name="workflowLib" value="workflowLib.sh" basepath="qcPipeline"/>
         <tool name="cleanupScript" value="cleanupScript.sh" basepath="qcPipeline" >
@@ -114,7 +128,7 @@
                 <!-- Test -->
                 <rset size="t" memory="1" cores="1" nodes="1" walltime="00:10:00" queue="devel"/>
                 <!-- Production -->
-                <rset size="l" nodes="1" walltime="10"/>
+                <rset size="l" memory="1" cores="1" nodes="1" walltime="10:00:00"/>
             </resourcesets>
             <input type="file" typeof="de.dkfz.b080.co.files.LaneFile" scriptparameter='RAW_SEQ'/>
             <output type="tuple">

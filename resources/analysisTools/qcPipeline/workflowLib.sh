@@ -267,7 +267,20 @@ trimmomatic() {
     "$JAVA_BINARY" -jar "$TOOL_ADAPTOR_TRIMMING" $ADAPTOR_TRIMMING_OPTIONS_0 "$input1" "$input2" "$output1" "$u1" "$output2" "$u2" $ADAPTOR_TRIMMING_OPTIONS_1
 }
 
-
+runBwaPostAltJs="${runBwaPostAltJs:-false}"
+ALT_FILE="${ALT_FILE:-$INDEX_PREFIX.alt}"
+# By default assume that bwa-postalt.js and k8 are located besides bwa (like in bwakit).
+bwaPostAltJsPath="${bwaPostAltJsPath:-"$(dirname "$(which bwa)")"/bwa-postalt.js}"
+K8_BINARY="${K8_BINARY:-"$(dirname "$(which bwa)")"/k8}"
+optionalBwaPostAltJs() {
+  local hlaPrefix="${1:-}"
+  local minPaRatio="${2:-}"
+  if [[ "$runBwaPostAltJs" == "true" ]]; then
+    $K8_BINARY "$bwaPostAltJsPath" ${hlaPrefix:+-p "$hlaPrefix"} ${minPaRatio:+-r "$minPaRatio"} "$ALT_FILE"
+  else
+    cat -
+  fi
+}
 
 eval "$WORKFLOWLIB___SHELL_OPTIONS"
 if [[ "$WORKFLOWLIB___ERREXIT" == "errexit" ]]; then
