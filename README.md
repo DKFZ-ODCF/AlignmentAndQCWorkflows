@@ -21,6 +21,7 @@ The original script with a documentation of the underlying ideas can be found [h
     * Set `runBwaPostAltJs=true` to activate the ALT chromosome processing. Default: `false`.
     * `ALT_FILE`: Defaults to be `$INDEX_PREFIX.aln`
     * `K8_VERSION`: Used by `tbi-lsf-cluster.sh` environment script.
+    * `BWAKIT_VERSION`: Used by `tbi-lsf-cluster.sh` environment script.
     * `K8_BINARY`: Path to `k8` binary. Defaults to a `k8` executable located besides `bwa` (like in [bwakit](https://github.com/lh3/bwa/tree/master/bwakit))
     * Set `bwaPostAltJsPath` to point to the `bwa-postalt.js` script. Defaults to a `bwa-postalt.js` located besides `bwa` (like in [bwakit](https://github.com/lh3/bwa/tree/master/bwakit))
     * Set `bwaPostAltJsHla` to "true", if you want FASTQs with HLA-mapping reads (`-p` option). HLA FASTQs are placed besides the lane-BAMs.
