@@ -55,8 +55,8 @@ bamFileExists=false
 # in case the BAM already exists, but QC files are missing, create these only
 if [[ -f ${FILENAME_SORTED_BAM} ]] && [[ -s ${FILENAME_SORTED_BAM} ]]
 then
-    checkBamIsComplete "$FILENAME_SORTED_BAM"
-	bamFileExists=true
+  checkBamIsComplete "$FILENAME_SORTED_BAM"
+  bamFileExists=true
 fi
 
 # test if one of the fastq files is a fake fastq file to simulate paired end sequencing in PIDs with mixed sequencing (single and paired end)
