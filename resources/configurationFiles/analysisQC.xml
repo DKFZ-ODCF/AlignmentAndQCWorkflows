@@ -9,7 +9,7 @@
                cleanupScript="cleanupScript">
     <configurationvalues>
 
-        <!--ENVIRONMENT SETUP -->
+        <!-- ENVIRONMENT SETUP with tbi-lsf-cluster.sh using environment modules -->
         <cvalue name="HTSLIB_VERSION" value="0.2.5" type="string"/>
         <cvalue name="PERL_VERSION" value="5.20.2" type="string"/>
         <cvalue name="PYTHON_VERSION" value="2.7.9" type="string"/>
@@ -29,9 +29,13 @@
         <cvalue name="LIBMAUS_VERSION" value="0.0.131" type="string"/>
         <cvalue name="BIOBAMBAM_VERSION" value="0.0.148" type="string"/>
         <cvalue name="JAVA_VERSION" value="1.8.0_131" type="string"/>
+        <cvalue name="FASTQC_VERSION" value="0.11.3" type="string"/>
         <cvalue name="BWA_VERSION" value="0.7.8" type="string"
                 description="Use e.g. 0.7.8-r2.05 for a specific revision of bb-bwa."/>
-        <cvalue name="FASTQC_VERSION" value="0.11.3" type="string"/>
+        <cvalue name="BWAKIT_VERSION" value="${BWA_VERSION}" type="string"
+                description="The bwakit module contains the bwa-postalt.js script. Used if runBwaPostAltJs=true"/>
+        <cvalue name="K8_VERSION" value="0.2.5" type="string"
+                description="Used for bwa-postalt.js if runBwaPostAltJs=true"/>
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiLsf" type="string"/>
 

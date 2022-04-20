@@ -128,29 +128,42 @@ sambamba_markdup() {
 export -f sambamba_markdup
 export SAMBAMBA_MARKDUP_BINARY=sambamba_markdup
 
+if [[ "$runBwaPostAltJs" == "false" ]]; then
 
-if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
-    ## For bisulfite alignment, we suffix the the value of BINARY_VERSION by '-bisulfite', because that's the name in LSF cluster.
-    export BWA_VERSION="${BWA_VERSION:?BWA_VERSION is not set}-bisulfite"
+    if [[ "$WORKFLOW_ID" == "bisulfiteCoreAnalysis" ]]; then
+        ## For bisulfite alignment, we suffix the the value of BINARY_VERSION by '-bisulfite', because that's the name in LSF cluster.
+        export BWA_VERSION="${BWA_VERSION:?BWA_VERSION is not set}-bisulfite"
+        moduleLoad bwa
+        export BWA_BINARY=bwa
+
+    elif [[ "$WORKFLOW_ID" == "qcAnalysis" || "$WORKFLOW_ID" == "exomeAnalysis" ]]; then
+        if [[ "${useAcceleratedHardware:-false}" == false ]]; then
+            moduleLoad bwa
+            export BWA_BINARY=bwa
+        elif [[ "${useAcceleratedHardware:-true}" == true ]]; then
+            moduleLoad bwa-bb BWA_VERSION
+            export BWA_ACCELERATED_BINARY=bwa-bb
+        else
+            throw 200 "Uninterpretable value for boolean 'useAcceleratedHardware': '$useAcceleratedHardware'"
+        fi
+    else
+        throw 200 "Unknown workflow ID '$WORKFLOW_ID'"
+    fi
+
+elif [[ "$runBwaPostAltJs" == "true" ]]; then
     moduleLoad bwa
     export BWA_BINARY=bwa
 
-elif [[ "$WORKFLOW_ID" == "qcAnalysis" || "$WORKFLOW_ID" == "exomeAnalysis" ]]; then
-    if [[ "${useAcceleratedHardware:-false}" == false ]]; then
-        moduleLoad bwa
-        export BWA_BINARY=bwa
-    elif [[ "${useAcceleratedHardware:-true}" == true ]]; then
-        moduleLoad bwa-bb BWA_VERSION
-        export BWA_ACCELERATED_BINARY=bwa-bb
-    else
-        throw 200 "Uninterpretable value for boolean 'useAcceleratedHardware': '$useAcceleratedHardware'"
-    fi
-else
-    throw 200 "Unknown workflow ID '$WORKFLOW_ID'"
-fi
+    moduleLoad bwakit
+    export bwaPostAltJsPath
+    bwaPostAltJsPath="$(which bwa-postalt.js)"
 
-# NOTE: By default assume that bwa-postalt.js and k8 are located besides bwa (like in bwakit).
-#       See workflowLib.sh
+    moduleLoad k8
+    export K8_BINARY="${K8_BINARY:-k8-Linux}"
+
+else
+    throw 200 "Uninterpretable value for boolean 'runBwaPostAltJs': '$runBwaPostAltJs'"
+fi
 
 # Unversioned binaries.
 export CHECKSUM_BINARY=md5sum
