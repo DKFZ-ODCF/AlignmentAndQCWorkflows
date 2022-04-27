@@ -14,21 +14,21 @@
 #
 # ./prepare-trimmomatic-adapters.py -h
 #
-from __future__ import annotations
+from __future__ import annotations  # Require Python >= 3.7
 
-from concurrent import futures
 import bz2
 import gzip
 import sys
 from argparse import ArgumentParser, RawTextHelpFormatter
-from concurrent.futures import as_completed, Future
+from concurrent import futures
+from concurrent.futures import Future
 from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum
-from io import IOBase, TextIOBase
+from io import TextIOBase
 from pathlib import Path
-from typing import List, Optional, Dict, Union
 from textwrap import dedent
+from typing import List, Optional, Dict, Union
 
 PREFIX = "Prefix_"
 
