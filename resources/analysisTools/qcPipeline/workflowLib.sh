@@ -272,11 +272,12 @@ ALT_FILE="${ALT_FILE:-$INDEX_PREFIX.alt}"
 # By default assume that bwa-postalt.js and k8 are located besides bwa (like in bwakit).
 bwaPostAltJsPath="${bwaPostAltJsPath:-"$(dirname "$(which bwa)")"/bwa-postalt.js}"
 K8_BINARY="${K8_BINARY:-"$(dirname "$(which bwa)")"/k8}"
+declare -a bwaPostAltJsK8Options="$bwaPostAltJsK8Options"
 optionalBwaPostAltJs() {
   local hlaPrefix="${1:-}"
   local minPaRatio="${2:-}"
   if [[ "$runBwaPostAltJs" == "true" ]]; then
-    $K8_BINARY "$bwaPostAltJsPath" ${hlaPrefix:+-p "$hlaPrefix"} ${minPaRatio:+-r "$minPaRatio"} "$ALT_FILE"
+    $K8_BINARY ${bwaPostAltJsK8Options[@]} "$bwaPostAltJsPath" ${hlaPrefix:+-p "$hlaPrefix"} ${minPaRatio:+-r "$minPaRatio"} "$ALT_FILE"
   else
     cat -
   fi
