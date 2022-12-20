@@ -55,7 +55,7 @@ In exception to this strategy backports etc. for maintenance branches are create
 * 1.2.73-204 (branch-specific change)
   - Updated `tbi-lsf-cluster.sh` script for execution in the DKFZ/ODCF cluster to work with bwa-kit cluster module
 
-1.2.73-203 (branch-specific change)
+* 1.2.73-203 (branch-specific change)
   - minor: Optional ALT-chromosome processing via bwa.kit's `bwa-postaln.js`.
     * Set `runBwaPostAltJs=true` to activate the ALT chromosome processing. Default: `false`.
     * `ALT_FILE`: Defaults to be `$INDEX_PREFIX.aln`
