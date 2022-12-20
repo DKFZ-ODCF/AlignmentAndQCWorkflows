@@ -52,6 +52,31 @@ In exception to this strategy backports etc. for maintenance branches are create
   - Diverse bugfixes
   - MIT licence, where necessary copyleft licence
 
+* 1.2.73-204 (branch-specific change)
+  - Updated `tbi-lsf-cluster.sh` script for execution in the DKFZ/ODCF cluster to work with bwa-kit cluster module
+
+1.2.73-203 (branch-specific change)
+  - minor: Optional ALT-chromosome processing via bwa.kit's `bwa-postaln.js`.
+    * Set `runBwaPostAltJs=true` to activate the ALT chromosome processing. Default: `false`.
+    * `ALT_FILE`: Defaults to be `$INDEX_PREFIX.aln`
+    * `K8_VERSION`: Used by `tbi-lsf-cluster.sh` environment script.
+    * `K8_BINARY`: Path to `k8` binary. Defaults to a `k8` executable located besides `bwa` (like in [bwakit](https://github.com/lh3/bwa/tree/master/bwakit))
+    * Set `bwaPostAltJsPath` to point to the `bwa-postalt.js` script. Defaults to a `bwa-postalt.js` located besides `bwa` (like in [bwakit](https://github.com/lh3/bwa/tree/master/bwakit))
+    * Set `bwaPostAltJsHla` to "true", if you want FASTQs with HLA-mapping reads (`-p` option). HLA FASTQs are placed besides the lane-BAMs.
+    * Set `bwaPostAltJsMinPaRatio` to set the `-r` option of `bwa-postalt.js`.
+  - minor: Set `useCombinedAlignAndSampe=false` and `runSlimWorkflow=true` in the default config. The bwa sampe/aln workflow variant is unmaintained and wasn't used for years.
+  - minor: Set `workflowEnvironmentScript` to `workflowEnvironment_tbiLsf`. The previous value was reasonable only as long our PBS cluster existed. The `tbi-pbs-cluster.sh` script is also removed.
+  - patch: Set some resources limits for "fastqc" job.
+
+* 1.2.73-202 (branch-specific change)
+  - PATCH: call of grDevices.pdf() in chrom_diff.r lead to unexpected 
+  - patch: call of `grDevices.pdf()` in `chrom_diff.r` lead to unexpected 
+     (truncated to at most 511 characters) file name of output pdf 
+   
+* 1.2.73-201 (branch-specific change)
+  - PATCH: explicit MBUFFER version can be specified for tbi-lsf environment
+  - minor: explicit `MBUFFER_VERSION` can be specified for tbi-lsf environment
+
 * 1.2.76
   - Lifted 1.1.76 to Roddy 3
   - LSF support
