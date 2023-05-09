@@ -1,6 +1,7 @@
 package de.dkfz.b080.co.common
 
 import de.dkfz.b080.co.files.COConstants
+import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.core.ExecutionContext
 import groovy.transform.CompileStatic
 
@@ -106,6 +107,11 @@ class AlignmentAndQCConfig extends COConfig {
 
     boolean getRunCollectBamFileMetrics() {
         return configValues.getBoolean("runCollectBamFileMetrics", false)
+    }
+
+    List<String> getOverrideSampleNames() {
+        return configValues.getString("overrideSampleNames", "").
+                split(StringConstants.SPLIT_SEMICOLON) as List<String>
     }
 
     @Deprecated

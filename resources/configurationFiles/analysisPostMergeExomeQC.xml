@@ -44,26 +44,16 @@
         <tool name='insilicoGenotyperScript' value='insilicoGenotyper.py' basepath='qcPipeline'/>
         <tool name='pairedEndReadAberrationsScript' value='pairedEndReadAberrations.py' basepath='qcPipeline'/>
         <tool name='coveragePlotScript' value='coveragePlot.R' basepath='qcPipeline'/>
-        <tool name='insertSizesBucketSortScript' value='isizes_bucketsort.pl' basepath='qcPipeline'/>
         <tool name='insertSizePlotScript' value='insertsizePlot.R' basepath='qcPipeline'/>
-        <!--<tool name='writeQcSummary' value='writeQCSummary.py' basepath='qcPipeline'/>-->
         <tool name='writeQcSummary' value='writeQCsummary.pl' basepath='qcPipeline'/>
 
         <tool name='sequencerDetection' value='PhredOrIllumina.pl' basepath='qcPipeline'/>
         <tool name='plotDiffchrom' value='chrom_diff.r' basepath='qcPipeline'/>
         <tool name='coverageQc' value='coverageQc.py' basepath='qcPipeline'/>
         <tool name='filterReadBins' value='filter_readbins.pl' basepath='qcPipeline'/>
-        <tool name='genomeCoveragePyScript' value='genomeCoverage.py' basepath='qcPipeline'/>
         <tool name='coverageQcDImpl' value='coverageQcD/coverageQc' basepath="qcPipelineTools"/>
         <tool name='genomeCoverageDImpl' value='genomeCoverage/genomeCoverage' basepath="qcPipelineTools"/>
 
-        <tool name='readBinsCoverage' value='genomeCoverageReadBins.sh' basepath='qcPipeline'>
-            <resourcesets>
-                <rset size="l" memory="0.05" cores="4" nodes="1" walltime="6"/>
-            </resourcesets>
-            <input type="file" typeof="de.dkfz.b080.co.files.BamFile" scriptparameter="FILENAME"/>
-            <output type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="OUTFILENAME"/>
-        </tool>
         <tool name='coveragePlot' value='genomeCoveragePlots.sh' basepath='qcPipeline'>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_CONTROL"/>
             <input type="file" typeof="de.dkfz.b080.co.files.CoverageTextFile" scriptparameter="FILENAME_TUMOR"/>

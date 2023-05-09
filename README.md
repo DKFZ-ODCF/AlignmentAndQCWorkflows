@@ -16,6 +16,14 @@ The original script with a documentation of the underlying ideas can be found [h
 
 ## Change Logs
 
+* 1.2.74 (branch-specific change)
+  - minor: Added support for unaligned CRAM input.
+
+* 1.2.73-206 (branch-specific change)
+  - patch: Removed unused "overrideBamFiles", "overrideFastqFiles", "runCoveragePlotsOnly", "useCombinedAlignAndSampe", and "runSlimWorkflow" options.
+  - patch: Removed unused non-SLIM, BWA sampe scripts, and a number of other old unused scripts (`bwaAlignSequence.sh`, `bwaMemSort.sh`, `bwaSampeSort.sh`, `samtoolsIndexBamfile.sh`, `picardCollectMetrics.sh`, `samtoolsFlagstatBamfile.sh`, `insertSizeDistribution.sh`, `writeQcSummary.sh`, `writeQcSummary.py`, `differentiateChromosomes.sh`, `genomeCoverage.sh`, `genomeCoverage.py`, `genomeCoverageReadBins.sh`, `isizes_bucketsort.pl`, `coveragePieCharts.r`, `insilicoGenotypeCheckWarnings.sh`, `insilicoGenotyper.py`, `compareSNPs_new.sh`, `compareSNPs.sh`)
+  - patch: Groovy refactorings to increase clarity and DRYness
+
 * 1.2.73-205 (branch-specific change)
   - minor: Added `bwaPostAltJsK8Options` to allow setting opt K8 options for `bwa-postalt.js`
   - minor: Added `SAMPESORT_MEMSIZE` to allow reducing memory for SAM sorting. Default: ~2 GiB.

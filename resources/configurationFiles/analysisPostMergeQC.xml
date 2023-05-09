@@ -28,16 +28,13 @@
         <tool name='insilicoGenotyperScript' value='insilicoGenotyper.py' basepath='qcPipeline'/>
         <tool name='pairedEndReadAberrationsScript' value='pairedEndReadAberrations.py' basepath='qcPipeline'/>
         <tool name='coveragePlotScript' value='coveragePlot.R' basepath='qcPipeline'/>
-        <tool name='insertSizesBucketSortScript' value='isizes_bucketsort.pl' basepath='qcPipeline'/>
         <tool name='insertSizePlotScript' value='insertsizePlot.R' basepath='qcPipeline'/>
-        <!--<tool name='writeQcSummary' value='writeQCSummary.py' basepath='qcPipeline'/>-->
         <tool name='writeQcSummary' value='writeQCsummary.pl' basepath='qcPipeline'/>
 
         <tool name='sequencerDetection' value='PhredOrIllumina.pl' basepath='qcPipeline'/>
         <tool name='plotDiffchrom' value='chrom_diff.r' basepath='qcPipeline'/>
         <tool name='coverageQc' value='coverageQc.py' basepath='qcPipeline'/>
         <tool name='filterReadBins' value='filter_readbins.pl' basepath='qcPipeline'/>
-        <tool name='genomeCoveragePyScript' value='genomeCoverage.py' basepath='qcPipeline'/>
         <tool name='coverageQcDImpl' value='coverageQcD/coverageQc' basepath="qcPipelineTools"/>
         <tool name='genomeCoverageDImpl' value='genomeCoverage/genomeCoverage' basepath="qcPipelineTools"/>
 
