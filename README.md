@@ -16,6 +16,17 @@ The original script with a documentation of the underlying ideas can be found [h
 
 ## Change Logs
 
+* 1.2.73-205 (branch-specific change)
+  - minor: Added `bwaPostAltJsK8Options` to allow setting opt K8 options for `bwa-postalt.js`
+  - minor: Added `SAMPESORT_MEMSIZE` to allow reducing memory for SAM sorting. Default: ~2 GiB.
+  - minor: Upgrade from COWorkflows 1.2.76 to COWorkflowsBasePlugin 1.4.2.
+    - minor: Old `FLAG_USE_EXISTING_PAIRED_BAMS` was renamed to `FLAG_USE_ONLY_EXISTING_PAIRED_BAMS`
+    - minor: Removed `FLAG_RUN_SLIM_WORKFLOW`. Corresponding code is unused for years.
+  - patch: Little refactorings and groovification of old Java code
+
+* 1.2.73-204 (branch-specific change)
+  - minor: Separate BWA from BWAKIT version. Default `BWAKIT_VERSION` to `BWA_VERSION`. Independently set `K8_VERSION` (default 0.2.5). Changed associated module-loading code in environment setup file `tbi-lsf-cluster.sh`.
+
 * 1.2.73-203 (branch-specific change)
   - minor: Optional ALT-chromosome processing via bwa.kit's `bwa-postaln.js`.
     * Set `runBwaPostAltJs=true` to activate the ALT chromosome processing. Default: `false`.

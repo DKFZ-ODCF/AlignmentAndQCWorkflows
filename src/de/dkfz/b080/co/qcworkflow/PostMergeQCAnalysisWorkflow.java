@@ -1,10 +1,11 @@
 package de.dkfz.b080.co.qcworkflow;
 
-import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService;
+import de.dkfz.b080.co.common.AlignmentAndQCConfig;
 import de.dkfz.b080.co.common.COProjectsRuntimeService;
-import de.dkfz.b080.co.files.*;
-import de.dkfz.roddy.config.Configuration;
-import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
+import de.dkfz.b080.co.files.BamFile;
+import de.dkfz.b080.co.files.BamFileGroup;
+import de.dkfz.b080.co.files.CoverageTextFileGroup;
+import de.dkfz.b080.co.files.Sample;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.core.ExecutionContextError;
 import de.dkfz.roddy.core.Workflow;
@@ -12,9 +13,6 @@ import de.dkfz.roddy.core.Workflow;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES;
-import static de.dkfz.b080.co.files.COConstants.FLAG_USE_EXISTING_MERGED_BAMS;
 
 /**
  * A short workflow which only does post merge alignment quality control
@@ -25,16 +23,12 @@ public class PostMergeQCAnalysisWorkflow extends Workflow {
 
     @Override
     public boolean execute(ExecutionContext context) {
-        Configuration cfg = context.getConfiguration();
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "true", "boolean"); //Enable sample extraction from output for this workflow.
-        cfgValues.put(FLAG_USE_EXISTING_MERGED_BAMS, "true", "boolean"); //Enable usage of existing merged bams for this workflow.
-        final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
-        final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context);
+        cfg.setExtractSamplesFromOutputFiles(true); // Enable sample extraction from output for this workflow.
+        cfg.setUseOnlyExistingTargetBam(true);  // Enable usage of existing merged bams for this workflow.
 
         COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
+        List<Sample> samples = runtimeService.metadataAccessor.getSamples(context);
         if (samples.size() == 0)
             return false;
 
@@ -42,10 +36,11 @@ public class PostMergeQCAnalysisWorkflow extends Workflow {
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = new LinkedHashMap<>();
 
         for (Sample sample : samples) {
-            BamFile mergedBam = new BamFile(runtimeService.getMergedBamFileForDataSetAndSample(context, sample));
+            BamFile mergedBam = new BamFile(runtimeService.metadataAccessor.
+                    getMergedBamFileFromFilesystem(context, null, sample));
 
             mergedBam.performPostMergeQCAnalysis();
-            if (runExomeAnalysis) {
+            if (cfg.getRunExomeAnalysis()) {
                 mergedBam.extractTargetsCalculateCoverage();
             }
 
@@ -62,7 +57,7 @@ public class PostMergeQCAnalysisWorkflow extends Workflow {
             return false;
         }
 
-        if (runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
+        if (cfg.getRunCoveragePlots() && coverageTextFilesBySample.keySet().size() >= 2) {
             coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
         } else if (coverageTextFilesBySample.keySet().size() == 1) {
             ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot();

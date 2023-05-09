@@ -1,87 +1,68 @@
 package de.dkfz.b080.co.qcworkflow
 
 import de.dkfz.b080.co.common.AlignmentAndQCConfig
-import de.dkfz.b080.co.common.BasicCOProjectsRuntimeService
 import de.dkfz.b080.co.common.COProjectsRuntimeService
 import de.dkfz.b080.co.files.*
-import de.dkfz.roddy.config.Configuration
-import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
-import de.dkfz.roddy.core.DataSet
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
 import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
-
-import static de.dkfz.b080.co.files.COConstants.FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES
+import groovy.transform.CompileStatic
 
 /**
  * @author michael
  */
-@groovy.transform.CompileStatic
-public class BisulfiteCoreWorkflow extends QCPipeline {
+@CompileStatic
+class BisulfiteCoreWorkflow extends QCPipeline {
 
     @Override
-    public boolean execute(ExecutionContext context) {
-        Configuration cfg = context.getConfiguration();
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        cfgValues.put(FLAG_EXTRACT_SAMPLES_FROM_OUTPUT_FILES, "false", "boolean"); //Disable sample extraction from output for alignment workflows.
-        //cfgValues.put(COConstants.FLAG_USE_ACCELERATED_HARDWARE, "false", "boolean"); //Disable accelerated hardware usage for testing
+    boolean execute(ExecutionContext context) {
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
+        cfg.setUseOnlyExistingTargetBam(true)
 
-        // Run flags
-        final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false)
-        final boolean runFastQC = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC, true)
-        final boolean runAlignmentOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false);
-        final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
-        final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
+        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.runtimeService
+        List<Sample> samples = runtimeService.getSamplesForContext(context)
 
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
-
-        List<Sample> samples = runtimeService.getSamplesForContext(context);
-
-        BamFileGroup mergedBamFiles = new BamFileGroup();
+        BamFileGroup mergedBamFiles = new BamFileGroup()
         Map<Sample.SampleType, CoverageTextFileGroup> coverageTextFilesBySample = [:]
 
         for (Sample sample in samples) {
-
-            List<String> availableLibrariesForSample = sample.getLibraries();
-            BamFileGroup mergedBamsPerLibrary = new BamFileGroup();
+            BamFileGroup mergedBamsPerLibrary = new BamFileGroup()
 
             // Create per library merged bams
-            for (String library in availableLibrariesForSample) {
+            for (String library in sample.libraries) {
                 BamFileGroup sortedBamFiles = []
-                List<LaneFileGroup> rawSequenceGroups = runtimeService.loadLaneFilesForSampleAndLibrary(context, sample, library)
+                List<LaneFileGroup> rawSequenceGroups = runtimeService.
+                        loadLaneFilesForSampleAndLibrary(context, sample, library)
                 if (rawSequenceGroups == null || rawSequenceGroups.size() > 0) {
                     for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
 
-                        if (runFastQC && !runAlignmentOnly)
-                            rawSequenceGroup.calcFastqcForAll();
-                        if (runFastQCOnly)
-                            continue;
+                        if (cfg.runFastqc && !cfg.runAlignmentOnly)
+                            rawSequenceGroup.calcFastqcForAll()
+                        if (cfg.runFastqcOnly)
+                            continue
 
 
-                        BamFile bamFile = rawSequenceGroup.alignAndPairSlim();
-                        //rawSequenceGroup.alignAndPairSlim()
+                        BamFile bamFile = rawSequenceGroup.alignAndPairSlim()
 
-
-                        bamFile.setAsTemporaryFile();  // Bam files created with sai files are only temporary.
-                        sortedBamFiles.addFile(bamFile);
+                        bamFile.setAsTemporaryFile()  // Bam files created with sai files are only temporary.
+                        sortedBamFiles.addFile(bamFile)
 
                     }
                 }
 
-                if (!sortedBamFiles.getFilesInGroup()) continue;
+                if (!sortedBamFiles.filesInGroup) continue
 
-                if (runAlignmentOnly) continue;
+                if (cfg.runAlignmentOnly) continue
 
-                BamFile mergedLibraryBam;
-                if (availableLibrariesForSample.size() == 1) {
-                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample);
-                    if (runCollectBamFileMetrics) mergedLibraryBam.collectMetrics();
+                BamFile mergedLibraryBam
+                if (sample.libraries.size() == 1) {
+                    mergedLibraryBam = sortedBamFiles.mergeAndRemoveDuplicatesSlim(sample)
+                    if (cfg.runCollectBamFileMetrics) mergedLibraryBam.collectMetrics()
 
-                    Sample.SampleType sampleType = sample.getType();
-                    if (!coverageTextFilesBySample.containsKey(sampleType))
-                        coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
-                    coverageTextFilesBySample.get(sampleType).addFile(mergedLibraryBam.calcReadBinsCoverage());
+                    if (!coverageTextFilesBySample.containsKey(sample.type))
+                        coverageTextFilesBySample.put(sample.type, new CoverageTextFileGroup())
+                    coverageTextFilesBySample.get(sample.type).addFile(mergedLibraryBam.calcReadBinsCoverage())
 
                     mergedBamFiles.addFile(mergedLibraryBam);
                     // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
@@ -101,38 +82,39 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
             }
 
             // Merge library bams into per sample bams
-            if(availableLibrariesForSample.size() > 1) {
-                BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample);
+            if(sample.libraries.size() > 1) {
+                BamFile mergedBam = mergedBamsPerLibrary.mergeSlim(sample)
                 // Unfortunately, due to the way Roddy works, the following call needs to be encapsulated into
                 // a method, in order to put library and merged methylation results into different directories.
                 // This allows for selection via onMethod="BisulfiteCoreWorkflow.mergedMethylationCallingMeta".
                 mergedBam.mergedMethylationCallingMeta()
 
-                if (runCollectBamFileMetrics) mergedBam.collectMetrics();
+                if (cfg.runCollectBamFileMetrics) mergedBam.collectMetrics()
 
-                Sample.SampleType sampleType = sample.getType();
-                if (!coverageTextFilesBySample.containsKey(sampleType))
-                    coverageTextFilesBySample.put(sampleType, new CoverageTextFileGroup());
-                coverageTextFilesBySample.get(sampleType).addFile(mergedBam.calcReadBinsCoverage());
+                if (!coverageTextFilesBySample.containsKey(sample.type))
+                    coverageTextFilesBySample.put(sample.type, new CoverageTextFileGroup())
+                coverageTextFilesBySample.get(sample.type).addFile(mergedBam.calcReadBinsCoverage())
 
-                mergedBamFiles.addFile(mergedBam);
+                mergedBamFiles.addFile(mergedBam)
             }
 
         }
 
-        if (!mergedBamFiles.getFilesInGroup()) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.expand("There were no merged bam files available."));
+        if (!mergedBamFiles.filesInGroup) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
+                    expand("There were no merged bam files available."))
             return false;
         }
 
-        if (runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
-            coverageTextFilesBySample.get(Sample.SampleType.CONTROL).plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
-        } else if (runCoveragePlots && coverageTextFilesBySample.keySet().size() == 1) {
+        if (cfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() >= 2) {
+            coverageTextFilesBySample.get(Sample.SampleType.CONTROL).
+                    plotAgainst(coverageTextFilesBySample.get(Sample.SampleType.TUMOR));
+        } else if (cfg.runCoveragePlots && coverageTextFilesBySample.keySet().size() == 1) {
             //TODO: Think if this conflicts with plotAgainst on rerun! Maybe missing files are not recognized.
-            ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot();
+            ((CoverageTextFileGroup) coverageTextFilesBySample.values().toArray()[0]).plot()
         }
 
-        return true;
+        return true
     }
 
 
@@ -144,18 +126,18 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         for (Sample sample : samples) {
             LinkedHashMap<String,LaneFileGroup> laneFileGroups = [:]
-            for (String lib : sample.getLibraries()) {
+            for (String lib : sample.libraries) {
                 for (LaneFileGroup group : runtimeService.loadLaneFilesForSampleAndLibrary(context, sample, lib)) {
-                    String key = group.getRun() + " " + group.getId()
+                    String key = group.run + " " + group.id
                     if (laneFileGroups.containsKey(key)) {
                         context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
-                                    expand("Duplicate lane identifiers for ${group.getRun()}_${group.getId()} among libraries " +
-                                            "(pid=${context.getDataSet()}, sample=${sample.getName()})! Check run and FASTQ names."))
+                                    expand("Duplicate lane identifiers for ${group.run}_${group.id} among libraries " +
+                                            "(pid=${context.dataSet}, sample=${sample.name})! Check run and FASTQ names."))
                         returnValue = false
                     } else {
                         laneFileGroups[key] = group
                     }
-                    cnt += group.getFilesInGroup().size()
+                    cnt += group.filesInGroup.size()
                 }
             }
         }
@@ -169,14 +151,16 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
     protected boolean checkCytosinePositionIndex(ExecutionContext context) {
         AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
-        FileSystemAccessProvider accessProvider = FileSystemAccessProvider.getInstance()
-        File cposidx = aqcfg.getCytosinePositionIndex()
+        FileSystemAccessProvider accessProvider = FileSystemAccessProvider.instance
+        File cposidx = aqcfg.cytosinePositionIndex
         if (cposidx.toString().equals("")) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("${AlignmentAndQCConfig.CVALUE_CYTOSINE_POSITIONS_INDEX} is not defined!"))
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("${AlignmentAndQCConfig.CVALUE_CYTOSINE_POSITIONS_INDEX} is not defined!"))
             return false
         } else if (!accessProvider.fileExists(cposidx)
                 || !accessProvider.isReadable(cposidx)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Cytosine position index '${cposidx}' is not accessible!"))
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("Cytosine position index '${cposidx}' is not accessible!"))
             return false
         } else {
             return true
@@ -186,10 +170,11 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
 
     protected boolean checkClipIndex(ExecutionContext context) {
         AlignmentAndQCConfig aqcfg = new AlignmentAndQCConfig(context)
-        FileSystemAccessProvider accessProvider = FileSystemAccessProvider.getInstance()
-        if (!aqcfg.getClipIndex().toString().startsWith('$' + ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION)
-                && !accessProvider.isReadable(aqcfg.getClipIndex())) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Clip index '${aqcfg.getClipIndex()}' is not accessible!"));
+        FileSystemAccessProvider accessProvider = FileSystemAccessProvider.instance
+        if (!aqcfg.clipIndex.toString().startsWith('$' + ExecutionService.RODDY_CVALUE_DIRECTORY_EXECUTION)
+                && !accessProvider.isReadable(aqcfg.clipIndex)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("Clip index '${aqcfg.clipIndex}' is not accessible!"))
             return false
         } else {
             return true
@@ -197,7 +182,7 @@ public class BisulfiteCoreWorkflow extends QCPipeline {
     }
 
     @Override
-    public boolean checkExecutability(ExecutionContext context) {
+    boolean checkExecutability(ExecutionContext context) {
         boolean result = super.checkExecutability(context)
         result &= checkCytosinePositionIndex(context)
         result &= checkClipIndex(context)

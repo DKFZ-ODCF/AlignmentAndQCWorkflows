@@ -1,5 +1,7 @@
 package de.dkfz.b080.co.files;
 
+import de.dkfz.b080.co.common.LaneID;
+import de.dkfz.b080.co.common.RunID;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.io.ExecutionResult;
@@ -33,7 +35,11 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
     private FastqcGroup allFastqcFiles;
     private AlignedSequenceFileGroup allAlignedFiles;
 
-    public LaneFileGroup(ExecutionContext executionContext, String id, String run, Sample sample, List<LaneFile> files) {
+    public LaneFileGroup(ExecutionContext executionContext,
+                         String id,
+                         String run,
+                         Sample sample,
+                         List<LaneFile> files) {
         super(files);
         this.id = id;
         this.run = run;
@@ -68,7 +74,9 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
 
     //This method could be a candidate for
     public FastqcGroup calcFastqcForAll() {
-        final boolean useSingleEndProcessing = getExecutionContext().getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING, false);
+        final boolean useSingleEndProcessing =
+                getExecutionContext().getConfiguration().getConfigurationValues().
+                        getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING, false);
 
         LinkedList<FastqcFile> files = new LinkedList<FastqcFile>();
         for (LaneFile f : filesInGroup) {
@@ -85,7 +93,9 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
     }
 
     public AlignedSequenceFileGroup alignAll() {
-        final boolean useSingleEndProcessing = getExecutionContext().getConfiguration().getConfigurationValues().getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING, false);
+        final boolean useSingleEndProcessing =
+                getExecutionContext().getConfiguration().getConfigurationValues().
+                        getBoolean(COConstants.FLAG_USE_SINGLE_END_PROCESSING, false);
         LinkedList<AlignedSequenceFile> files = new LinkedList<AlignedSequenceFile>();
         int i = 0;
         for (LaneFile f : filesInGroup) {
@@ -108,37 +118,44 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
     public BamFile alignAndPairSlim() {
         ExecutionContext context = getExecutionContext();
         Configuration configuration = context.getConfiguration();
-        boolean useAcceleratedHardware = configuration.getConfigurationValues().getBoolean(COConstants.FLAG_USE_ACCELERATED_HARDWARE);
+        boolean useAcceleratedHardware =
+                configuration.getConfigurationValues().
+                        getBoolean(COConstants.FLAG_USE_ACCELERATED_HARDWARE);
 
         // Bad hack: Decrease the file stage level by one!
         LaneFile laneFile0 = filesInGroup.get(0).getFSDecreasedCopy();
         LaneFile laneFile1 = filesInGroup.get(1).getFSDecreasedCopy();
 
-        String libString = configuration.getConfigurationValues().getString(COConstants.PRM_CVAL_LIBRARY);
+        String libString =
+                configuration.getConfigurationValues().
+                        getString(COConstants.PRM_CVAL_LIBRARY);
         String sampleName = laneFile0.getSample().getName();
         String pid = context.getDataSet().getId();
-        String run = laneFile0.getRunID();
-        String lane = laneFile0.getLaneId();
+        RunID run = laneFile0.getRunID();
+        LaneID lane = laneFile0.getLaneId();
         String lb = sampleName + "_" + pid + (libString.equals("addToOldLib") ? "" : "_lib2");
 
         String laneId0 = "RAW_SEQ_FILE_1_INDEX=" + ((COFileStageSettings) laneFile0.getFileStage()).getNumericIndex();
         String laneId1 = "RAW_SEQ_FILE_2_INDEX=" + ((COFileStageSettings) laneFile1.getFileStage()).getNumericIndex();
 
-        final String TOOL = useAcceleratedHardware ? COConstants.TOOL_ACCELERATED_ALIGNANDPAIR_SLIM : COConstants.TOOL_ALIGNANDPAIR_SLIM;
+        final String TOOL =
+                useAcceleratedHardware ?
+                COConstants.TOOL_ACCELERATED_ALIGNANDPAIR_SLIM :
+                        COConstants.TOOL_ALIGNANDPAIR_SLIM;
         BamFile bamFile = GenericMethod.callGenericTool(TOOL, laneFile0, laneFile1,
                 "SAMPLE=" + sampleName, "sample=" + sampleName,
-                "RUN=" + run, "run=" + run,
-                "LANE=" + lane, "lane=" + lane,
+                "RUN=" + run.toString(), "run=" + run.toString(),
+                "LANE=" + lane.toString(), "lane=" + lane.toString(),
                 "LB=" + lb, laneId0, laneId1);
         return bamFile;
     }
 
     public BamFile alignAndPair() {
-        ExecutionContext run = getExecutionContext();
+        ExecutionContext runContext = getExecutionContext();
         LaneFile laneFile0 = filesInGroup.get(0);
         LaneFile laneFile1 = filesInGroup.get(1);
 
-        Configuration configuration = run.getConfiguration();
+        Configuration configuration = runContext.getConfiguration();
         BamFile bamFile = (BamFile) BaseFile.constructManual(BamFile.class, this);
         FlagstatsFile flagstatsFile = (FlagstatsFile)BaseFile.constructManual(FlagstatsFile.class, bamFile);
         BamIndexFile bamIndexFile = (BamIndexFile) BaseFile.constructManual(BamIndexFile.class, bamFile);
@@ -152,15 +169,15 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
         final String TOOL = useAcceleratedHardware ? COConstants.TOOL_ACCELERATED_ALIGNANDPAIR : COConstants.TOOL_ALIGNANDPAIR;
 
         String sampleName = laneFile0.getSample().getName();
-        String pid = run.getDataSet().getId();
+        String pid = runContext.getDataSet().getId();
 
-        Map<String, Object> parameters = run.getDefaultJobParameters(TOOL);
+        Map<String, Object> parameters = runContext.getDefaultJobParameters(TOOL);
         parameters.put(COConstants.PRM_FILENAME_SORTED_BAM, bamFile.getAbsolutePath());
         parameters.put(COConstants.PRM_FILENAME_FLAGSTAT, flagstatsFile.getAbsolutePath());
         parameters.put(COConstants.PRM_FILENAME_BAM_INDEX, bamIndexFile.getAbsolutePath());
         parameters.put(COConstants.PRM_RAW_SEQ_1, laneFile0.getAbsolutePath());
         parameters.put(COConstants.PRM_RAW_SEQ_2, laneFile1.getAbsolutePath());
-        parameters.put(COConstants.PRM_ID, laneFile0.getRunID() + "_" + laneFile0.getLaneId());
+        parameters.put(COConstants.PRM_ID, laneFile0.getRunID().toString() + "_" + laneFile0.getLaneId().toString());
         parameters.put(COConstants.PRM_SM, "sample_" + sampleName + "_" + pid);
         parameters.put(COConstants.PRM_LB, sampleName + "_" + pid + (libString.equals("addToOldLib") ? "" : "_lib2"));
 
@@ -171,7 +188,14 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
 
         List<BaseFile> parentFiles = new LinkedList<>();
         parentFiles.addAll(filesInGroup);
-        Job job = new Job(run, run.createJobName(parentFiles.get(0), TOOL, true), TOOL, null, parameters, parentFiles, Arrays.asList((BaseFile) bamFile, flagstatsFile));
+        Job job = new Job(
+                runContext,
+                runContext.createJobName(parentFiles.get(0), TOOL,true),
+                TOOL,
+                (List<String>) null,
+                parameters,
+                parentFiles,
+                Arrays.asList((BaseFile) bamFile, flagstatsFile));
         BEJobResult jobResult = job.run();
         flagstatsFile.setCreatingJobsResult(jobResult);
         if (indexCreated) bamIndexFile.setCreatingJobsResult(jobResult);
@@ -222,7 +246,7 @@ public class LaneFileGroup extends FileGroup<LaneFile> {
         fullCommandList.append(" wait");
         logger.log(Level.INFO, fullCommandList.toString());
         ExecutionResult er = es.execute(fullCommandList.toString());
-        if (!er.successful) {
+        if (!er.isSuccessful()) {
             logger.severe("Could not create testdata for one or more files.");
         }
     }

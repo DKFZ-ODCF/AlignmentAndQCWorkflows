@@ -83,7 +83,7 @@ class Common {
         if (bamFileFileStage.stage.isMoreDetailedOrEqualTo(COFileStage.RUN)) {
             runId = bamFileFileStage.runID;
             if (bamFileFileStage.stage.isMoreDetailedOrEqualTo(COFileStage.LANE))
-                lane = bamFileFileStage.laneId;
+                lane = bamFileFileStage.laneID;
 
         }
         def temp = run.getDefaultJobParameters(QCSUMMARY);

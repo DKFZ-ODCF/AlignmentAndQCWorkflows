@@ -9,12 +9,13 @@ import de.dkfz.roddy.execution.jobs.ScriptCallingMethod
 import de.dkfz.roddy.execution.jobs.StaticScriptProviderClass
 import de.dkfz.roddy.knowledge.files.BaseFile
 import de.dkfz.roddy.tools.LoggerWrapper
+import groovy.transform.CompileStatic
 
 /**
  *
  * @author michael
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 @StaticScriptProviderClass
 class Samtools {
 
