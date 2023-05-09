@@ -36,6 +36,8 @@
                 description="The bwakit module contains the bwa-postalt.js script. Used if runBwaPostAltJs=true"/>
         <cvalue name="K8_VERSION" value="0.2.5" type="string"
                 description="Used for bwa-postalt.js if runBwaPostAltJs=true"/>
+        <cvalue name="bwaPostAltJsK8Options" value="" type="string"
+                description="List of parameters for the K8 JS-interpreter used for bwa-postalt.js"/>
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiLsf" type="string"/>
 
@@ -80,6 +82,9 @@
 
         <cvalue name='markDuplicatesVariant' value='' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
+
+        <cvalue name="SAMPESORT_MEMSIZE" value="2000000000" type="string"
+                description="Memory for sorting the SAM stream. Format depends on sorter. E.g. the default could be written '2G' for samtools sort."/>
 
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'
                 description="Please use -l 0, the workflow unpacks the BAM directly with samtools. Compression is faster and more stable with samtools."/>

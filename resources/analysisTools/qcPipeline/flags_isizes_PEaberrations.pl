@@ -119,13 +119,13 @@ while (<IN>)
 	if ($_ =~ /^\@/)	# there might be a SAM header
 	{next;}
 	$all++;
-	@help = split ("\t", $_);
-	$flag = $help[1];
+	my ($qname, $flag, $rname, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) =
+	    split ("\t", $_);
 	# not unmapped, no duplicate and no secondary/supplementary alignment, and mapqual >= X
 	if (!($flag & 4) && !($flag & 1024) && !($flag & 256) && !($flag & 2048))
 	{
 		$uniq++;
-		if ($help[4] >= $minmapq)
+		if ($mapq >= $minmapq)
 		{
 			# of these, with mapqual >= X
 			$minmapuniq++;
@@ -135,15 +135,15 @@ while (<IN>)
 			next;
 		}
 		# is the read itself on a wanted chromosome?
-		if (defined $chroms{$help[2]})
+		if (defined $chroms{$rname})
 		{
 			$onchr++;
 			# and the mate on a wanted chromosome
-			if (defined $chroms{$help[6]} || $help[6] eq "=")	# same chrom is usually indicated by "=" instead of repeating the name
+			if (defined $chroms{$rnext} || $rnext eq "=")	# same chrom is usually indicated by "=" instead of repeating the name
 			{
 				$both++;
 				# paired end aberration:  mate also has to be mapped, on a different chrom
-				if (!($flag & 8) && $help[6] ne "=" && ($help[2] ne $help[6]))
+				if (!($flag & 8) && $rnext ne "=" && ($rname ne $rnext))
 				# keep matrix symmetrical to see whether there is a bias, e.g. more 1->10 than 10->1
 				{
 					$aberrant++;
@@ -151,14 +151,14 @@ while (<IN>)
 					# is more interesting
 					if ($flag & 64)
 					{
-						$chrompairs{$help[2]}{$help[6]}++;
+						$chrompairs{$rname}{$rnext}++;
 					}
 				}
 				# for insert sizes, take first read of a proper pair (-f 67 = 64 (first in pair) + 2 (proper pair) + 1 (paired));
 				# discarding duplicates (-F 1024) is already done further up
 				if ($flag & 64 && $flag & 2 && $flag & 1)
 				{
-					$entry = abs($help[8]);	# insert size
+					$entry = abs($tlen);	# insert size
 					if ($entry < $min)
 					{
 						$min = $entry;
