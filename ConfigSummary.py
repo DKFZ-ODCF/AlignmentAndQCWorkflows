@@ -142,7 +142,8 @@ class ConfigSummary:
         result_parameters = [self.useAdapterTrimming]
         additional_parameters = {}
         if parameters.get(self.useAdapterTrimming, "false") == "true":
-            additional_parameters += {
+            additional_parameters = {
+                **additional_parameters,
                 "TRIMMOMATIC_VERSION": "0.30",  # Hardcoded! Binary included!
             }
             result_parameters += [self.useAdapterTrimming,
