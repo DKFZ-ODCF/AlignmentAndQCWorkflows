@@ -32,7 +32,7 @@ NP_BCONV_OUT=${RODDY_SCRATCH}/np_bconv_out
 MBUF_SMALL="${MBUFFER_BINARY} -m ${MBUFFER_SIZE_SMALL} -q -l /dev/null"
 MBUF_LARGE="${MBUFFER_BINARY} -m ${MBUFFER_SIZE_LARGE} -q -l /dev/null"
 
-mkfifo ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS} ${NP_BWA_OUT} ${NP_BCONV_OUT}
+touch ${NP_READBINS_IN} ${NP_COVERAGEQC_IN} ${NP_COMBINEDANALYSIS_IN} ${NP_FLAGSTATS} ${NP_BWA_OUT} ${NP_BCONV_OUT}
 
 bamname=`basename ${FILENAME_SORTED_BAM}`
 INDEX_FILE="$FILENAME_SORTED_BAM.bai"
@@ -48,7 +48,7 @@ NP_SORT_ERRLOG="$RODDY_SCRATCH/NP_SORT_ERRLOG"
 FILENAME_SORT_LOG="$DIR_TEMP/${bamname}_errlog_sort"
 
 NP_BAMSORT="$RODDY_SCRATCH/NAMED_PIPE_BAMSORT"
-mkfifo "$NP_BAMSORT"
+touch "$NP_BAMSORT"
 
 # Create the following variable for error checking issues
 TMP_FILE="$tempSortedBamFile"
@@ -132,44 +132,26 @@ if [[ "$bamFileExists" == "false" ]]; then	# we have to make the BAM
     fi
 fi
 
-# Try to read from pipes BEFORE they are filled.
-# In all cases:
-# SAM output is piped to perl script that calculates various QC measures
-(${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} ) & procIDCBA=$!
 
-# genome coverage (depth of coverage and other QC measures in one file)
-(${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) & procIDGenomeCoverage=$!
-
-# read bins
-(set -o pipefail; ${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=/dev/stdout --processors=4 --mode=countReads --windowSize=${WINDOW_SIZE} | $MBUF_SMALL | ${PERL_BINARY} ${TOOL_FILTER_READ_BINS} - ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp) & procIDReadbinsCoverage=$!
-
-# use sambamba for flagstats
-(set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 /dev/stdin > $tempFlagstatsFile) & procIDFlagstat=$!
 
 if [[ ${bamFileExists} == true ]]; then
 	echo "the BAM file already exists, re-creating other output files."
 	# make all the pipes
-	(cat ${FILENAME_SORTED_BAM} | ${MBUF_LARGE} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_LARGE} > $NP_COMBINEDANALYSIS_IN) & procIDOutPipe=$!
+	(cat ${FILENAME_SORTED_BAM} | ${MBUF_LARGE} | tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} | ${SAMBAMBA_BINARY} view /dev/stdin | ${MBUF_LARGE} > $NP_COMBINEDANALYSIS_IN)
 else
 	if [[ ${useBioBamBamSort} == false ]]; then
-		# we use samtools for making the index
-		# filter secondary and supplementary alignments (flag 2304) after alignment
-		mkfifo $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
-
-		# Index bam file
-		${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile} & procID_IDX=$!
 
 		# Align converted fastq files
 		${BWA_BINARY} mem \
 			-t ${BWA_MEM_THREADS} \
 			-R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
 			$BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG \
-		> ${NP_BWA_OUT} & procID_BWA=$!
+		> ${NP_BWA_OUT}
 
 		# Convert aligned reads back to original state
 		${SAMTOOLS_BINARY} view -uSbh -F 2304 ${NP_BWA_OUT} | \
 		${PYTHON_BINARY} ${TOOL_METHYL_C_TOOLS} bconv - - \
-		> ${NP_BCONV_OUT} & procID_BCONV=$!
+		> ${NP_BCONV_OUT}
 
 		# Sort bam file
 		(set -o pipefail; \
@@ -184,26 +166,40 @@ else
 			${NP_READBINS_IN} \
 			${NP_FLAGSTATS} \
 			${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; \
-		    echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+		    echo "$? (Pipe Exit Codes: ${PIPESTATUS[@]})" > ${DIR_TEMP}/${bamname}_ec)
+
+		# we use samtools for making the index
+		# filter secondary and supplementary alignments (flag 2304) after alignment
+		touch $NP_SORT_ERRLOG ${NP_SAMTOOLS_INDEX_IN}
 
 		# filter samtools error log
-		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
+		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG)
 
-		# Check for errors
-		wait $procID_logwrite	# do we need a check for it?
-		wait $procID_BWA || throw 20 "Error in BWA alignment"
-		wait $procID_BCONV || throw 21 "Error in BCONV"
-		wait $procID_MEMSORT || throw 24 "Error in samtools sort"
-		wait $procID_IDX; [[ ! $? -eq 0 ]] && echo "Error from samtools index" && exit 10
+		# Index bam file
+		${SAMTOOLS_BINARY} index ${NP_SAMTOOLS_INDEX_IN} ${tempBamIndexFile}
 	else
 		throw 11 "biobambam sort not implemented yet";
 	fi;
 fi
 
-if [[ ${bamFileExists} == true ]]; then
-	wait $procIDOutPipe || throw 13 "Error from sambamba view pipe"
-else	# make sure to rename BAM file when it has been produced correctly
-    errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
+
+
+# use sambamba for flagstats
+(set -o pipefail; cat ${NP_FLAGSTATS} | ${SAMBAMBA_FLAGSTATS_BINARY} flagstat -t 1 /dev/stdin > $tempFlagstatsFile)
+
+
+# genome coverage (depth of coverage and other QC measures in one file)
+(${TOOL_COVERAGE_QC_D_IMPL} --alignmentFile=${NP_COVERAGEQC_IN} --outputFile=${FILENAME_GENOME_COVERAGE}.tmp --processors=1 --basequalCutoff=${BASE_QUALITY_CUTOFF} --ungappedSizes=${CHROM_SIZES_FILE}) 
+
+# SAM output is piped to perl script that calculates various QC measures
+(${PERL_BINARY} ${TOOL_COMBINED_BAM_ANALYSIS} -i ${NP_COMBINEDANALYSIS_IN} -a ${FILENAME_DIFFCHROM_MATRIX}.tmp -c ${CHROM_SIZES_FILE} -b ${FILENAME_ISIZES_MATRIX}.tmp  -f ${FILENAME_EXTENDED_FLAGSTATS}.tmp  -m ${FILENAME_ISIZES_STATISTICS}.tmp -o ${FILENAME_DIFFCHROM_STATISTICS}.tmp -p ${INSERT_SIZE_LIMIT} )
+
+# genome coverage
+(${TOOL_GENOME_COVERAGE_D_IMPL} --alignmentFile=${NP_READBINS_IN} --outputFile=genomeCoverage.txt --processors=1 --mode=countReads --windowSize=${WINDOW_SIZE})
+(${PERL_BINARY} ${TOOL_FILTER_READ_BINS} genomeCoverage.txt ${CHROM_SIZES_FILE} > ${FILENAME_READBINS_COVERAGE}.tmp)
+
+if [[ ${bamFileExists} == false ]]; then
+	errorString="There was a non-zero exit code in the bwa mem - sort pipeline; exiting..."
     source "$TOOL_BWA_ERROR_CHECKING_SCRIPT"
 	checkBamIsComplete "$tempSortedBamFile"
 	mv ${tempSortedBamFile} ${FILENAME_SORTED_BAM} || throw 36 "Could not move file"
@@ -213,14 +209,7 @@ else	# make sure to rename BAM file when it has been produced correctly
 	fi
 fi
 
-waitForRegisteredPids_BashSucksVersion
-wait $procUnpack1 || throw 39 "Error from reading FASTQ 1"
-wait $procUnpack1 || throw 40 "Error from reading FASTQ 2"
 
-wait $procIDFlagstat || throw 14 "Error from sambamba flagstats"
-wait $procIDReadbinsCoverage || throw 15 "Error from genomeCoverage read bins"
-wait $procIDGenomeCoverage || throw 16 "Error from coverageQCD"
-wait $procIDCBA || throw 17 "Error from combined QC perl script"
 
 # rename QC files
 mv ${FILENAME_DIFFCHROM_MATRIX}.tmp ${FILENAME_DIFFCHROM_MATRIX} || throw 28 "Could not move file"
