@@ -57,7 +57,11 @@ getBigScratchDirectory () {
     echo "$scratchDir"
 }
 
-
+getFilePathOnRoddyScratch () {
+    local sourceLocation="${1}"
+    basename=$(basename ${sourceLocation})
+    echo "${RODDY_SCRATCH}/${basename}"
+}
 
 analysisType () {
     if [[  "${runExomeAnalysis-false}" = "true" ]]; then
