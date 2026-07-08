@@ -23,3 +23,15 @@ touch it.
 This is a standing, cross-cutting process rule, not a one-shot task — apply
 it for the lifetime of this plugin's development, not just the current
 branch's task batch.
+
+### Version numbers in change documentation
+
+Never assert the version/tag a not-yet-released change will ship under
+(e.g. "new in 1.2.73-205") unless that number is already decided and fixed
+— branch-local "next version" labels are placeholders and the actual
+release tag (e.g. it could become 1.4.0 instead) is often undecided until
+release time. When documenting a still-unreleased addition, either omit the
+version or say it's "on this branch, not yet released under a tag". When
+documenting a removed/renamed/deprecated item, anchor on the last tag that
+is certain to have shipped it (e.g. "present up to and including
+1.2.73-204") rather than the uncertain next tag.
