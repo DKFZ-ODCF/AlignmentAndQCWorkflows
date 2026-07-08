@@ -59,7 +59,7 @@ SAMTOOLS_SORT_BINARY=samtools-0.1.19
 #then
 #    # Single end read is active
 #    nice ${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} $RAW_SEQ_1 ${TRIM_STEP} ${REVERSE_STEP} | mbuffer -q -m 1G -l /dev/null > $FNPIPE1 &
-#    ${BWA_BINARY} samse -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" ${INDEX_PREFIX} ${FILENAME_SEQ_1} $FNPIPE1 2> ${FILENAME_BWA_LOG} | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}
+#    ${BWA_BINARY} samse -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" ${INDEX_PREFIX} ${FILENAME_SEQ_1} $FNPIPE1 2> ${FILENAME_BWA_LOG} | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ 8 -m ${SAM_SORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}
 
 #if [[ $useAdaptorTrimming == false ]]
 #then
@@ -73,8 +73,8 @@ SAMTOOLS_SORT_BINARY=samtools-0.1.19
 #
 #    ## -r STR   read group header line such as `@RG\tID:foo\tSM:bar' [null]
 #    #Samtools 0.1.19 uses multithreaded sorting => therefore it is hardcoded here.
-#    ${BWA_BINARY} mem -t ${THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} $FNPIPE1 $FNPIPE2 | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ ${THREADS} -m ${SAMPESORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}
-##    ${BWA_BINARY} sampe -P -T -t 8 ${BWA_SAMPESORT_OPTIONS} -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" ${INDEX_PREFIX} ${FILENAME_SEQ_1} ${FILENAME_SEQ_2} $FNPIPE1 $FNPIPE2 2> ${FILENAME_BWA_LOG} | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}
+#    ${BWA_BINARY} mem -t ${THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} $FNPIPE1 $FNPIPE2 | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ ${THREADS} -m ${SAM_SORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}
+##    ${BWA_BINARY} sampe -P -T -t 8 ${BWA_SAMPESORT_OPTIONS} -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" ${INDEX_PREFIX} ${FILENAME_SEQ_1} ${FILENAME_SEQ_2} $FNPIPE1 $FNPIPE2 2> ${FILENAME_BWA_LOG} | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ 8 -m ${SAM_SORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}
 #
 #else
 
@@ -115,7 +115,7 @@ if [[ "$ON_CONVEY" == "true" ]]; then
     cat ${FNPIPE_FLAGSTATS_IN} | ${SAMBAMBA_BINARY} flagstat /dev/stdin > $FLAGSTAT_TMP & procID_FSTATS=$!
     (set -o pipefail; ${bwaBinary} mem -t 12 -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} | $MBUFFER_2 | \
         ${SAMBAMBA_BINARY} view -f bam -S -l 0 -t 8 /dev/stdin | $MBUFFER_2 | \
-        tee ${FNPIPE_FLAGSTATS_IN} | ${SAMBAMBA_BINARY} sort --tmpdir=${LCLSCRATCH} -l 9 -t 8 -m ${SAMPESORT_MEMSIZE} /dev/stdin -o $TMP_FILE; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+        tee ${FNPIPE_FLAGSTATS_IN} | ${SAMBAMBA_BINARY} sort --tmpdir=${LCLSCRATCH} -l 9 -t 8 -m ${SAM_SORT_MEMSIZE} /dev/stdin -o $TMP_FILE; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
     wait $procID_MEMSORT
     [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem-sambamba pipe returned a non-zero exit code and the job will die now." && exit 100
     wait $procID_FSTATS
@@ -124,7 +124,7 @@ elif [[ ${useBioBamBamSort} == false ]]; then
     cat ${FNPIPE_INDEX_IN} | ${SAMTOOLS_SORT_BINARY} index - ${TMP_FILE_INDEX} & procID_IDX=$!
     (set -o pipefail; ${BWA_BINARY} mem -t ${THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} | $MBUFFER_2 | \
         ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | \
-        ${SAMTOOLS_SORT_BINARY} sort -@ ${THREADS} -m ${SAMPESORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} ${FNPIPE_INDEX_IN} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
+        ${SAMTOOLS_SORT_BINARY} sort -@ ${THREADS} -m ${SAM_SORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} ${FNPIPE_INDEX_IN} | ${SAMTOOLS_SORT_BINARY} flagstat - > ${FLAGSTAT_TMP}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
     wait $procID_MEMSORT
     [[ ! `cat ${DIR_TEMP}/${bamname}_ec` -eq "0" ]] && echo "bwa mem-samtools pipe returned a non-zero exit code and the job will die now." && exit 100
     wait procID_IDX

@@ -1,0 +1,141 @@
+
+:toc: left
+
+= External-Interface Change Log
+
+This document tracks changes to this plugin's *external interface* --
+cvalues external project configs can set/override, `<tool>` names,
+environment-script names, documented file-naming conventions, and public
+Groovy/Java API (classes/methods other plugins could extend or call).
+
+== Identified items
+
+[cols="1,3,3,2,4", options="header"]
+|===
+| # | Change | Source task | External surface | Risk if not confirmed
+
+| 1
+| `useCombinedAlignAndSampe` cvalue removed entirely (was already default `false`/deprecated)
+| `drop-bwa-aln-sampe-usecombinedalignandsampe` (done by `origin/cleanups` merge)
+| Project XML `<cvalue>` override
+| Any external project config still setting this cvalue will have it silently ignored (ineffective), not error -- a config author could believe they're selecting a code path that no longer exists
+
+| 2
+| `runSlimWorkflow` cvalue removed entirely
+| `drop-bwa-aln-sampe-usecombinedalignandsampe` (done by merge)
+| same as above
+| same as above
+
+| 3
+| `useAcceleratedHardware` cvalue removal (planned)
+| `drop-convey-accelerated-execution`
+| Project XML `<cvalue>` override, incl. `analysisBisulfiteCore.xml`
+| Any external config relying on Convey/accelerated hardware execution silently loses that behavior with no error
+
+| 4
+| `CONVEY_SAMBAMBA_SAMSORT_THREADS` / `CONVEY_SAMBAMBA_SAMSORT_MEMSIZE` cvalues removed (planned)
+| `drop-convey-accelerated-execution`
+| Project XML `<cvalue>` override
+| Same as #3
+
+| 5
+| `<tool>` entries removed: `alignment`, `accelerated:alignment`, `alignAndPair`, `accelerated:alignAndPair`, `accelerated:alignAndPairSlim`, `sampesort`, `sampesortSlim`, plus several QC tools (`samtoolsIndex`, `samtoolsFlagstat`, `insertSizes`, `genomeCoverage`, `genomeCoveragePyScript`, `readBinsCoverage`, `collectBamMetrics`, `chromosomeDiff`, `insertSizesBucketSortScript`)
+| `drop-bwa-aln-sampe-usecombinedalignandsampe`, `drop-convey-accelerated-execution`, `drop-unused-scripts` (mostly done by `origin/cleanups` merge)
+| Project XML resource-set overrides (`<tool name='...'><resourcesets>...`), *and cluster job-monitoring*: tool names are the job names operators/monitoring scripts see and match against in `bjobs`/`qstat`-style listings and Roddy's execution store (see `audit-migrated-wiki-content` finding 5 -- this was previously undocumented anywhere)
+| An external project config that customizes resource sets for any of these tool names will have that override become dead configuration (Roddy's behavior for an override of a nonexistent tool name is not verified here -- could be silently ignored or could error at config-validation time; *open question, needs checking against Roddy core*). Separately, any external cluster-monitoring dashboard/script that matches on one of these job names by name will silently stop seeing it once the tool is removed/renamed -- this is a second, independent audience to consider beyond project-config authors, and the stakes are higher than a config no-op (a monitoring gap can hide a real production failure)
+
+| 6
+| `listOfUsedTools` in `analysisExome.xml`, `analysisGenomePancanSlim.xml`, `analysisBisulfiteCore.xml` still lists tool names whose definitions were deleted by the `origin/cleanups` merge (pre-existing gap in that merge, not caused by any task here)
+| flagged by several tasks' plans, not owned by one
+| Project XML `imports="qcAnalysis"` chains
+| Likely a latent config-validation warning/error waiting to surface; not new, but should be fixed alongside whichever task touches these files next
+
+| 7
+| `K8_BINARY` cvalue proposed as a *new* addition to `analysisQC.xml` (currently only has a hardcoded fallback in shell scripts, no XML cvalue at all)
+| `review-finding-6-uncoordinated-defaults`
+| Project XML `<cvalue>`
+| Additive, not breaking -- flagged here only so it's not missed as a documented, user-facing new option
+
+| 8
+| `workflowEnvironmentScript` default switched from `workflowEnvironment_tbiPbs` to `workflowEnvironment_tbiLsf`, and the `workflowEnvironment_tbiPbs` tool + `tbi-pbs-cluster.sh` deleted entirely
+| Already done in the reviewed diff (`1.2.73-201` -> `1.2.73-204`), predates the `.claude/tasks/` batch
+| Project XML `<cvalue name="workflowEnvironmentScript">` override
+| Any external project config that still explicitly sets `workflowEnvironmentScript=workflowEnvironment_tbiPbs` breaks outright (tool no longer exists) -- this is a *known, already-shipped* breaking change, not something to fix, just to document/announce
+
+| 9
+| Public Groovy/Java API removal candidates: `AlignmentAndQCConfig.getUseCombinedAlignAndSampe()`/`getRunSlimWorkflow()` (deprecated getters), `QCPipeline.mergeAndRemoveDuplicatesFat()`, `COProjectsRuntimeService.getMergedBamFilesForDataSet()` (both overloads), `LaneFileGroup.alignAndPair()`/`alignAll()`, `LaneFile.align()`, the whole `AlignedSequenceFileGroup`/`AlignedSequenceFile` classes
+| `drop-bwa-aln-sampe-usecombinedalignandsampe`, `drop-convey-accelerated-execution`
+| *Groovy/Java class/method API*, not just XML config
+| These files/methods share names with classes in `COWorkflowsBasePlugin`/`COWorkflows` (`plugins/COWorkflows_1.2.20/src/de/dkfz/b080/co/files/{LaneFile,LaneFileGroup,AlignedSequenceFileGroup}.java`, `COProjectsRuntimeService.groovy`) -- *unresolved: verify whether this plugin's classes `extends`/override those base classes, or are independent copies from before the plugin was split out of COWorkflows.* If they override base-class methods, deleting them here could be fine (base no-ops take over) or could break an `@Override` contract depending on Roddy's generic-method dispatch. Do not delete without checking `COWorkflowsBasePlugin` inheritance first.
+
+| 10
+| `bwaMemSortSlim.sh`'s exit-code surface: folding the never-checked `procID_logwrite` into the new fail-fast wait helper means its failure now produces a *new* exit code (proposed `18`) that never occurred before
+| `bash-wait-deadlock-fix`
+| Job exit code (observable by external job-monitoring/alerting around Roddy, not by project XML)
+| Low risk, but any external tooling that maps specific exit codes to alert dashboards should be told about the new code
+
+| 11
+| README `ALT_FILE` extension `.aln` -> `.alt`
+| `review-finding-8-readme-alt-file-extension`
+| Documentation only
+| *Not a real interface change* -- the code always used `.alt`; only the README text was wrong. Included here only to explicitly rule it out as a compatibility concern.
+
+| 12
+| Script deletions: `failedReadFilter.pl`, `coveragePlotGenome.r`, `coveragePlotsPerChrom.r`, `insertSizeDistribution.r`, `hartigansDip.R` (candidate)
+| `drop-unused-scripts`
+| None found via `<tool>` registration or internal script calls
+| Low risk -- flagged only in case some external wrapper invokes these scripts directly by path outside of Roddy's tool-registration mechanism (not discoverable from inside this repo)
+
+| 13
+| `SAMPESORT_MEMSIZE` cvalue (present up to and including `1.2.73-204`, the last tagged release) renamed to `SAM_SORT_MEMSIZE` on this branch, with default changed from `2000000000` (~2 GiB) to `500M` per thread; old name kept as a deprecated alias (`SAM_SORT_MEMSIZE` defaults to `${SAMPESORT_MEMSIZE}`); `bwaPostAltJsK8Options` cvalue added on this branch (not yet released under any tag -- the eventual release version for this branch is undecided, so not asserted here)
+| `verify-and-close-alt-hla-memory-fix` (issue #97), commits `f1f1d46`/`9634047` plus this rename
+| Project XML `<cvalue>`, and all shell scripts under `resources/analysisTools/` that read the memory-size variable (now read `SAM_SORT_MEMSIZE` instead of `SAMPESORT_MEMSIZE`) (`SAMPESORT_MEMSIZE` also existed under this name with a `20G` default years earlier in this plugin's history before being dropped, then reintroduced with a different, much lower default -- external configs from that era setting `SAMPESORT_MEMSIZE` explicitly are unaffected by the rename, but any relying on the historical *default* would see a large change if they ever return)
+| Additive/renamed, not breaking for current configs: external configs that set `SAMPESORT_MEMSIZE` keep working unchanged via the default-chaining fallback (`SAM_SORT_MEMSIZE` value `"${SAMPESORT_MEMSIZE}"`), the same idiom already used elsewhere in `analysisQC.xml` (e.g. `BWAKIT_VERSION` defaulting to `${BWA_VERSION}`). `500M` per thread (`samtools sort -@ 8`, so ~4G total) is the value empirically validated in issue #97 to bound the previously-unbounded memory growth seen with ALT-contig/`bwa-postalt.js` processing. Risk: any external tooling that greps job scripts or Roddy configs for the literal string `SAMPESORT_MEMSIZE` (rather than reading the resolved value) would no longer find it in the backend scripts, only in the deprecated cvalue definition
+|===
+
+== Decision (2026-07-08): items 1-4 -- silent removal, documented as deprecated
+
+User decision: silent removal is appropriate for `useCombinedAlignAndSampe`,
+`runSlimWorkflow`, `useAcceleratedHardware`,
+`CONVEY_SAMBAMBA_SAMSORT_THREADS`/`CONVEY_SAMBAMBA_SAMSORT_MEMSIZE` -- no
+compatibility shim, no fail-fast guard. Two conditions attached:
+
+. Document the removal in the README.md "Change Logs" section for whichever
+  release includes it.
+. Document each variable in `docs/` (retroactively, if it was never
+  documented before), marked deprecated -- state explicitly that each was
+  only valid up to and including `1.2.73-204` and was likely already
+  dysfunctional by that version (per `review-finding-1-usecombinedalignandsampe-default`:
+  `useCombinedAlignAndSampe`'s default already made the flag a no-op at
+  `1.2.73-204`, so "deprecated" here means "document what it used to do,"
+  not "still works but discouraged").
+
+This closes the open question for items 1-4. Item 5 (`<tool>` removals) and
+item 9 (Groovy/Java API removals) are separate, unresolved questions -- not
+covered by this decision -- since they involve different failure modes
+(possible Roddy config-validation errors; possible base-class override
+breakage) rather than a silent-no-op cvalue read.
+
+== Open follow-ups
+
+* Add a README.md "Change Logs" entry for items 1-4 when
+  `drop-bwa-aln-sampe-usecombinedalignandsampe` / `drop-convey-accelerated-execution` ship.
+* Add/retrofit documentation in `docs/users/ConfiguringAndRunning.adoc` (see
+  `migrate-gitlab-wiki-to-docs`) for `useCombinedAlignAndSampe`,
+  `runSlimWorkflow`, `useAcceleratedHardware`,
+  `CONVEY_SAMBAMBA_SAMSORT_THREADS`, `CONVEY_SAMBAMBA_SAMSORT_MEMSIZE` marked
+  deprecated/removed-as-of, even if they were never documented while active.
+* Get user sign-off on item 8 (env-script default switch, already shipped --
+  announce only, same silent/documented approach presumably applies but
+  wasn't explicitly asked -- confirm).
+* Resolve item 5's open question: check Roddy core's behavior when a project
+  config overrides a `<tool>` name that no longer exists in the imported
+  base configuration (silent ignore vs. validation error).
+* Resolve item 9's open question: check whether `AlignmentAndQCWorkflows`'s
+  `LaneFile`/`LaneFileGroup`/`AlignedSequenceFileGroup`/`COProjectsRuntimeService`
+  override or extend same-named classes in `COWorkflowsBasePlugin`/`COWorkflows`
+  before any of their methods are deleted.
+* Once all tasks in the current batch are implemented, produce a single
+  user-facing README.md "Change Logs" entry summarizing all confirmed
+  breaking changes together, rather than scattering them across per-task
+  edits.

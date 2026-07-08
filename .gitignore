@@ -2,3 +2,6 @@ manifest.tmp
 build/
 out/
 shunit2/
+.claude/tasks/
+.claude/CLAUDE.local.md
+.claude/local/

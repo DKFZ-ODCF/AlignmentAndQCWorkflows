@@ -178,7 +178,7 @@ else
 		${SAMTOOLS_BINARY} view -uSbh -F 2304 - | \
 		$MBUF_LARGE | \
 		${SAMTOOLS_BINARY} sort -@ 8 \
-			-m ${SAMPESORT_MEMSIZE} \
+			-m ${SAM_SORT_MEMSIZE} \
 			-o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
 		tee ${NP_COVERAGEQC_IN} \
 			${NP_READBINS_IN} \

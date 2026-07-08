@@ -93,7 +93,7 @@ else	# we have to make the BAM
 		(set -o pipefail; ${BWA_BINARY} samse -T -t 8 -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
 		${INDEX_PREFIX} ${FILENAME_SEQ_1} $FNPIPE1 2> ${FILENAME_BWA_LOG} | $MBUF_2G | \
 		tee $NP_COMBINEDANALYSIS_IN | ${SAMTOOLS_BINARY} view -uSbh - | $MBUF_2G | \
-		tee $NP_FLAGSTATS_IN | ${SAMTOOLS_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
+		tee $NP_FLAGSTATS_IN | ${SAMTOOLS_BINARY} sort -@ 8 -m ${SAM_SORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
 		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} $NP_INDEX_IN > ${tempSortedBamFile}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_SAMSESORT=$!
 		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!
@@ -129,7 +129,7 @@ else	# we have to make the BAM
 		(set -o pipefail; ${BWA_BINARY} sampe -P -T -t 8 ${BWA_SAMPESORT_OPTIONS} -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" \
 			${INDEX_PREFIX} ${FILENAME_SEQ_1} ${FILENAME_SEQ_2} $FNPIPE1 $FNPIPE2 2> ${FILENAME_BWA_LOG} | \
 			$MBUF_2G | tee $NP_COMBINEDANALYSIS_IN | ${SAMTOOLS_BINARY} view -uSbh - | $MBUF_2G | \
-			tee $NP_FLAGSTATS_IN | ${SAMTOOLS_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
+			tee $NP_FLAGSTATS_IN | ${SAMTOOLS_BINARY} sort -@ 8 -m ${SAM_SORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
 			tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} $NP_INDEX_IN > ${tempSortedBamFile}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_SAMPESORT=$!
 		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!

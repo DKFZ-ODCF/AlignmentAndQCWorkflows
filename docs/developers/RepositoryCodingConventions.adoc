@@ -1,0 +1,25 @@
+
+:toc: left
+
+= Repository-Specific Coding Conventions
+
+This document holds conventions specific to *this* repository -- how the
+generic rules in link:CodingGuidelines.adoc[] map onto this
+plugin's actual layout and tooling.
+
+== Language and Directory Scope
+
+* This plugin is *not* a Gradle project but is built via `Roddy/helperScripts/compileRoddyPlugin.sh` from the Roddy project.
+* This plugin must build against **JDK 8 and Groovy 2.4/2.5** -- the same
+  versions the `Roddy` core it plugs into targets.
+
+== Tooling
+
+* `shellcheck` is wired as a local `PostToolUse` hook for Bash file changes
+  made through Claude Code (`.claude/hooks/shellcheck-bash-changes.sh`,
+  registered in `.claude/settings.json`). It reports findings but does not
+  block edits.
+* Bash unit tests use `shunit2` (not vendored/committed -- clone
+  `https://github.com/kward/shunit2.git` locally, per
+  `docs/developers/WorkflowStructureAndTesting.adoc` once that page is
+  migrated from the wiki) and are run via `resources/tests/runTests.sh`.

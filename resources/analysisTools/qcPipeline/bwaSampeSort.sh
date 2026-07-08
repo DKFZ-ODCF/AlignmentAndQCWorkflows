@@ -61,7 +61,7 @@ if [[ ${useSingleEndProcessing} == "true" ]]
 then
     # Single end read is active
     nice ${UNZIPTOOL} ${UNZIPTOOL_OPTIONS} $RAW_SEQ_1 ${TRIM_STEP} ${REVERSE_STEP} | mbuffer -q -m 1G -l /dev/null > $FNPIPE1 &
-    ${BWA_BINARY} samse -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" ${INDEX_PREFIX} ${FILENAME_SEQ_1} $FNPIPE1 2> ${FILENAME_BWA_LOG} | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} $FNPIPE_INDEX $FNPIPE_FLAGSTATS > /dev/null
+    ${BWA_BINARY} samse -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" ${INDEX_PREFIX} ${FILENAME_SEQ_1} $FNPIPE1 2> ${FILENAME_BWA_LOG} | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ 8 -m ${SAM_SORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} $FNPIPE_INDEX $FNPIPE_FLAGSTATS > /dev/null
 else
     if [[ $useAdaptorTrimming == false ]]
     then
@@ -89,7 +89,7 @@ else
         cat $o2 ${TRIM_STEP} ${REVERSE_STEP} | mbuffer -q -m 6G -l /dev/null > $FNPIPE2 &
 
     fi
-    ${BWA_BINARY} sampe -P -T -t 8 ${BWA_SAMPESORT_OPTIONS} -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" ${INDEX_PREFIX} ${FILENAME_SEQ_1} ${FILENAME_SEQ_2} $FNPIPE1 $FNPIPE2 2> ${FILENAME_BWA_LOG} | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} $FNPIPE_INDEX $FNPIPE_FLAGSTATS > /dev/null
+    ${BWA_BINARY} sampe -P -T -t 8 ${BWA_SAMPESORT_OPTIONS} -r "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" ${INDEX_PREFIX} ${FILENAME_SEQ_1} ${FILENAME_SEQ_2} $FNPIPE1 $FNPIPE2 2> ${FILENAME_BWA_LOG} | $MBUFFER_2 | ${SAMTOOLS_BINARY} view -uSbh - | $MBUFFER_2 | ${SAMTOOLS_SORT_BINARY} sort -@ 8 -m ${SAM_SORT_MEMSIZE} -o - ${TMP_FILE_SORT} | tee ${TMP_FILE_SAMTOOLS} $FNPIPE_INDEX $FNPIPE_FLAGSTATS > /dev/null
 fi
 
 #Wait for unfinished samtools jobs.
