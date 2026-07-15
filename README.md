@@ -16,6 +16,18 @@ The original script with a documentation of the underlying ideas can be found [h
 
 ## Change Logs
 
+* 1.2.73-205 (branch-specific change)
+  - minor: Added `bwaPostAltJsK8Options` to allow setting opt K8 options for `bwa-postalt.js`
+  - minor: Upgrade from COWorkflows 1.2.76 to COWorkflowsBasePlugin 1.4.2.
+    - minor: Old `FLAG_USE_EXISTING_PAIRED_BAMS` was renamed to `FLAG_USE_ONLY_EXISTING_PAIRED_BAMS`
+    - minor: Removed `FLAG_RUN_SLIM_WORKFLOW`. Corresponding code is unused for years.
+  - patch: Added `SAM_SORT_MEMSIZE` to allow reducing memory for SAM sorting. Default: `500M` per thread (see issue #97: unbounded growth with ALT-contig/`bwa-postalt.js` processing was traced to `samtools sort`, not to `bwa-postalt.js` itself; bounding this cvalue fixes it for all alignment workflow runs, not only ALT-aware ones).
+      * `SAMPESORT_MEMSIZE` (the original name for this cvalue) is deprecated but still works: `SAM_SORT_MEMSIZE` defaults to `${SAMPESORT_MEMSIZE}`, so existing project configs that set the old name keep functioning unchanged.
+  - patch: Little refactorings and groovification of old Java code
+
+* 1.2.73-204 (branch-specific change)
+  - minor: Separate BWA from BWAKIT version. Default `BWAKIT_VERSION` to `BWA_VERSION`. Independently set `K8_VERSION` (default 0.2.5). Changed associated module-loading code in environment setup file `tbi-lsf-cluster.sh`.
+
 * 1.2.73-203 (branch-specific change)
   - minor: Optional ALT-chromosome processing via bwa.kit's `bwa-postaln.js`.
     * Set `runBwaPostAltJs=true` to activate the ALT chromosome processing. Default: `false`.

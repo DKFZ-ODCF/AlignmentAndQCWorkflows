@@ -170,7 +170,7 @@ else
 		(set -o pipefail; ${BWA_BINARY} mem -t ${BWA_MEM_THREADS} -R "@RG\tID:${ID}\tSM:${SM}\tLB:${LB}\tPL:ILLUMINA" $BWA_MEM_OPTIONS ${INDEX_PREFIX} ${INPUT_PIPES} 2> $FILENAME_BWA_LOG | $MBUF_LARGE | \
 		optionalBwaPostAltJs "$hlaPrefix" "$bwaPostAltJsMinPaRatio" | tee $NP_COMBINEDANALYSIS_IN | \
 		${SAMTOOLS_BINARY} view -uSbh - | $MBUF_LARGE | \
-		${SAMTOOLS_BINARY} sort -@ 8 -m ${SAMPESORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
+		${SAMTOOLS_BINARY} sort -@ 8 -m ${SAM_SORT_MEMSIZE} -o - ${tempFileForSort} 2>$NP_SORT_ERRLOG | \
 		tee ${NP_COVERAGEQC_IN} ${NP_READBINS_IN} ${NP_FLAGSTATS} ${NP_SAMTOOLS_INDEX_IN} > ${tempSortedBamFile}; echo $? > ${DIR_TEMP}/${bamname}_ec) & procID_MEMSORT=$!
 		# filter samtools error log
 		(cat $NP_SORT_ERRLOG | uniq > $FILENAME_SORT_LOG) & procID_logwrite=$!

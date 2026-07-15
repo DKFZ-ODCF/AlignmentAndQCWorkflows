@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/shellcheck-bash-changes.sh\" 2>/dev/null || true",
+            "statusMessage": "Running shellcheck..."
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/lintr-r-changes.sh\" 2>/dev/null || true",
+            "statusMessage": "Running lintr..."
+          }
+        ]
+      }
+    ]
+  }
+}

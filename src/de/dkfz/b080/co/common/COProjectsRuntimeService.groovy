@@ -12,14 +12,13 @@ import de.dkfz.roddy.execution.io.ExecutionResult;
 import de.dkfz.roddy.execution.io.ExecutionService;
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.LoggerWrapper
+import groovy.transform.CompileStatic
 
 import java.util.function.Consumer;
 
-/**
- * Created by heinold on 15.01.16.
- */
-@groovy.transform.CompileStatic
-public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
+
+@CompileStatic
+class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
     private static LoggerWrapper logger = LoggerWrapper.getLogger(BasicCOProjectsRuntimeService.class.getName());
 
     protected static void getFileCompression(ExecutionContext run, List<LaneFile> allLaneFiles) {
@@ -174,6 +173,14 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
         return laneFiles
     }
 
+    protected static int indexOfPathElement(String pathnamePattern, String element) {
+        int index = pathnamePattern.split(StringConstants.SPLIT_SLASH).findIndexOf { it -> it == element }
+        if (index < 0) {
+            throw new RuntimeException("Couldn't match '${element}' in '${pathnamePattern}")
+        }
+        return index
+    }
+
     public List<LaneFileGroup> getLaneFileGroupsFromFastqList(ExecutionContext context, Sample sample, String libraryID) {
         COConfig coConfig = new COConfig(context)
         List<File> fastqFiles = coConfig.getFastqList().collect { String it -> new File(it); }
@@ -238,11 +245,22 @@ public class COProjectsRuntimeService extends BasicCOProjectsRuntimeService {
                     runIndex = 2;
                     sampleName = split[0..1].join(StringConstants.UNDERSCORE);
                 }
-                String run = split[runIndex..-2].join(StringConstants.UNDERSCORE);
-                String lane = String.format("L%03d", laneID);
+                RunID run = new RunID(split[runIndex..-2].join(StringConstants.UNDERSCORE))
+                LaneID lane = new LaneID(String.format("L%03d", laneID))
 
 
-                BamFile bamFile = COBaseFile.constructSourceFile(BamFile, f, context, new COFileStageSettings(lane, run, sample, context.getDataSet())) as BamFile
+                BamFile bamFile =
+                        COBaseFile.constructSourceFile(
+                                BamFile,
+                                f,
+                                context,
+                                new COFileStageSettings(
+                                        lane,
+                                        run,
+                                        (LibraryID) null,
+                                        sample,
+                                        context.dataSet)
+                        ) as BamFile
                 return bamFile;
         })
         BamFileGroup bamFileGroup = new BamFileGroup(bamFiles);

@@ -34,7 +34,7 @@ public class QCPipeline extends Workflow {
         final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false);
         final boolean runAlignmentOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false);
         final boolean runCoveragePlots = cfgValues.getBoolean(COConstants.FLAG_RUN_COVERAGE_PLOTS, true);
-        final boolean runSlimWorkflow = cfgValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false);
+        final boolean runSlimWorkflow = true
         final boolean runExomeAnalysis = cfgValues.getBoolean(COConstants.FLAG_RUN_EXOME_ANALYSIS);
         final boolean runCollectBamFileMetrics = cfgValues.getBoolean(COConstants.FLAG_RUN_COLLECT_BAMFILE_METRICS, false);
 
@@ -94,22 +94,10 @@ public class QCPipeline extends Workflow {
     }
 
     private BamFileGroup createSortedBams(ExecutionContext context, COProjectsRuntimeService runtimeService, Sample sample) {
-        Configuration cfg = context.getConfiguration();
-
-        RecursiveOverridableMapContainerForConfigurationValues cfgValues = cfg.getConfigurationValues();
-        // Run flags
-        final boolean runFastQCOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC_ONLY, false);
-        final boolean runFastQC = cfgValues.getBoolean(COConstants.FLAG_RUN_FASTQC, true);
-        final boolean runAlignmentOnly = cfgValues.getBoolean(COConstants.FLAG_RUN_ALIGNMENT_ONLY, false);
-
-        final boolean useOnlyExistingPairedBams = cfgValues.getBoolean(COConstants.FLAG_USE_EXISTING_PAIRED_BAMS, false);
-        // Usage flags
-        final boolean useCombinedAlignAndSampe = cfgValues.getBoolean(COConstants.FLAG_USE_COMBINED_ALIGN_AND_SAMPE, false);
-        final boolean runSlimWorkflow = cfgValues.getBoolean(COConstants.FLAG_RUN_SLIM_WORKFLOW, false);
-
+        AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
         BamFileGroup sortedBamFiles = new BamFileGroup();
 
-        if (useOnlyExistingPairedBams) {
+        if (cfg.useOnlyExistingPairedBams) {
             //Start from the paired bams instead of the lane files.
             sortedBamFiles = runtimeService.getPairedBamFilesForDataSet(context, sample);
         } else {
@@ -119,23 +107,25 @@ public class QCPipeline extends Workflow {
             if (rawSequenceGroups == null || rawSequenceGroups.size() == 0)
                 return sortedBamFiles;
             for (LaneFileGroup rawSequenceGroup : rawSequenceGroups) {
-                if (runFastQC && !runAlignmentOnly)
+                if (cfg.runFastqc && !cfg.runAlignmentOnly)
                     rawSequenceGroup.calcFastqcForAll();
-                if (runFastQCOnly)
+                if (cfg.runFastqcOnly)
                     continue;
 
 
                 BamFile bamFile = null;
+                final boolean runSlimWorkflow = true
 
-                if (useCombinedAlignAndSampe) { //I.e. bwa mem
-                    if (runSlimWorkflow) {
+                // TODO Remove all this dead code.
+                if (cfg.useCombinedAlignAndSampe) { //I.e. bwa mem
+                    if (cfg.runSlimWorkflow) {
                         bamFile = rawSequenceGroup.alignAndPairSlim();
                     } else {
                         bamFile = rawSequenceGroup.alignAndPair();
                     }
                 } else { //I.e. bwa align
                     rawSequenceGroup.alignAll();
-                    if (runSlimWorkflow) {
+                    if (cfg.runSlimWorkflow) {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSortSlim();
                     } else {
                         bamFile = rawSequenceGroup.getAllAlignedFiles().pairAndSort();
@@ -157,7 +147,7 @@ public class QCPipeline extends Workflow {
 
         //To avoid problems with qcsummary the step is done manually.
         sortedBamFiles.runDefaultOperations();
-        for (BamFile sortedBam : sortedBamFiles.getFilesInGroup())
+        for (BamFile sortedBam : sortedBamFiles.filesInGroup)
             sortedBam.createQCSummaryFile();
 
         BamFile mergedBam = sortedBamFiles.mergeAndRemoveDuplicates();
@@ -172,23 +162,28 @@ public class QCPipeline extends Workflow {
 
     private boolean valueIsEmpty(ExecutionContext context, Object value, String variableName) {
         if (value == null || value.toString() == "") {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Expected value to be set: ${variableName}"))
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("Expected value to be set: ${variableName}"))
             return true
         }
         return false
     }
 
     private boolean fileIsAccessible(ExecutionContext context, File file, String variableName) {
-        if (valueIsEmpty(context, file, variableName) || !FileSystemAccessProvider.getInstance().checkFile(file, false, context)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("File '${file}' not accessible: ${variableName}"))
+        if (valueIsEmpty(context, file, variableName) ||
+                !FileSystemAccessProvider.instance.checkFile(file, false, context)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("File '${file}' not accessible: ${variableName}"))
             return false
         }
         return true
     }
 
     private boolean directoryIsAccessible(ExecutionContext context, File directory, String variableName) {
-        if (valueIsEmpty(context, directory, variableName) || !FileSystemAccessProvider.getInstance().checkDirectory(directory, context, false)) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Directory '${directory}' not accessible: ${variableName}"))
+        if (valueIsEmpty(context, directory, variableName) ||
+                !FileSystemAccessProvider.instance.checkDirectory(directory, context, false)) {
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                    expand("Directory '${directory}' not accessible: ${variableName}"))
             return false
         }
         return true
@@ -199,26 +194,31 @@ public class QCPipeline extends Workflow {
 
         boolean returnValue
         returnValue =
-                !valueIsEmpty(context, config.getIndexPrefix(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
-                directoryIsAccessible(context, new File(config.getIndexPrefix()).getParentFile(), AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
-        returnValue =
-                fileIsAccessible(context, config.getChromosomeSizesFile(), AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
-        if (config.getRunExomeAnalysis()) {
-            returnValue =
-                    fileIsAccessible(context, config.getTargetRegionsFile(), AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
-                    !valueIsEmpty(context, config.getTargetSize(), AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
+                !valueIsEmpty(context, config.indexPrefix,
+                        AlignmentAndQCConfig.CVALUE_INDEX_PREFIX) &&
+                directoryIsAccessible(context, new File(config.indexPrefix).parentFile,
+                        AlignmentAndQCConfig.CVALUE_INDEX_PREFIX)
+        returnValue &=
+                fileIsAccessible(context, config.chromosomeSizesFile,
+                        AlignmentAndQCConfig.CVALUE_CHROMOSOME_SIZES_FILE)
+        if (config.runExomeAnalysis) {
+            returnValue &=
+                    fileIsAccessible(context, config.targetRegionsFile,
+                            AlignmentAndQCConfig.CVALUE_TARGET_REGIONS_FILE) &&
+                    !valueIsEmpty(context, config.targetSize,
+                            AlignmentAndQCConfig.CVALUE_TARGET_SIZE)
         }
         return returnValue
     }
 
     private boolean checkSamples(ExecutionContext context) {
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.runtimeService
         List<Sample> samples = runtimeService.getSamplesForContext(context)
         if (samples.size() == 0) {
-            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.getDataSet()}!"))
+            context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("No samples found for PID ${context.dataSet}!"))
             return false
         } else {
-            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.getDataSet().getId());
+            logger.postAlwaysInfo("Found " + samples.size() + " samples for dataset " + context.dataSet.id);
             return true
         }
     }
@@ -228,7 +228,8 @@ public class QCPipeline extends Workflow {
 
         AlignmentAndQCConfig cfg = new AlignmentAndQCConfig(context)
 
-        BasicCOProjectsRuntimeService runtimeService = (BasicCOProjectsRuntimeService) context.getRuntimeService()
+        BasicCOProjectsRuntimeService runtimeService =
+                (BasicCOProjectsRuntimeService) context.runtimeService
         List<Sample> samples = runtimeService.getSamplesForContext(context)
 
         if (cfg.useOnlyExistingTargetBam && cfg.fastqFileListIsSet) {
@@ -248,13 +249,13 @@ public class QCPipeline extends Workflow {
             for (Sample sample : samples) {
                 List<LaneFileGroup> laneFileGroups = ((COProjectsRuntimeService) runtimeService).loadLaneFilesForSample(context, sample)
                 for (LaneFileGroup lfg : laneFileGroups) {
-                    cnt += lfg.getFilesInGroup().size()
+                    cnt += lfg.filesInGroup.size()
                 }
-                logger.postAlwaysInfo("Processed sample " + sample.getName() + " and found " + laneFileGroups.size() + " groups of lane files.")
+                logger.postAlwaysInfo("Processed sample " + sample.name + " and found " + laneFileGroups.size() + " groups of lane files.")
             }
             if (cnt <= 0) {
                 context.addErrorEntry(ExecutionContextError.EXECUTION_NOINPUTDATA.
-                        expand("No lane files found for PID ${context.getDataSet()}!"))
+                        expand("No lane files found for PID ${context.dataSet}!"))
                 returnValue = false
             }
         }
@@ -284,7 +285,7 @@ public class QCPipeline extends Workflow {
         }
 
         def accessProvider = FileSystemAccessProvider.getInstance()
-        def bamFile = new File(aqcfg.getSingleBamParameter())
+        def bamFile = new File(aqcfg.singleBamParameter)
         if (!accessProvider.fileExists(bamFile) || !accessProvider.isReadable(bamFile)) {
             context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
                     expand("A 'bam' parameter was set, but the BAM file is not readable: '${bamFile}'"))
@@ -296,7 +297,7 @@ public class QCPipeline extends Workflow {
 
     public boolean checkFingerprintingSitesFile(ExecutionContext context) {
         def aqcfg = new AlignmentAndQCConfig(context)
-        def accessProvider = FileSystemAccessProvider.getInstance()
+        def accessProvider = FileSystemAccessProvider.instance
         boolean result = true
         if (aqcfg.runFingerprinting) {
             if (!accessProvider.fileExists(aqcfg.fingerprintingSitesFile)
@@ -323,7 +324,8 @@ public class QCPipeline extends Workflow {
 
     public boolean createTestdata(ExecutionContext context) {
         boolean allOk = true;
-        COProjectsRuntimeService runtimeService = (COProjectsRuntimeService) context.getRuntimeService();
+        COProjectsRuntimeService runtimeService =
+                (COProjectsRuntimeService) context.runtimeService
 
         List<Sample> samples = runtimeService.getSamplesForContext(context);
         for (Sample sample : samples) {
@@ -332,7 +334,7 @@ public class QCPipeline extends Workflow {
 
             List<LaneFileGroup> rawSequenceGroups = runtimeService.getLanesForSample(context, sample);
             for (LaneFileGroup lfg : rawSequenceGroups) {
-                for (LaneFile lf : lfg.getFilesInGroup()) {
+                for (LaneFile lf : lfg.filesInGroup) {
                     allLaneFiles.addFile(lf);
                 }
             }

@@ -36,6 +36,8 @@
                 description="The bwakit module contains the bwa-postalt.js script. Used if runBwaPostAltJs=true"/>
         <cvalue name="K8_VERSION" value="0.2.5" type="string"
                 description="Used for bwa-postalt.js if runBwaPostAltJs=true"/>
+        <cvalue name="bwaPostAltJsK8Options" value="" type="string"
+                description="List of parameters for the K8 JS-interpreter used for bwa-postalt.js"/>
 
         <cvalue name="workflowEnvironmentScript" value="workflowEnvironment_tbiLsf" type="string"/>
 
@@ -80,6 +82,11 @@
 
         <cvalue name='markDuplicatesVariant' value='' type="string"
                 description="Allowed values: biobambam, picard, sambamba. Default: empty. If set, this option takes precedence over the older useBioBamBamMarkDuplicates option."/>
+
+        <cvalue name="SAMPESORT_MEMSIZE" value="500M" type="string"
+                description="Deprecated. Use SAM_SORT_MEMSIZE instead. Kept only so that project configs still setting this name keep working: SAM_SORT_MEMSIZE defaults to this value unless set explicitly."/>
+        <cvalue name="SAM_SORT_MEMSIZE" value="${SAMPESORT_MEMSIZE}" type="string"
+                description="Memory per thread for sorting the SAM stream (samtools sort -m). Format depends on sorter. Default derived from issue #97: with ALT-contig processing (bwa-postalt.js) memory grew unbounded until this was bounded to 500M/thread (samtools sort -@ 8, so ~4G total). Replaces the deprecated SAMPESORT_MEMSIZE."/>
 
         <cvalue name='SAMBAMBA_MARKDUP_OPTS' value='"-t 1 -l 0 --hash-table-size=2000000 --overflow-list-size=1000000 --io-buffer-size=64"'
                 description="Please use -l 0, the workflow unpacks the BAM directly with samtools. Compression is faster and more stable with samtools."/>

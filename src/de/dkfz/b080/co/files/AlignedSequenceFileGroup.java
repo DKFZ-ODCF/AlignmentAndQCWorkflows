@@ -1,5 +1,7 @@
 package de.dkfz.b080.co.files;
 
+import de.dkfz.b080.co.common.LaneID;
+import de.dkfz.b080.co.common.RunID;
 import de.dkfz.roddy.config.Configuration;
 import de.dkfz.roddy.core.ExecutionContext;
 import de.dkfz.roddy.execution.jobs.BEJobResult;
@@ -35,15 +37,16 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
         String libString = configuration.getConfigurationValues().getString(COConstants.PRM_CVAL_LIBRARY);
         String sampleName = laneFile0.getSample().getName();
         String pid = context.getDataSet().getId();
-        String run = laneFile0.getRunID();
-        String lane = laneFile0.getLaneId();
+        RunID run = laneFile0.getRunID();
+        LaneID lane = laneFile0.getLaneId();
         String lb = sampleName + "_" + pid + (libString.equals("addToOldLib") ? "" : "_lib2");
 
         String laneId0 = "RAW_SEQ_FILE_1_INDEX=" + ((COFileStageSettings) laneFile0.getFileStage()).getNumericIndex();
         String laneId1 = "RAW_SEQ_FILE_2_INDEX=" + ((COFileStageSettings) laneFile1.getFileStage()).getNumericIndex();
 
         final String TOOL = "sampesortSlim";
-        BamFile bamFile = GenericMethod.callGenericTool(TOOL, seqFile0, seqFile1, laneFile0, laneFile1, "SAMPLE=" + sampleName, "RUN=" + run, "LANE=" + lane, "LB=" + lb, laneId0, laneId1);
+        BamFile bamFile = GenericMethod.callGenericTool(TOOL, seqFile0, seqFile1, laneFile0, laneFile1,
+                "SAMPLE=" + sampleName, "RUN=" + run.toString(), "LANE=" + lane.toString(), "LB=" + lb, laneId0, laneId1);
         return bamFile;
     }
 
@@ -78,7 +81,7 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
         parameters.put(COConstants.PRM_RAW_SEQ_2, laneFile1.getAbsolutePath());
 
         // Could be moved to the config / scripts
-        parameters.put("ID", parentFile.getRunID() + "_" + parentFile.getLaneId());
+        parameters.put("ID", parentFile.getRunID().toString() + "_" + parentFile.getLaneId().toString());
         parameters.put("SM", "sample_" + parentFile.getSample().getName() + "_" + context.getDataSet());
         parameters.put("LB", parentFile.getSample().getName() + "_" + context.getDataSet() + (libString.equals("addToOldLib") ? "" : "_lib2"));
 
@@ -90,7 +93,14 @@ public class AlignedSequenceFileGroup extends FileGroup<AlignedSequenceFile> {
 
         List<BaseFile> parentFiles = new LinkedList<BaseFile>();
         parentFiles.addAll(filesInGroup);
-        Job job = new Job(context, context.createJobName(parentFiles.get(0), COConstants.TOOL_SAMPESORT, true), COConstants.TOOL_SAMPESORT, null, parameters, parentFiles, Arrays.asList((BaseFile)bamFile, indexFile, flagstatsFile));
+        Job job = new Job(
+                context,
+                context.createJobName(parentFiles.get(0), COConstants.TOOL_SAMPESORT, true),
+                COConstants.TOOL_SAMPESORT,
+                (List<String>) null,
+                parameters,
+                parentFiles,
+                Arrays.asList((BaseFile)bamFile, indexFile, flagstatsFile));
         BEJobResult jobResult = job.run();
 
         flagstatsFile.setCreatingJobsResult(jobResult);
